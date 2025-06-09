@@ -1,0 +1,17 @@
+/*Start fix menu nav*/
+.header-navbar {
+    height: 77px;
+}
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+}
+/*End menu nav*/
+.card .card-header h5+span {
+    display: block;
+}
+@media (width > 600px) {
+    .camera-capture{
+        display: none;
+    }
+}
