@@ -34,11 +34,11 @@
                                 <span class="pcoded-mtext">Historial de Actividad</span>
                             </a>
                         </li>
-                        <li class="{{ request()->routeIs('lounges.*') ? 'active' : '' }}">
+                        <!-- <li class="{{ request()->routeIs('lounges.*') ? 'active' : '' }}">
                             <a href="{{ route('lounges.index') }}" class="waves-effect waves-dark">
                                 <span class="pcoded-mtext">Salas Lounge</span>
                             </a>
-                        </li>
+                        </li> -->
                         <li class="{{ request()->routeIs('courses.*') ? 'active' : '' }}">
                             <a href="{{ route('courses.index') }}" class="waves-effect waves-dark">
                                 <span class="pcoded-mtext">Cursos</span>
