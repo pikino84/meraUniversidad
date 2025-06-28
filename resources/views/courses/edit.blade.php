@@ -15,7 +15,7 @@
         </div>
     @endif
 
-    <form action="{{ route('courses.update', $course->id) }}" method="POST" enctype="multipart/form-data">
+    <form  id="cursos_form" action="{{ route('courses.update', $course->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -43,6 +43,15 @@
                     <input type="file" name="cover_image" class="form-control-file" accept="image/*">
                     <small class="form-text text-muted">Si quieres cambiar la imagen, sube una nueva.</small>
                 </div>
+                <div class="form-group mt-3">
+                    <label for="zip_file">Archivo ZIP del Curso</label>
+                    <input type="file" name="zip_file" class="form-control-file" accept=".zip">
+                    <small class="form-text text-muted">
+                        Si no subes un nuevo archivo ZIP, se conservará el contenido actual del curso.
+                        Solo súbelo si deseas reemplazar completamente los archivos del curso.
+                    </small>
+                </div>
+
 
                 <div class="form-group mt-4">
                     <button type="submit" class="btn btn-primary">Actualizar Curso</button>
@@ -52,5 +61,22 @@
             </div>
         </div>
     </form>
+    <div id="loadingOverlay">
+        <div>
+            <div class="spinner-border text-light mb-3" role="status"></div>
+            <div>Procesando curso, no refresques la pagina, por favor espera...</div>
+        </div>
+    </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cursos_form = document.getElementById('cursos_form');
+        const overlay = document.getElementById('loadingOverlay');
+        cursos_form.addEventListener('submit', function () {
+            overlay.style.display = 'flex';
+        });
+    });
+</script>
+@endpush

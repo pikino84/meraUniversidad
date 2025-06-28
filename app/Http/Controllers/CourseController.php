@@ -94,8 +94,8 @@ class CourseController extends Controller
 
         // Guardar portada dentro de la carpeta final
         $coverImage = $request->file('cover_image');
-        $coverImageName = 'cover.' . $coverImage->getClientOriginalExtension();
-        $coverImage->move($finalPath, $coverImageName);
+        $coverImageName = $slug . '-cover.' . $coverImage->getClientOriginalExtension();
+        $coverImage->move($storageCoursesPath, $coverImageName);
 
         // Borrar el zip temporal y carpeta temporal
         unlink($zipTempPath);
@@ -106,7 +106,7 @@ class CourseController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'slug' => $slug,
-            'cover_image' => 'cursos/' . $slug . '/' . $coverImageName, // Ruta relativa a storage
+            'cover_image' => 'cursos/' . $coverImageName, // Ruta relativa a storage
             'path' => 'cursos/' . $slug, // Para apuntar al index.html
         ]);
 
@@ -127,18 +127,107 @@ class CourseController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'cover_image' => 'nullable|image|max:2048',
+            'zip_file' => 'nullable|file|mimes:zip|max:1024000',
         ]);
 
+        $oldSlug = $course->slug;
+        $newSlug = Str::slug($request->name);
+        $storageCoursesPath = storage_path('app/public/cursos');
+        $finalPath = $storageCoursesPath . '/' . $newSlug;
+
+        // Cambiar nombre de carpeta si cambia el slug y no hay nuevo zip
+        if (!$request->hasFile('zip_file') && $oldSlug !== $newSlug) {
+            $oldPath = $storageCoursesPath . '/' . $oldSlug;
+            if (file_exists($oldPath)) {
+                rename($oldPath, $finalPath);
+            }
+        }
+
+        // Si viene un ZIP nuevo, reemplaza contenido
+        if ($request->hasFile('zip_file')) {
+            // ZIP temporal
+            $zip = $request->file('zip_file');
+            $zipTempPath = storage_path('app/temp/' . $zip->getClientOriginalName());
+            $zip->move(storage_path('app/temp'), $zip->getClientOriginalName());
+
+            // Extraer ZIP a temp
+            $tempExtractPath = $storageCoursesPath . '/temp-' . $newSlug;
+            if (!file_exists($tempExtractPath)) {
+                mkdir($tempExtractPath, 0755, true);
+            }
+
+            $zipArchive = new ZipArchive;
+            if ($zipArchive->open($zipTempPath) === true) {
+                $zipArchive->extractTo($tempExtractPath);
+                $zipArchive->close();
+            } else {
+                return back()->with('error', 'Error al descomprimir el ZIP.');
+            }
+
+            // Eliminar carpeta anterior (si existe)
+            if (file_exists($storageCoursesPath . '/' . $oldSlug)) {
+                File::deleteDirectory($storageCoursesPath . '/' . $oldSlug);
+            }
+
+            // Crear carpeta nueva
+            mkdir($finalPath, 0755, true);
+
+            // Mover contenido descomprimido a la carpeta final
+            $files = File::allFiles($tempExtractPath);
+            foreach ($files as $file) {
+                $relativePath = $file->getRelativePath();
+                $destinationFolder = $finalPath . ($relativePath ? '/' . $relativePath : '');
+
+                if (!file_exists($destinationFolder)) {
+                    mkdir($destinationFolder, 0755, true);
+                }
+
+                File::copy($file->getRealPath(), $destinationFolder . '/' . $file->getFilename());
+            }
+
+            // Mover subdirectorios
+            $subFolders = File::directories($tempExtractPath);
+            foreach ($subFolders as $subFolder) {
+                File::copyDirectory($subFolder, $finalPath . '/' . basename($subFolder));
+            }
+
+            // Eliminar archivos temporales
+            unlink($zipTempPath);
+            File::deleteDirectory($tempExtractPath);
+        }
+
+        // Imagen de portada
+        if ($request->hasFile('cover_image')) {
+            $coverImage = $request->file('cover_image');
+            $coverImageName = $newSlug . '-cover.' . $coverImage->getClientOriginalExtension();
+            $coverImage->move($storageCoursesPath, $coverImageName);
+            $course->cover_image = 'cursos/' . $coverImageName;
+        } elseif ($oldSlug !== $newSlug && !$request->hasFile('zip_file')) {
+            // Renombrar imagen si se cambió el slug pero no se subió imagen ni zip
+            $oldImagePath = $storageCoursesPath . '/' . $oldSlug . '/cover.*';
+            $oldImageFiles = glob($oldImagePath);
+            if (!empty($oldImageFiles)) {
+                $oldImage = $oldImageFiles[0];
+                $extension = pathinfo($oldImage, PATHINFO_EXTENSION);
+                $newImageName = 'cover.' . $extension;
+                rename($oldImage, $storageCoursesPath . '/' . $newImageName);
+                $course->cover_image = 'cursos/' . $newImageName;
+            }
+        }
+
+        // Actualizar curso
         $course->update([
             'name' => $request->name,
             'description' => $request->description,
-            'cover_image' => $request->hasFile('cover_image')
-                ? $request->file('cover_image')->store('courses/covers', 'public')
-                : $course->cover_image,
+            'slug' => $newSlug,
+            'cover_image' => $course->cover_image,
+            'path' => 'cursos/' . $newSlug,
         ]);
 
         return redirect()->route('courses.index')->with('success', 'Curso actualizado exitosamente.');
     }
+
+
 
     public function publicIndex()
     {
@@ -150,6 +239,7 @@ class CourseController extends Controller
     {
         // Eliminar carpeta del curso
         $storagePath = storage_path('app/public/' . $course->path);
+        $coverImagePath = storage_path('app/public/' . $course->cover_image);
         if (file_exists($storagePath)) {
             File::deleteDirectory($storagePath);
         }

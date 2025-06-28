@@ -15,3 +15,22 @@
         display: none;
     }
 }
+#loadingOverlay div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#loadingOverlay {
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    background: rgba(0,0,0,0.7); 
+    z-index: 9999; 
+    align-items: center; 
+    justify-content: center; 
+    color: white; 
+    font-size: 1.5rem;
+}

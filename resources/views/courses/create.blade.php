@@ -15,7 +15,7 @@
         </div>
     @endif
 
-    <form action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
+    <form id="cursos_form" action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="card shadow mb-4">
@@ -49,5 +49,22 @@
             </div>
         </div>
     </form>
+    <div id="loadingOverlay">
+        <div>
+            <div class="spinner-border text-light mb-3" role="status"></div>
+            <div>Procesando curso, no refresques la pagina, por favor espera...</div>
+        </div>
+    </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cursos_form = document.getElementById('cursos_form');
+        const overlay = document.getElementById('loadingOverlay');
+        cursos_form.addEventListener('submit', function () {
+            overlay.style.display = 'flex';
+        });
+    });
+</script>
+@endpush
