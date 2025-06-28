@@ -34,7 +34,7 @@ class CourseController extends Controller
             'zip_file' => 'required|file|mimes:zip|max:1024000',
         ]);
 
-        $slug = Str::slug($request->name);
+        $slug = 'curso-' . Str::random(8);
 
         // RUTA destino final: storage/app/public/cursos/
         $storageCoursesPath = storage_path('app/public/cursos');
@@ -136,12 +136,12 @@ class CourseController extends Controller
         $finalPath = $storageCoursesPath . '/' . $newSlug;
 
         // Cambiar nombre de carpeta si cambia el slug y no hay nuevo zip
-        if (!$request->hasFile('zip_file') && $oldSlug !== $newSlug) {
+        /*if (!$request->hasFile('zip_file') && $oldSlug !== $newSlug) {
             $oldPath = $storageCoursesPath . '/' . $oldSlug;
             if (file_exists($oldPath)) {
                 rename($oldPath, $finalPath);
             }
-        }
+        }*/
 
         // Si viene un ZIP nuevo, reemplaza contenido
         if ($request->hasFile('zip_file')) {

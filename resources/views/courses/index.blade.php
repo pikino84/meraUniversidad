@@ -27,11 +27,10 @@
 <div class="card">
     <div class="card-block table-border-style">
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped table-xs table-hover">
                 <thead>
                     <tr>
                         <th>Nombre</th>
-                        <th>Descripción</th>
                         <th>Portada</th>                        
                         <th>Acciones</th>
                     </tr>
@@ -40,7 +39,6 @@
                     @forelse ($courses as $course)
                         <tr>
                             <td>{{ $course->name }}</td>
-                            <td>{{ $course->description }}</td>
                             <td>
                                 <img src="{{ asset('storage/' . $course->cover_image) }}" alt="Portada" width="100" class="img-thumbnail">
                             </td>
