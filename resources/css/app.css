@@ -13,3 +13,1746 @@
     z-index: 9999;
     display: none;
 }
+
+.pcoded .pcoded-navbar .pcoded-item .pcoded-hasmenu .pcoded-submenu li>a .pcoded-mtext::before {
+    display: none;
+    content: none;
+}
+
+.pcoded .pcoded-navbar .pcoded-item .pcoded-hasmenu .pcoded-submenu li>a .pcoded-micon {
+    display: inline-block;
+}
+
+/* NUEVO CSS */
+/* ==================================================== MERA BRAND THEME COMPLETE Green + Blue Identity ==================================================== LIGHT BLUE #81CFF4 AQUAMARINE BLUE #8CBCC4 GREEN ACCENT #93C01F SECONDARY GREEN #55882B MERA GREEN #024D25 ==================================================== */
+/* ========================== BRAND VARIABLES ========================== */
+:root {
+    --mera-blue: #81CFF4;
+    --mera-aqua: #8CBCC4;
+    --mera-green: #93C01F;
+    --mera-green-dark: #55882B;
+    --mera-primary: #024D25;
+    --mera-white: #ffffff;
+    --mera-gray: #8A8C91;
+    --mera-border: #dee2e6;
+}
+
+/* ========================== CHECKBOX / RADIO ========================== */
+[type='checkbox']:checked,
+[type='radio']:checked {
+    background-color: #93C01F !important;
+}
+
+[type='checkbox']:focus,
+[type='radio']:focus {
+    box-shadow: 0 0 .2rem rgba(147, 192, 31, .35) !important;
+}
+
+/* ========================== BACKGROUND ========================== */
+.background_by_mera {
+    background-image: url('../lounge_assets/backgrounds/background_web.png');
+    background-color: #fff;
+    background-position: 0px -60px;
+}
+
+/* ========================== COLORS COMPATIBILITY ========================== */
+.bg-black {
+    background-color: #024D25 !important;
+}
+
+.bg-gold {
+    background-color: #93C01F !important;
+}
+
+.color-gold {
+    color: #93C01F !important;
+}
+
+/* ========================== BUTTON OUTLINE ========================== */
+.btn.btn-outline-primary.btn-sm {
+    border: #dee2e6 1px solid !important;
+    color: #024D25;
+}
+
+.btn.btn-outline-primary.btn-sm:hover {
+    background: #024D25 !important;
+    color: #fff;
+}
+
+/* ========================== MAIN CONTAINER ========================== */
+.pcoded-main-container {
+    background: #fff;
+}
+
+/* ========================== NAVBAR ========================== */
+.pcoded .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li>a {
+    color: #024D25;
+}
+
+.header-navbar .navbar-wrapper .navbar-logo[logo-theme="theme6"] {
+    background: #fff;
+}
+
+.header-navbar .navbar-wrapper .navbar-logo {
+    padding: 20px 40px;
+}
+
+.pcoded .pcoded-navbar[navbar-theme="theme1"] .nav-user,
+.pcoded .pcoded-navbar[navbar-theme="theme1"] .pcoded-inner-navbar {
+    background-color: #fff;
+}
+
+/* Separador menú */
+.pcoded-hasmenu>a.waves-effect.waves-dark {
+    border-top: solid #55882B 1px;
+}
+
+/* Submenu */
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item li .pcoded-submenu {
+    background-color: #fff;
+}
+
+.pcoded .pcoded-navbar[navbar-theme="theme1"] .pcoded-item li.pcoded-hasmenu .pcoded-submenu li>a {
+    color: #024D25;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item li .pcoded-submenu li.active>a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item li .pcoded-submenu li:hover>a {
+    color: #024D25;
+    background: #81CFF4;
+    /* border-radius: 25px 0 0 25px; */
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item li .pcoded-submenu {
+    border-left-color: #024D25;
+}
+
+/* Línea submenu */
+.pcoded-submenu::before {
+    background-color: #8CBCC4;
+}
+
+/* Puntos submenu */
+.pcoded-submenu li::before {
+    background-color: #93C01F;
+}
+
+.pcoded-submenu li.active::before {
+    background-color: #93C01F;
+    border-color: #93C01F;
+}
+
+/* Items activos */
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.active>a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a {
+    background: #024D25;
+    color: #fff;
+
+}
+
+/* Items activos */
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.active>a:hover,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a:hover {
+    background: #024D25;
+    color: white;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.active:hover>a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger:hover>a {
+    background: #024D25;
+}
+
+/* Flechas menú */
+.pcoded .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li.pcoded-hasmenu>a:after {
+    color: #024D25;
+    /* background: rgba(147, 192, 31, .45); */
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li:hover>a {
+    background: #024D25;
+    color: #fff;
+}
+
+.pcoded .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li>a .pcoded-micon {
+    color: #024D25;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item>li.active>a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item>li.active:hover>a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger:hover>a {
+    border-left-color: #024D25;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a:after {
+    background: transparent;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.active>a:after,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a:after {
+    color: #fff;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li.active>a:after,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li.active:hover>a:after,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li.pcoded-trigger>a:after,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li.pcoded-trigger:hover>a:after,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li:hover>a:after,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li:hover:hover>a:after {
+    color: #fff;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.active>a .pcoded-micon,
+.pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a .pcoded-micon {
+    color: #fff;
+}
+
+.pcoded li.pcoded-hasmenu>a:after {
+    float: right;
+    font-style: normal;
+    margin-left: 3px;
+    font-size: 13px;
+    position: absolute;
+    right: 15px;
+    top: initial;
+    font-family: 'feather';
+    padding-top: 5px;
+    -webkit-transition: opacity 0.3s linear;
+    transition: opacity 0.3s linear;
+}
+
+/* ========================== HEADER ========================== */
+.header-navbar {
+    height: 80px;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar[pcoded-navbar-position="fixed"] {
+    top: 80px;
+}
+
+.header-navbar .navbar-wrapper .navbar-container .nav-left .mera-header-title {
+    cursor: default;
+    font-size: 16px;
+}
+
+.header-navbar .navbar-wrapper .navbar-logo .mobile-menu,
+.header-navbar .navbar-wrapper .navbar-container .nav-left li,
+.header-navbar .navbar-wrapper .navbar-container .nav-right li {
+    line-height: 5;
+}
+
+.pcoded[theme-layout="vertical"].pcoded-wrapper,
+.pcoded[theme-layout="vertical"] .pcoded-main-container {
+    margin-top: 80px;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar .pcoded-item>.pcoded-hasmenu>.pcoded-submenu {
+    padding: 0;
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+}
+
+/* ========================== FILTERS ========================== */
+.wrapper-filter-list {
+    border: solid 1px #dee2e6;
+    padding: 27px 30px;
+    background: #fff;
+    border-radius: 22px;
+}
+
+.wrapper-filter-list input {
+    border: #dee2e6 1px solid;
+}
+
+.wrapper-filter-list .input-group-text {
+    background: #fff;
+}
+
+a:focus,
+a:hover {
+    color: #93C01F;
+}
+
+.border-lounge {
+    border: #55882B 1px solid !important;
+    border-radius: 22px !important;
+}
+
+/* ==================================================== MERA BRAND THEME COMPLETE PARTE 2/3 ==================================================== */
+/* ========================== TITLES / BADGES ========================== */
+.title-list {
+    font-size: 25px;
+    font-weight: 500;
+}
+
+.badge-info {
+    background: #93C01F;
+    color: #fff;
+}
+
+/* ========================== BUTTONS ========================== */
+.btn-black,
+.btn-black:hover,
+.btn-black:focus {
+    background: #024D25;
+    color: #fff;
+    border-radius: 22px;
+}
+
+.btn-black:hover {
+    background: #55882B;
+}
+
+.btn-grey,
+.btn-grey:hover,
+.btn-grey:focus {
+    background: #8CBCC4;
+    color: #fff;
+    border-radius: 22px;
+}
+
+/* Excel button */
+.btn-excel {
+    background-color: #55882B;
+    border-color: #024D25;
+    color: #fff;
+}
+
+.btn-excel:hover {
+    background-color: #024D25;
+    color: #fff;
+}
+
+.btn-outline-excel {
+    border: 1px solid #55882B;
+    color: #55882B;
+}
+
+.btn-outline-excel:hover {
+    background: #55882B;
+    color: #fff;
+}
+
+/* ========================== FORM CONTROLS ========================== */
+.form-control:focus {
+    border: 1px solid #81CFF4;
+    box-shadow: 0 0 .2rem rgba(129, 207, 244, .35);
+}
+
+.select2-container--default .select2-selection--single {
+    border: #dee2e6 1px solid !important;
+    border-radius: 22px !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #93C01F;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #024D25 transparent transparent transparent;
+}
+
+span.select2-selection__placeholder {
+    color: #024D25 !important;
+}
+
+/* ========================== CALENDAR ========================== */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected:hover {
+    background: #93C01F !important;
+    border-color: #93C01F !important;
+    color: #fff;
+}
+
+/* ========================== BREADCRUMB ========================== */
+li.breadcrumb-item .icon-home:before {
+    color: #93C01F;
+}
+
+.breadcrumb-item.active {
+    color: #8A8C91;
+}
+
+/* ========================== MODALS ========================== */
+.modal {
+    z-index: 1051;
+}
+
+.modal-content {
+    border-radius: 18px;
+}
+
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+}
+
+.overlay-background {
+    background-color: rgba(2, 77, 37, .75);
+}
+
+.spinner-border {
+    border-color: #93C01F;
+}
+
+/* ========================== SWEET ALERT ========================== */
+.swal-button {
+    background-color: #024D25 !important;
+}
+
+.swal-icon--success {
+    border-color: #93C01F !important;
+}
+
+.swal-icon--success__line {
+    background-color: #93C01F !important;
+}
+
+.swal-icon--success__ring {
+    border: 4px solid #93C01F !important;
+}
+
+/* ========================== TABLES ========================== */
+.table.table-sm td,
+.table.table-sm th {
+    padding: .6rem .2rem !important;
+}
+
+.table thead th {
+    background: #024D25;
+    color: #fff;
+}
+
+.table td,
+.table th {
+    border-color: #8CBCC4;
+}
+
+/* ========================== LOGOS TABLE ========================== */
+.td-logo {
+    width: 100px;
+    padding: 6px !important;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========================== DARK MODE TOGGLE ========================== */
+.toggle-slider {
+    background: #8CBCC4;
+}
+
+.dark-mode-toggle input:checked+.toggle-slider {
+    background: #93C01F;
+}
+
+.dark-mode-toggle input:checked+.toggle-slider::after {
+    transform: translateX(18px);
+}
+
+/* ==================================================== DARK MODE ==================================================== */
+body.dark-mode,
+body.dark-mode .pcoded-main-container {
+    background: #012b18 !important;
+}
+
+body.dark-mode .pcoded-content.background_by_mera {
+    background-color: #012b18;
+}
+
+/* Header */
+body.dark-mode .header-navbar,
+body.dark-mode .header-navbar .navbar-wrapper,
+body.dark-mode .pcoded-header,
+body.dark-mode .navbar-logo {
+    background: #024D25 !important;
+}
+
+body.dark-mode .navbar-logo a {
+    color: #fff !important;
+}
+
+/* Sidebar */
+body.dark-mode .pcoded-navbar,
+body.dark-mode .pcoded-inner-navbar,
+body.dark-mode .nav-user {
+    background: #01351A !important;
+}
+
+body.dark-mode .pcoded-navbar .pcoded-item>li>a {
+    color: #fff !important;
+}
+
+body.dark-mode .pcoded-item>li.active>a,
+body.dark-mode .pcoded-item>li.pcoded-trigger>a {
+    background: #55882B !important;
+    color: #fff !important;
+}
+
+/* Submenu dark */
+body.dark-mode .pcoded-item li .pcoded-submenu {
+    background: #024D25 !important;
+}
+
+body.dark-mode .pcoded-submenu li>a {
+    color: #fff !important;
+}
+
+body.dark-mode .pcoded-submenu li:hover>a,
+body.dark-mode .pcoded-submenu li.active>a {
+    background: #81CFF4 !important;
+    color: #024D25 !important;
+}
+
+/* Cards */
+body.dark-mode .card {
+    background: #024D25 !important;
+    border-color: #55882B !important;
+    color: #fff;
+}
+
+body.dark-mode .card-header {
+    background: #024D25 !important;
+    border-color: #55882B !important;
+}
+
+/* ============================================================
+   DARK MODE - MERA BRAND COLORS
+   Verde / Azul corporativo
+   ============================================================ */
+/* Toggle */
+.dark-mode-toggle input:checked+.toggle-slider {
+    background: #93C01F;
+}
+
+.dark-mode-toggle input:checked+.toggle-slider::after {
+    transform: translateX(18px);
+}
+
+/* ============================================================
+   DARK MODE STYLES
+   ============================================================ */
+body.dark-mode,
+body.dark-mode .pcoded-main-container {
+    background: #0B1F17 !important;
+}
+
+body.dark-mode .pcoded-content.background_by_mera {
+    background-image: none;
+    background-color: #0B1F17;
+}
+
+/* Header */
+body.dark-mode .header-navbar,
+body.dark-mode .header-navbar .navbar-wrapper,
+body.dark-mode .pcoded-header[header-theme="themelight1"],
+body.dark-mode .header-navbar .navbar-wrapper .navbar-logo[logo-theme="theme6"] {
+    background: #024D25 !important;
+}
+
+body.dark-mode .header-navbar .navbar-wrapper .navbar-logo a,
+body.dark-mode .pcoded-header[header-theme="themelight1"] .navbar-logo a {
+    color: #FFFFFF !important;
+}
+
+/* Sidebar */
+body.dark-mode .pcoded-navbar,
+body.dark-mode .pcoded-navbar[navbar-theme="theme1"] .pcoded-inner-navbar,
+body.dark-mode .pcoded-navbar[navbar-theme="theme1"] .nav-user {
+    background-color: #024D25 !important;
+}
+
+body.dark-mode .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li>a {
+    color: #FFFFFF !important;
+}
+
+/* Menú activo */
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.active>a,
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a {
+    background: #003A1C !important;
+    color: #81CFF4 !important;
+}
+
+/* Hover menú */
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li:hover>a {
+    color: #93C01F !important;
+}
+
+/* Separadores */
+body.dark-mode .pcoded-hasmenu>a.waves-effect.waves-dark {
+    border-top-color: rgba(129, 207, 244, .35) !important;
+}
+
+/* Submenu */
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"] .pcoded-item li .pcoded-submenu {
+    background-color: #fff !important;
+}
+
+body.dark-mode .pcoded-navbar[navbar-theme="theme1"] .pcoded-item li.pcoded-hasmenu .pcoded-submenu li>a {
+    color: #D9F2E5 !important;
+}
+
+/* Submenu activo */
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item li .pcoded-submenu li.active>a,
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item li .pcoded-submenu li:hover>a {
+    background: #55882B !important;
+    color: #FFFFFF !important;
+}
+
+/* Línea lateral submenu */
+body.dark-mode .pcoded-submenu::before {
+    background-color: #81CFF4 !important;
+}
+
+/* Puntos submenu */
+body.dark-mode .pcoded-submenu li::before {
+    background-color: #8CBCC4 !important;
+}
+
+body.dark-mode .pcoded-submenu li.active::before {
+    background-color: #93C01F !important;
+    border-color: #93C01F !important;
+}
+
+/* Flechas */
+body.dark-mode .pcoded-navbar[navbar-theme="theme1"] .pcoded-item>li.pcoded-hasmenu>a:after {
+    background: #55882B !important;
+    color: #fff !important;
+}
+
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item>li.pcoded-trigger>a:after {
+    background: #93C01F !important;
+    color: #fff !important;
+}
+
+/* Bordes activos */
+body.dark-mode .pcoded[theme-layout="vertical"] .pcoded-navbar[active-item-theme="theme1"] .pcoded-item>li.active>a {
+    border-left-color: #81CFF4 !important;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+body.dark-mode .card {
+    background: #102B20 !important;
+    border-color: #245C3A !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .card .card-header,
+body.dark-mode .card .card-body {
+    background: #102B20 !important;
+    color: #FFFFFF !important;
+}
+
+/* ============================================================
+   TABLAS
+   ============================================================ */
+body.dark-mode .table,
+body.dark-mode .table td,
+body.dark-mode .table th {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .table thead th {
+    background: #024D25 !important;
+    border-color: #245C3A !important;
+}
+
+body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+    background: rgba(85, 136, 43, .18) !important;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background: rgba(129, 207, 244, .15) !important;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+body.dark-mode .form-control,
+body.dark-mode select,
+body.dark-mode textarea {
+    background: #0B1F17 !important;
+    border-color: #245C3A !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode label {
+    color: #D9F2E5 !important;
+}
+
+body.dark-mode .form-control:focus {
+    border-color: #81CFF4 !important;
+    box-shadow: 0 0 0 .2rem rgba(129, 207, 244, .25) !important;
+}
+
+/* ============================================================
+   BOTONES
+   ============================================================ */
+body.dark-mode .btn-black,
+body.dark-mode .btn-black:hover {
+    background: #024D25 !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .btn-black:hover {
+    background: #55882B !important;
+}
+
+body.dark-mode .badge-info {
+    background: #93C01F !important;
+    color: #024D25 !important;
+}
+
+.pcoded .pcoded-header[header-theme="themelight1"] .navbar-logo a {
+    color: #024D25;
+}
+
+.pcoded .pcoded-navbar .pcoded-item .pcoded-hasmenu .pcoded-submenu li {
+    border-bottom: 1px solid hsl(148deg 94.94% 15.49% / 20%);
+}
+
+/* ============================================================
+   PAGINACIÓN
+   ============================================================ */
+body.dark-mode .page-item.active .page-link {
+    background: #93C01F !important;
+    border-color: #93C01F !important;
+    color: #024D25 !important;
+}
+
+body.dark-mode .page-item .page-link:hover {
+    background: #81CFF4 !important;
+    color: #024D25 !important;
+}
+
+/* ============================================================
+   ALERTAS
+   ============================================================ */
+body.dark-mode .alert-info {
+    background: #024D25 !important;
+    border-color: #81CFF4 !important;
+}
+
+body.dark-mode .alert-success {
+    background: #355A1C !important;
+    border-color: #93C01F !important;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #0B1F17;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #55882B;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #81CFF4;
+}
+
+/* NUEVO CSS */
+.mera-page-header {
+    background: linear-gradient(135deg,
+            #024D25 0%,
+            #55882B 45%,
+            #81CFF4 120%);
+    padding: 22px 30px;
+    border-radius: 18px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 20px rgba(2, 77, 37, .18);
+}
+
+.header-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.header-line {
+    width: 6px;
+    height: 45px;
+    background: #93C01F;
+    border-radius: 10px;
+}
+
+.mera-title {
+    color: #FFFFFF;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: .3px;
+}
+
+.mera-subtitle {
+    color: rgba(255, 255, 255, .85);
+    margin: 5px 0 0;
+    font-size: 14px;
+}
+
+/* ===============================
+        BOTÓN MERA
+================================ */
+.mera-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #93C01F;
+    color: #024D25 !important;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 26px;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow:
+        0 6px 15px rgba(147, 192, 31, .35);
+    transition: .3s ease;
+}
+
+.mera-btn-primary:hover {
+    background: #81CFF4;
+    color: #024D25 !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 22px rgba(129, 207, 244, .45);
+}
+
+/* Icono + */
+.mera-btn-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #024D25;
+    color: #FFFFFF;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Responsive */
+@media(max-width:768px) {
+    .mera-page-header {
+        padding: 20px;
+    }
+
+    .header-title-wrapper {
+        margin-bottom: 20px;
+    }
+
+    .mera-btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ===============================
+   MERA HEADER STYLE
+   Verde + Azul corporativo
+================================ */
+
+/* =====================================
+      MERA USERS TABLE
+   ===================================== */
+
+
+.mera-table-card {
+    border-radius: 20px;
+    border: none;
+    box-shadow:
+        0 10px 25px rgba(2, 77, 37, .12);
+    overflow: hidden;
+}
+
+/* Header tabla */
+.mera-table thead th {
+    background:
+        linear-gradient(135deg,
+            #024D25,
+            #55882B);
+    color: #FFFFFF;
+    border: none;
+    padding: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: .5px;
+}
+
+/* Celdas */
+.mera-table tbody td {
+    padding: 16px;
+    vertical-align: middle;
+    color: #333;
+    border-color: #edf2ef;
+}
+
+/* Hover */
+.mera-table tbody tr {
+    transition: .25s ease;
+}
+
+.mera-table tbody tr:hover {
+    background:
+        rgba(129, 207, 244, .12) !important;
+    transform: scale(1.005);
+}
+
+/* Nombre */
+.user-name {
+    font-weight: 600;
+    color: #024D25;
+}
+
+.user-email {
+    color: #6c757d;
+}
+
+/* Roles */
+.mera-badge {
+    display: inline-block;
+    background: #93C01F;
+    color: #024D25;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 2px;
+}
+
+/* Botones acciones */
+.mera-action-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: none;
+    margin: 0 4px;
+    color: #fff;
+    transition: .3s ease;
+}
+
+/* Editar */
+.mera-edit-btn {
+    background: #81CFF4;
+    color: #024D25;
+}
+
+.mera-edit-btn:hover {
+    background: #8CBCC4;
+    color: #024D25;
+    transform: translateY(-2px);
+}
+
+/* Eliminar */
+.mera-delete-btn {
+    background: #024D25;
+}
+
+.mera-delete-btn:hover {
+    background: #55882B;
+    transform: translateY(-2px);
+}
+
+/* Sin usuarios */
+.mera-table tbody td.text-center {
+    padding: 40px;
+    color: #6c757d;
+}
+
+/* =====================================
+       MERA USER FORM
+===================================== */
+.mera-form-card {
+    border: none;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow:
+        0 10px 30px rgba(2, 77, 37, .15);
+}
+
+/* Header */
+.mera-form-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background:
+        linear-gradient(135deg,
+            #024D25,
+            #55882B);
+    padding: 22px 28px;
+    border: none;
+}
+
+.mera-form-header h5 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.mera-form-header span {
+    color: rgba(255, 255, 255, .8);
+    font-size: 13px;
+}
+
+.mera-header-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #93C01F;
+    color: #024D25;
+    border-radius: 50%;
+    font-size: 22px;
+    box-shadow:
+        0 5px 15px rgba(147, 192, 31, .35);
+}
+
+/* Inputs */
+.mera-form-group label {
+    color: #024D25;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+
+.mera-input {
+    height: 45px;
+    border-radius: 25px;
+    border: 1px solid #dbe8df;
+    padding: 10px 20px;
+    transition: .3s ease;
+}
+
+.mera-input:focus {
+    border-color: #81CFF4;
+    box-shadow:
+        0 0 0 .2rem rgba(129, 207, 244, .25);
+}
+
+/* Select */
+select.mera-input {
+    cursor: pointer;
+}
+
+/* Botones */
+.mera-form-actions {
+    margin-top: 25px;
+    display: flex;
+    gap: 12px;
+}
+
+/* Guardar */
+.mera-btn-save {
+    background: #93C01F;
+    color: #024D25;
+    border-radius: 30px;
+    padding: 11px 25px;
+    font-weight: 700;
+    border: none;
+}
+
+.mera-btn-save:hover {
+    background: #81CFF4;
+    color: #024D25;
+}
+
+/* Cancelar */
+.mera-btn-cancel {
+    background: #024D25;
+    color: #fff !important;
+    border-radius: 30px;
+    padding: 11px 25px;
+    font-weight: 600;
+}
+
+.mera-btn-cancel:hover {
+    background: #55882B;
+    color: #fff;
+}
+
+.card .card-header h5 {
+    color: white;
+}
+
+.card .card-header h5:after {
+    display: none;
+}
+
+/* Responsive */
+@media(max-width:768px) {
+    .mera-form-actions {
+        flex-direction: column;
+    }
+
+    .mera-btn-save,
+    .mera-btn-cancel {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Botón principal Mera */
+.btn-primary {
+    background: linear-gradient(90deg, #024D25, #81CFF4) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: 22px;
+    padding: 8px 22px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #55882B, #8CBCC4) !important;
+    color: #fff !important;
+}
+
+
+/* Botón cancelar */
+.btn-secondary {
+    background: #8CBCC4 !important;
+    border: none !important;
+    color: #024D25 !important;
+    border-radius: 22px;
+    padding: 8px 22px;
+}
+
+.btn-secondary:hover {
+    background: #81CFF4 !important;
+}
+
+
+/* Iconos en formularios */
+.form-group label i {
+    color: #024D25;
+    margin-right: 5px;
+}
+
+/* Inputs */
+.form-control:focus {
+    border-color: #81CFF4 !important;
+    box-shadow: 0 0 0 .2rem rgba(129, 207, 244, .25) !important;
+}
+
+/* Permisos */
+.form-check {
+    padding: 10px 20px;
+    border: 1px solid #e8efea;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: .25s;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.form-check:hover {
+    background: rgba(129, 207, 244, .12);
+    border-color: #81CFF4;
+}
+
+.form-check-input {
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #024D25;
+    margin-left: 4px;
+}
+
+/* =====================================
+        MERA CATEGORY TREE
+===================================== */
+.mera-tree-card {
+    border: none;
+    border-radius: 18px;
+    box-shadow:
+        0 6px 18px rgba(2, 77, 37, .10);
+    transition: .25s ease;
+}
+
+.mera-tree-card:hover {
+    transform: translateX(4px);
+    box-shadow:
+        0 10px 25px rgba(2, 77, 37, .15);
+}
+
+/* Iconos carpetas */
+.mera-folder-icon {
+    color: #93C01F;
+    font-size: 20px;
+}
+
+.mera-folder-empty-icon {
+    color: #81CFF4;
+    font-size: 20px;
+}
+
+/* Texto */
+.mera-tree-title {
+    color: #024D25;
+    font-size: 16px;
+}
+
+.mera-tree-count {
+    color: #8A8C91;
+}
+
+/* Botón agregar */
+.mera-add-btn {
+    background: #93C01F;
+    color: #024D25;
+}
+
+.mera-add-btn:hover {
+    background: #81CFF4;
+    color: #024D25;
+}
+
+.title_deleted {
+    color: #024D25;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.subtitle_deleted {
+    margin-bottom: 12px;
+    color: black !important;
+    font-size: 16px;
+}
+
+.mera-form-group {
+    margin-top: 12px;
+}
+
+.modal_custom {
+    place-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.mera-user-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 0;
+}
+
+.mera-avatar {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
+.mera-user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.mera-user-name {
+    font-weight: 600;
+}
+
+.mera-user-role {
+    color: #888;
+    font-size: 12px;
+}
+
+.pcoded-hasmenu>a.waves-effect.waves-dark {
+    border: none;
+}
+
+body.menu-open {
+    overflow: hidden;
+}
+
+.slimScrollBar {
+    display: none !important;
+}
+
+body .pcoded[pcoded-device-type="phone"][vertical-nav-type="expanded"] .pcoded-navbar,
+body .pcoded[pcoded-device-type="phone"][vertical-nav-type="expanded"] .pcoded-navbar[pcoded-navbar-position="fixed"],
+body .pcoded[pcoded-device-type="tablet"][vertical-nav-type="expanded"] .pcoded-navbar,
+body .pcoded[pcoded-device-type="tablet"][vertical-nav-type="expanded"] .pcoded-navbar[pcoded-navbar-position="fixed"] {
+    position: fixed;
+    top: 80px;
+}
+
+.mobile-user {
+    display: none;
+}
+
+@media only screen and (max-width: 992px) {
+
+    .header-navbar .navbar-wrapper .navbar-logo {
+
+        width: 100% !important;
+        justify-content: space-between !important;
+
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-content: center;
+        justify-content: space-between;
+        align-items: center;
+
+        .mobile-user {
+            display: flex;
+            align-items: center;
+            /* margin-left: auto; */
+            /* margin-right: 45px; */
+        }
+    }
+
+    .header-navbar .navbar-wrapper .navbar-logo .mobile-menu {
+        position: initial;
+        right: 0;
+        top: 0;
+        font-size: 30px;
+        line-height: 4.4;
+        width: 40px;
+    }
+
+    .dropdown-toggle::after {
+        display: none;
+    }
+
+    .dropdown-menu[data-bs-popper] {
+        left: auto;
+    }
+
+    .profile_mobile {
+        background: #fff;
+        -webkit-box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        border: none;
+        opacity: 1;
+        position: absolute;
+        left: auto;
+        right: -25px;
+        visibility: visible;
+        overflow: visible;
+        width: 24rem;
+        padding: 15px 0;
+        -webkit-transform: translateY(20px);
+        transform: translateY(20px);
+    }
+
+    .profile_mobile li:first-child {
+        padding: 0.7em 20px;
+    }
+
+    .profile_mobile li {
+        line-height: initial;
+        padding: 1em 20px;
+        width: 100%;
+        -webkit-transition: all 0.3s ease-in-out;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .profile_mobile li {
+        float: left;
+        line-height: 2.4;
+        padding: 0 20px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .profile_mobile::after {
+        content: "";
+        border: 10px solid transparent;
+        border-left-color: #fff;
+        border-top-color: #fff;
+        position: absolute;
+        border-radius: 3px;
+        top: -8px;
+        right: 15px;
+        -webkit-box-shadow: -5px -5px 12px -2px rgba(0, 0, 0, 0.3);
+        box-shadow: -5px -5px 12px -2px rgba(0, 0, 0, 0.3);
+        -webkit-transform: rotate(45deg);
+        transform: rotate(45deg);
+        z-index: 1002;
+    }
+
+    .profile_mobile li>a {
+        font-size: 16px;
+        display: block;
+    }
+
+    .profile_mobile a {
+        font-size: 15px;
+        padding-left: 0;
+        color: #333;
+    }
+
+    .profile_mobile i {
+        font-size: 15px;
+        margin-left: 0;
+        margin-right: 5px;
+    }
+
+}
+
+/* CURSOS - RESPONSIVIDAD*/
+.icon-menu:before {
+    content: "\e88f" !important;
+}
+
+.mera-courses-mobile {
+    display: none;
+}
+
+
+@media only screen and (max-width: 768px) {
+
+
+    .mera-table-desktop {
+        display: none;
+    }
+
+
+    .mera-courses-mobile {
+        display: block;
+    }
+
+
+    .mera-course-card {
+
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+
+    }
+
+
+    .mera-course-header {
+
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+
+    }
+
+
+    .mera-course-cover {
+
+        text-align: center;
+        margin-bottom: 15px;
+
+
+        img {
+
+            max-width: 150px;
+            width: 100%;
+
+        }
+
+    }
+
+
+    .mera-course-info {
+
+        margin-bottom: 15px;
+
+        strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+    }
+
+
+    .mera-course-actions {
+
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+
+    }
+
+}
+
+/* CURSOS - RESPONSIVIDAD*/
+
+/* DASHBOARD */
+/* =====================================
+        MERA DASHBOARD
+===================================== */
+
+
+.mera-dashboard-card {
+
+    background: #fff;
+    border-radius: 22px;
+    padding: 25px;
+
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    margin-bottom: 25px;
+
+    box-shadow:
+        0 10px 25px rgba(2, 77, 37, .12);
+
+    transition: .3s ease;
+
+}
+
+
+.mera-dashboard-card:hover {
+
+    transform: translateY(-5px);
+
+}
+
+
+.mera-dashboard-card span {
+
+    color: #8A8C91;
+    font-size: 14px;
+
+}
+
+
+.mera-dashboard-card h3 {
+
+    color: #024D25;
+    font-size: 32px;
+    font-weight: 700;
+
+    margin: 5px 0 0;
+
+}
+
+
+
+.mera-dashboard-icon {
+
+    width: 65px;
+    height: 65px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 26px;
+
+}
+
+
+
+.mera-green {
+
+    background: #93C01F;
+    color: #024D25;
+
+}
+
+
+.mera-blue {
+
+    background: #81CFF4;
+    color: #024D25;
+
+}
+
+
+.mera-aqua {
+
+    background: #8CBCC4;
+    color: #024D25;
+
+}
+
+
+.mera-dark {
+
+    background: #024D25;
+    color: white;
+
+}
+
+
+
+/* SECCIONES */
+
+.mera-dashboard-section {
+
+    border: none;
+    border-radius: 22px;
+
+    box-shadow:
+        0 10px 25px rgba(2, 77, 37, .12);
+
+    margin-bottom: 25px;
+
+}
+
+
+
+.mera-section-title {
+
+    color: #024D25;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+
+
+/* ACCESOS */
+
+
+.mera-shortcut {
+
+    height: 120px;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(135deg,
+            #024D25,
+            #55882B);
+
+    color: white !important;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 10px;
+
+    font-size: 18px;
+
+    transition: .3s;
+
+}
+
+
+
+.mera-shortcut i {
+
+    font-size: 30px;
+
+    color: #93C01F;
+
+}
+
+
+
+.mera-shortcut:hover {
+
+    transform: translateY(-5px);
+
+    background:
+        linear-gradient(135deg,
+            #55882B,
+            #81CFF4);
+
+}
+
+
+
+/* CURSOS RECIENTES */
+
+.mera-recent-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 15px 0;
+
+    border-bottom: 1px solid #edf2ef;
+
+}
+
+
+
+.mera-recent-item strong {
+
+    display: block;
+
+    color: #024D25;
+
+}
+
+
+.mera-recent-item small {
+
+    color: #8A8C91;
+
+}
+
+
+.mera-view-btn {
+
+    background: #93C01F;
+
+    color: #024D25 !important;
+
+    border-radius: 20px;
+
+    padding: 6px 18px;
+
+    font-weight: 700;
+
+}
+
+
+
+@media(max-width:768px) {
+
+    .mera-dashboard-card {
+
+        padding: 20px;
+
+    }
+
+
+    .mera-shortcut {
+
+        margin-bottom: 15px;
+
+    }
+
+}
+
+/* DASHBOARD */

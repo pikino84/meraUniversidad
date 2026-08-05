@@ -8,17 +8,28 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\LoungeController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
     return view('auth.login');
 })->middleware('guest')->name('home');
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('dashboard');
+
 //Rutas protegidas por autenticación
 Route::middleware('auth')->group(function () {
     // SUPER ADMIN + ADMIN -> Admin Panel
@@ -26,7 +37,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
-        
+
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity.logs.index');
         Route::resource('lounges', LoungeController::class);
         // Perfil
@@ -35,8 +46,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
         Route::resource('courses', CourseController::class);
+        Route::resource('categories', CategoryController::class);
     });
 });
 
 Route::get('/cursos', [\App\Http\Controllers\CourseController::class, 'publicIndex']);
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

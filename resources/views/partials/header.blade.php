@@ -2,19 +2,72 @@
 <nav class="navbar header-navbar pcoded-header">
     <div class="navbar-wrapper">
         <div class="navbar-logo">
-            <a class=" text-left " href="{{ url('/dashboard') }}">
-                <img class="img-fluid h-14" src="{{ asset('images/logo_university.svg') }}" alt="Theme-Logo" />
-            </a>
+
             <a class="mobile-menu" id="mobile-collapse" href="#!">
-                <i class="feather icon-menu icon-toggle-right"></i>
+                <!-- <i class="feather icon-menu icon-toggle-right"></i> -->
+                <i class="feather icon-menu"></i>
             </a>
-            <a class="mobile-options waves-effect waves-light">
+
+            <a class=" text-left " href="{{ url('/dashboard') }}">
+                <img class="img-fluid h-10" src="{{ asset('images/logo_university.svg') }}" alt="Theme-Logo" />
+            </a>
+
+
+            <div class="mobile-user">
+                <div class="dropdown-primary dropdown">
+
+                    <div class="dropdown-toggle mera-user-toggle" data-bs-toggle="dropdown">
+
+                        <img src="/images/avatar-blank.jpg"
+                            class="img-radius mera-avatar"
+                            alt="Usuario">
+
+                        <!-- <div class="mera-user-info">
+                            <span class="mera-user-name">
+                                Super Admin
+                            </span>
+
+                            <small class="mera-user-role">
+                                super admin
+                            </small>
+                        </div> -->
+
+                        <i class="feather icon-chevron-down"></i>
+
+                    </div>
+
+                    <ul class="show-notification profile-notification dropdown-menu profile_mobile">
+                        @auth
+                        <li>
+                            <a href="{{ route('profile.edit') }}">
+                                <i class="feather icon-user"></i>
+                                Mi perfil
+                            </a>
+                        </li>
+                        @endauth
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <a href="{{ route('logout') }}"
+                                    onclick="event.preventDefault(); this.closest('form').submit();">
+                                    <i class="feather icon-log-out"></i>
+                                    Cerrar sesión
+                                </a>
+                            </form>
+
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+
+            <!-- <a class="mobile-options waves-effect waves-light">
                 <i class="feather icon-more-horizontal"></i>
-            </a>
+            </a> -->
         </div>
         <div class="navbar-container container-fluid">
             <ul class="nav-left">
-                {{-- 
+                {{--
                 <li class="header-search">
                     <div class="main-search morphsearch-search">
                         <div class="input-group">
@@ -31,13 +84,94 @@
                  --}}
                 <li>
                     <a href="#!" onclick="javascript:toggleFullScreen()" class="waves-effect waves-light">
-                    <i class="full-screen feather icon-maximize"></i>
-                </a>
+                        <i class="full-screen feather icon-maximize"></i>
+                    </a>
+                </li>
+                <li class="mera-header-title">
+                    <span>
+                        Bienvenido, {{ Auth::user()->name }}
+                    </span>
                 </li>
             </ul>
             <ul class="nav-right">
-                {{--  
-                <li class="header-notification">
+
+                <li class="user-profile header-notification">
+
+                    <div class="dropdown-primary dropdown">
+                        <!-- <div class="dropdown-toggle" data-bs-toggle="dropdown">
+                            <img src="{{ asset('images/avatar-blank.jpg') }}" class="img-radius" alt="User-Profile-Image">
+                            <span>{{ Auth::user()->name }}</span>
+                            
+                            <i class="feather icon-chevron-down"></i>
+                        </div> -->
+
+                        <div class="dropdown-toggle mera-user-toggle" data-bs-toggle="dropdown">
+
+                            <img
+                                src="{{ asset('images/avatar-blank.jpg') }}"
+                                class="img-radius mera-avatar"
+                                alt="Usuario">
+
+                            <div class="mera-user-info">
+
+                                <span class="mera-user-name">
+                                    {{ Auth::user()->name }}
+                                </span>
+
+                                <small class="mera-user-role">
+                                    {{ Auth::user()->getRoleNames()->first() ?? 'Usuario' }}
+                                </small>
+
+                            </div>
+
+                            <i class="feather icon-chevron-down"></i>
+
+                        </div>
+
+                        <ul class="show-notification profile-notification dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
+                            {{--
+                            <li>
+                                <a href="#!">
+                                    <i class="feather icon-settings"></i> Settings
+                                </a>
+                            </li>
+                             --}}
+                            @auth
+                            <li>
+                                <a href="{{ route('profile.edit') }}">
+                                    <i class="feather icon-user"></i>
+                                    Mi perfil
+                                </a>
+                            </li>
+                            @endauth
+                            {{--
+                            <li>
+                                <a href="email-inbox.html">
+                                    <i class="feather icon-mail"></i> My Messages
+                                </a>
+                            </li>
+                            <li>
+                                <a href="auth-lock-screen.html">
+                                    <i class="feather icon-lock"></i> Lock Screen
+                                </a>
+                            </li>
+                             --}}
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <a href="{{ route('logout') }}"
+                                        onclick="event.preventDefault(); this.closest('form').submit();">
+                                        <i class="feather icon-log-out"></i>
+                                        Cerrar sesión
+                                    </a>
+                                </form>
+
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                <!-- <li class="header-notification">
                     <div class="dropdown-primary dropdown">
                         <div class="dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="feather icon-bell"></i>
@@ -94,57 +228,7 @@
                             <span class="badge bg-c-green">3</span>
                         </div>
                     </div>
-                </li>
-                --}}
-                <li class="user-profile header-notification">
-
-                    <div class="dropdown-primary dropdown">
-                        <div class="dropdown-toggle" data-bs-toggle="dropdown">
-                            <img src="{{ asset('images/avatar-blank.jpg') }}" class="img-radius" alt="User-Profile-Image">
-                            <span>{{ Auth::user()->name }}</span>
-                            
-                            <i class="feather icon-chevron-down"></i>
-                        </div>
-                        <ul class="show-notification profile-notification dropdown-menu" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
-                            {{-- 
-                            <li>
-                                <a href="#!">
-                                    <i class="feather icon-settings"></i> Settings
-                                </a>
-                            </li>
-                             --}}
-                            @auth
-                            <li>
-                                <a href="{{ route('profile.edit') }}">
-                                    <i class="feather icon-user"></i> Profile
-                                </a>
-                            </li>
-                            @endauth
-                            {{-- 
-                            <li>
-                                <a href="email-inbox.html">
-                                    <i class="feather icon-mail"></i> My Messages
-                                </a>
-                            </li>
-                            <li>
-                                <a href="auth-lock-screen.html">
-                                    <i class="feather icon-lock"></i> Lock Screen
-                                </a>
-                            </li>
-                             --}}
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <a href="{{ route('logout') }}"
-                                       onclick="event.preventDefault(); this.closest('form').submit();">
-                                        <i class="feather icon-log-out"></i> Logout
-                                    </a>
-                                </form>
-                                
-                            </li>
-                        </ul>
-                    </div>
-                </li>
+                </li> -->
             </ul>
         </div>
     </div>
@@ -170,45 +254,45 @@
                 <div class="main-friend-list">
                     <div class="media userlist-box waves-effect waves-light" data-id="1" data-status="online" data-username="Josephin Doe">
                         <a class="media-left" href="#!">
-                                    <img class="media-object img-radius img-radius" src="{{ asset('images/avatar-3.jpg') }}" alt="Generic placeholder image ">
-                                    <div class="live-status bg-success"></div>
-                                </a>
+                            <img class="media-object img-radius img-radius" src="{{ asset('images/avatar-3.jpg') }}" alt="Generic placeholder image ">
+                            <div class="live-status bg-success"></div>
+                        </a>
                         <div class="media-body">
                             <div class="chat-header">Josephin Doe XXX</div>
                         </div>
                     </div>
                     <div class="media userlist-box waves-effect waves-light" data-id="2" data-status="online" data-username="Lary Doe">
                         <a class="media-left" href="#!">
-                                    <img class="media-object img-radius" src="{{ asset('images/avatar-2.jpg') }}" alt="Generic placeholder image">
-                                    <div class="live-status bg-success"></div>
-                                </a>
+                            <img class="media-object img-radius" src="{{ asset('images/avatar-2.jpg') }}" alt="Generic placeholder image">
+                            <div class="live-status bg-success"></div>
+                        </a>
                         <div class="media-body">
                             <div class="f-13 chat-header">Lary Doe</div>
                         </div>
                     </div>
                     <div class="media userlist-box waves-effect waves-light" data-id="3" data-status="online" data-username="Alice">
                         <a class="media-left" href="#!">
-                                    <img class="media-object img-radius" src="{{ asset('images/avatar-4.jpg') }}" alt="Generic placeholder image">
-                                    <div class="live-status bg-success"></div>
-                                </a>
+                            <img class="media-object img-radius" src="{{ asset('images/avatar-4.jpg') }}" alt="Generic placeholder image">
+                            <div class="live-status bg-success"></div>
+                        </a>
                         <div class="media-body">
                             <div class="f-13 chat-header">Alice</div>
                         </div>
                     </div>
                     <div class="media userlist-box waves-effect waves-light" data-id="4" data-status="offline" data-username="Alia">
                         <a class="media-left" href="#!">
-                                    <img class="media-object img-radius" src="{{ asset('images/avatar-3.jpg') }}" alt="Generic placeholder image">
-                                    <div class="live-status bg-default"></div>
-                                </a>
+                            <img class="media-object img-radius" src="{{ asset('images/avatar-3.jpg') }}" alt="Generic placeholder image">
+                            <div class="live-status bg-default"></div>
+                        </a>
                         <div class="media-body">
                             <div class="f-13 chat-header">Alia<small class="d-block text-muted">10 min ago</small></div>
                         </div>
                     </div>
                     <div class="media userlist-box waves-effect waves-light" data-id="5" data-status="offline" data-username="Suzen">
                         <a class="media-left" href="#!">
-                                    <img class="media-object img-radius" src="{{ asset('images/avatar-2.jpg') }}" alt="Generic placeholder image">
-                                    <div class="live-status bg-default"></div>
-                                </a>
+                            <img class="media-object img-radius" src="{{ asset('images/avatar-2.jpg') }}" alt="Generic placeholder image">
+                            <div class="live-status bg-default"></div>
+                        </a>
                         <div class="media-body">
                             <div class="f-13 chat-header">Suzen<small class="d-block text-muted">15 min ago</small></div>
                         </div>
@@ -275,5 +359,3 @@
     </div>
 </div>
 <!-- [ chat message ] end -->
-
-

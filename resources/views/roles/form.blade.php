@@ -1,11 +1,46 @@
 @csrf
 
-<div class="form-group">
-    <label for="name">Nombre del Rol</label>
-    <input type="text" name="name" id="name" class="form-control" 
-           value="{{ old('name', $role->name ?? '') }}" required>
-    @error('name') <small class="text-danger">{{ $message }}</small> @enderror
+<div class="form-group mera-form-group">
+
+    <label>
+        Nombre del Rol
+    </label>
+
+    <input
+        type="text"
+        name="name"
+        id="name"
+        class="form-control mera-input"
+        value="{{ old('name', $role->name ?? '') }}"
+        placeholder="Ingrese el nombre del rol"
+        required>
+
+    @error('name')
+    <small class="text-danger">{{ $message }}</small>
+    @enderror
+
 </div>
 
-<button type="submit" class="btn btn-primary">{{ $buttonText }}</button>
-<a href="{{ route('roles.index') }}" class="btn btn-secondary">Cancelar</a>
+<div class="mera-form-actions">
+
+    <button
+        type="submit"
+        class="btn mera-btn-save">
+
+        <i class="fas fa-save"></i>
+
+        {{ $buttonText }}
+
+    </button>
+
+    <a
+        href="{{ route('roles.index') }}"
+        class="btn mera-btn-cancel">
+
+        <i class="fas fa-times"></i>
+
+        Cancelar
+
+    </a>
+
+</div>

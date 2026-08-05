@@ -1,54 +1,55 @@
-<section class="space-y-6">
-    <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {{ __('Delete Account') }}
+<section>
+    <div class="mera-form-group">
+        <h2 class="title_deleted">
+            {{ __('Eliminar Cuenta') }}
         </h2>
 
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+        <p class="text-muted subtitle_deleted">
+            {{ __('Una vez eliminada tu cuenta, todos sus recursos y datos serán eliminados permanentemente. Antes de eliminarla, descarga cualquier información que desees conservar.') }}
         </p>
-    </header>
+    </div>
 
-    <x-danger-button
-        x-data=""
-        x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    <button type="button" class="btn mera-btn-cancel" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')">
+        <i class="fa fa-trash"></i>
+        Eliminar Cuenta
+    </button>
 
-    <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
-        <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
+    <x-modal class="modal_custom" name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
+
+        <form method="post" action="{{ route('profile.destroy') }}" class="p-4">
             @csrf
             @method('delete')
 
-            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                {{ __('Are you sure you want to delete your account?') }}
-            </h2>
+            <div class="mera-form-group">
+                <h2 class="title_deleted">
+                    {{ __('¿Estás seguro de eliminar tu cuenta?') }}
+                </h2>
 
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
-            </p>
-
-            <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
-
-                <x-text-input
-                    id="password"
-                    name="password"
-                    type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
-                />
-
-                <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
+                <p class="text-muted subtitle_deleted">
+                    {{ __('Esta acción no puede deshacerse. Ingresa tu contraseña para confirmar la eliminación permanente de tu cuenta.') }}
+                </p>
             </div>
 
-            <div class="mt-6 flex justify-end">
-                <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
-                </x-secondary-button>
+            <div class="mera-form-group">
+                <label>
+                    {{ __('Contraseña') }}
+                </label>
 
-                <x-danger-button class="ms-3">
-                    {{ __('Delete Account') }}
-                </x-danger-button>
+                <x-text-input id="password" name="password" type="password" class="form-control mera-input" placeholder="Contraseña" />
+
+                <x-input-error :messages="$errors->userDeletion->get('password')" />
+            </div>
+
+            <div class="mera-form-actions">
+                <button type="button" class="btn mera-btn-cancel" x-on:click="$dispatch('close')">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </button>
+
+                <button class="btn mera-btn-save" style="background:#dc3545;color:white;">
+                    <i class="fa fa-trash"></i>
+                    Eliminar Cuenta
+                </button>
             </div>
         </form>
     </x-modal>

@@ -29,3 +29,52 @@ document.addEventListener('visibilitychange', function () {
         overlay.style.display = 'none';
     }
 });
+
+$(function () {
+
+    const pcoded = document.getElementById('pcoded');
+
+    if (!pcoded) return;
+
+    function toggleBodyScroll() {
+        if (window.innerWidth > 992) {
+            $('body').css('overflow', '');
+            return;
+        }
+
+        const navType = pcoded.getAttribute('vertical-nav-type');
+
+        if (navType === 'expanded') {
+            $('body').css('overflow', 'hidden');
+        } else {
+            $('body').css('overflow', '');
+        }
+    }
+
+    // Estado inicial
+    toggleBodyScroll();
+
+    // Escuchar cambios del atributo
+    const observer = new MutationObserver(function () {
+        toggleBodyScroll();
+    });
+
+    observer.observe(pcoded, {
+        attributes: true,
+        attributeFilter: ['vertical-nav-type']
+    });
+
+    // Recalcular al cambiar tamaño de pantalla
+    $(window).on('resize', function () {
+        toggleBodyScroll();
+    });
+
+});
+
+$(".mobile-options").on('click', function () {
+
+    if ($(window).width() <= 992) {
+        $(".navbar-container .nav-right").slideToggle('slow');
+    }
+
+});

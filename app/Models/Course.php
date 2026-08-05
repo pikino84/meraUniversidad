@@ -7,7 +7,14 @@ use Illuminate\Support\Str;
 
 class Course extends Model
 {
-    protected $fillable = ['name', 'slug', 'description', 'cover_image', 'path'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'cover_image',
+        'path',
+        'category_id'
+    ];
 
     protected static function boot()
     {
@@ -22,8 +29,17 @@ class Course extends Model
         });
     }
 
-    public function categories()
+    /**
+     * Categoría a la que pertenece el curso
+     */
+    public function category()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsTo(Category::class);
     }
+
+
+    // public function categories()
+    // {
+    //     return $this->belongsToMany(Category::class);
+    // }
 }

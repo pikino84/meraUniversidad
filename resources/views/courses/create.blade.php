@@ -1,70 +1,267 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="container-fluid">
-    <h1 class="mb-4">Crear Nuevo Curso</h1>
+@section('title', 'Nuevo Curso')
 
-    @if ($errors->any())
+@section('content')
+
+<div class="card mera-form-card">
+
+    <div class="card-header mera-form-header">
+
+        <div class="mera-header-icon">
+            <i class="fa fa-book"></i>
+        </div>
+
+        <div>
+            <h5>Crear Curso</h5>
+            <span>Registra un nuevo curso dentro del sistema</span>
+        </div>
+
+    </div>
+
+
+    <div class="card-block">
+
+        @if ($errors->any())
+
         <div class="alert alert-danger">
-            <strong>Ups!</strong> Hay algunos problemas con tus entradas.<br><br>
+
+            <strong>
+                Ups!
+            </strong>
+
+            Hay algunos problemas con tus entradas:
+
             <ul>
                 @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
+
+                <li>
+                    {{ $error }}
+                </li>
+
                 @endforeach
             </ul>
+
         </div>
-    @endif
 
-    <form id="cursos_form" action="{{ route('courses.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+        @endif
 
-        <div class="card shadow mb-4">
-            <div class="card-body">
 
-                <div class="form-group">
-                    <label for="name">Nombre del Curso <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control" placeholder="Nombre del Curso" required>
+
+        <form id="cursos_form"
+            action="{{ route('courses.store') }}"
+            method="POST"
+            enctype="multipart/form-data">
+
+            @csrf
+
+
+            <div class="row">
+
+
+                <div class="col-md-6">
+
+                    <div class="form-group mera-form-group">
+
+                        <label>
+                            Nombre del Curso
+                            <span class="text-danger">*</span>
+                        </label>
+
+
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control mera-input"
+                            placeholder="Nombre del Curso"
+                            value="{{ old('name') }}"
+                            required>
+
+                    </div>
+
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="description">Descripción <span class="text-danger">*</span></label>
-                    <textarea name="description" class="form-control" rows="4" placeholder="Descripción del curso" required></textarea>
+
+
+                <div class="col-md-6">
+
+                    <div class="form-group mera-form-group">
+
+                        <label>
+                            Categoría
+                        </label>
+
+
+                        @include('categories.components.select', [
+                        'categories'=>$categories,
+                        'selected'=>old('category_id')
+                        ])
+
+
+                        <small class="form-text text-muted">
+                            Selecciona la categoría a la que pertenecerá este curso.
+                        </small>
+
+                    </div>
+
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="cover_image">Imagen de Portada <span class="text-danger">*</span></label>
-                    <input type="file" name="cover_image" class="form-control-file" accept="image/*" required>
+
+
+                <div class="col-md-12">
+
+                    <div class="form-group mera-form-group">
+
+                        <label>
+                            Descripción
+                            <span class="text-danger">*</span>
+                        </label>
+
+
+                        <textarea
+                            name="description"
+                            class="form-control mera-input"
+                            rows="5"
+                            placeholder="Descripción del curso"
+                            required>{{ old('description') }}</textarea>
+
+
+                    </div>
+
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="zip_file">Archivo ZIP del Curso <span class="text-danger">*</span></label>
-                    <input type="file" name="zip_file" class="form-control-file" accept=".zip" >
-                    <small class="form-text text-muted">El archivo puede pesar hasta 1GB.</small>
+
+
+                <div class="col-md-6">
+
+                    <div class="form-group mera-form-group">
+
+                        <label>
+                            Imagen de Portada
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <br>
+
+                        <input
+                            type="file"
+                            name="cover_image"
+                            class="form-control-file"
+                            accept="image/*"
+                            required>
+
+
+                    </div>
+
                 </div>
-                <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-primary">Crear Curso</button>
-                    <a href="{{ route('courses.index') }}" class="btn btn-secondary">Cancelar</a>
+
+
+
+                <div class="col-md-6">
+
+                    <div class="form-group mera-form-group">
+
+                        <label>
+                            Archivo ZIP del Curso
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <br>
+
+                        <input
+                            type="file"
+                            name="zip_file"
+                            class="form-control-file"
+                            accept=".zip"
+                            required>
+
+                        <br>
+
+                        <small class="form-text text-muted">
+                            El archivo puede pesar hasta 1GB.
+                        </small>
+
+
+                    </div>
+
                 </div>
+
 
             </div>
-        </div>
-    </form>
-    <div id="loadingOverlay">
-        <div>
-            <div class="spinner-border text-light mb-3" role="status"></div>
-            <div>Procesando curso, no refresques la pagina, por favor espera...</div>
-        </div>
+
+
+
+            <div class="mera-form-actions">
+
+
+                <button type="submit"
+                    class="btn mera-btn-save">
+
+                    <i class="fa fa-save"></i>
+                    Crear Curso
+
+                </button>
+
+
+
+                <a href="{{ route('courses.index') }}"
+                    class="btn mera-btn-cancel">
+
+                    <i class="fa fa-times"></i>
+                    Cancelar
+
+                </a>
+
+
+            </div>
+
+
+        </form>
+
+
     </div>
+
 </div>
+
+
+
+<div id="loadingOverlay">
+
+    <div>
+
+        <div class="spinner-border text-light mb-3"
+            role="status"></div>
+
+
+        <div>
+            Procesando curso, no refresques la página, por favor espera...
+        </div>
+
+    </div>
+
+</div>
+
+
 @endsection
+
+
+
 @push('scripts')
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
+
         const cursos_form = document.getElementById('cursos_form');
         const overlay = document.getElementById('loadingOverlay');
-        cursos_form.addEventListener('submit', function () {
+
+
+        cursos_form.addEventListener('submit', function() {
+
             overlay.style.display = 'flex';
+
         });
+
     });
 </script>
+
 @endpush

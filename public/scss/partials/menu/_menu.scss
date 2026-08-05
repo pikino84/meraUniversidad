@@ -1,28 +1,78 @@
-$menu-title: #f1f7ff,#263544;
-$header-theme: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF,#263544;
+// $menu-title: #f1f7ff,#263544;
+// $header-theme: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF,#263544;
+// $header-theme-light: #fff;
+// $box-bg-color: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF,#263544;
+// $left-navbar-theme: #263544;
+// $left-navbar-light-theme: #fff;
+// $active-item: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF,#263544,#11c788,#FF4444,#ff784f,#38a9f9,#038f9e,#39ADB5;
+// $icon-color: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF;
+// $menu-font-color: #b7c0cd;
+// $sub-active-color: #1d2531;
+// $sub-active-color-light: #e2e2e2;
+
+// Títulos del menú
+$menu-title: #eef8f1, #024D25;
+
+// Colores del header
+$header-theme: #024D25, // Principal
+    #55882B, // Secundario
+    #93C01F, // Acento
+    #8CBCC4, // Azul verdoso
+    #81CFF4, // Azul claro
+    #024D25;
+
 $header-theme-light: #fff;
-$box-bg-color: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF,#263544;
-$left-navbar-theme: #263544;
+
+// Fondo del selector de temas
+$box-bg-color: #024D25,
+    #55882B,
+    #93C01F,
+    #8CBCC4,
+    #81CFF4,
+    #024D25;
+
+// Fondo del menú lateral
+$left-navbar-theme: #024D25;
+
+// Tema claro
 $left-navbar-light-theme: #fff;
-$active-item: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF,#263544,#11c788,#FF4444,#ff784f,#38a9f9,#038f9e,#39ADB5;
-$icon-color: #42a5f5,#FF5370,#FF7043,#2ed8b6,#B388FF;
-$menu-font-color: #b7c0cd;
-$sub-active-color: #1d2531;
-$sub-active-color-light: #e2e2e2;
+
+// Color del elemento activo
+$active-item: #024D25,
+    #55882B,
+    #93C01F,
+    #8CBCC4,
+    #81CFF4;
+
+// Color de iconos
+$icon-color: #93C01F,
+    #55882B,
+    #024D25,
+    #8CBCC4,
+    #81CFF4;
+
+// Texto del menú
+$menu-font-color: #dce8df;
+
+// Fondo de submenús
+$sub-active-color: #01361A;
+$sub-active-color-light: #eef8f1;
 
 .pcoded {
     &[nav-type="st1"] {
         .pcoded-item {
             $i: 1;
+
             @for $k from 1 through 2 {
                 @each $value in $icon-color {
-                    > li {
+                    >li {
                         &:nth-child(#{$i}) {
-                            > a > .pcoded-micon {
+                            >a>.pcoded-micon {
                                 color: $value;
                             }
                         }
                     }
+
                     $i: $i+1;
                 }
             }
@@ -31,8 +81,8 @@ $sub-active-color-light: #e2e2e2;
 
     &[nav-type="st2"] {
         .pcoded-item {
-            > li {
-                > a > .pcoded-micon {
+            >li {
+                >a>.pcoded-micon {
                     color: $inverse-color;
                 }
             }
@@ -42,8 +92,8 @@ $sub-active-color-light: #e2e2e2;
     &[nav-type="st1"],
     &[nav-type="st2"] {
         .pcoded-item {
-            > li {
-                > a > .pcoded-micon {
+            >li {
+                >a>.pcoded-micon {
                     color: $inverse-color;
 
                     b {
@@ -54,6 +104,7 @@ $sub-active-color-light: #e2e2e2;
         }
     }
 }
+
 // icon color end
 /**  =====================
       Left-side-menu css start
@@ -142,24 +193,28 @@ $sub-active-color-light: #e2e2e2;
         display: none;
     }
 
-    .pcoded-navbar{
+    .pcoded-navbar {
         @each $value in $left-navbar-light-theme {
             $i: index($left-navbar-light-theme, $value);
+
             &[navbar-theme="themelight#{$i}"] {
-                .pcoded-item li .pcoded-submenu{
+                .pcoded-item li .pcoded-submenu {
                     background: $value;
                 }
             }
         }
+
         @each $value in $left-navbar-theme {
             $i: index($left-navbar-theme, $value);
+
             &[navbar-theme="theme#{$i}"] {
-                .pcoded-item li .pcoded-submenu{
+                .pcoded-item li .pcoded-submenu {
                     background: $value;
                 }
             }
         }
     }
+
     .main-menu-header {
         .img-menu-user {
             width: 30px;
@@ -172,12 +227,12 @@ $sub-active-color-light: #e2e2e2;
         }
     }
 
-    .pcoded-navbar .pcoded-item > li > a {
+    .pcoded-navbar .pcoded-item>li>a {
         margin: 0 auto;
         border-radius: 0;
         z-index: 1026;
 
-        + .pcoded-submenu {
+        +.pcoded-submenu {
             margin-top: 0;
         }
     }
@@ -200,6 +255,7 @@ $sub-active-color-light: #e2e2e2;
         line-height: 1;
     }
 }
+
 /**  =====================
       Main-header css start
 ==========================  **/
@@ -219,12 +275,13 @@ $sub-active-color-light: #e2e2e2;
             text-transform: uppercase;
             width: 250px;
             padding: 20px 10px;
-            box-shadow: 0 4px 4px -4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 4px -4px rgba(0, 0, 0, 0.1);
 
             a {
                 margin: auto 0;
                 color: #fff;
             }
+
             @media only screen and (max-width: 992px) {
                 justify-content: center;
             }
@@ -246,6 +303,7 @@ $sub-active-color-light: #e2e2e2;
             .mobile-search {
                 display: none;
             }
+
             @each $value in $header-theme {
                 $i: index($header-theme, $value);
 
@@ -266,6 +324,7 @@ $sub-active-color-light: #e2e2e2;
                     padding: 0 20px;
                     cursor: pointer;
                     position: relative;
+
                     @media only screen and (max-width: 575px) {
                         padding: 0 15px;
                     }
@@ -274,11 +333,11 @@ $sub-active-color-light: #e2e2e2;
                         display: none;
                     }
 
-                    > a {
+                    >a {
                         font-size: 16px;
                         display: block;
 
-                        > i {
+                        >i {
                             &.flag-icon {
                                 border-radius: 50%;
                                 width: 20px;
@@ -313,7 +372,7 @@ $sub-active-color-light: #e2e2e2;
                     }
                 }
 
-                > .header-notification:nth-child(1) {
+                >.header-notification:nth-child(1) {
                     .show-notification {
                         li:first-child:hover {
                             background-color: #fff;
@@ -523,6 +582,7 @@ $sub-active-color-light: #e2e2e2;
         }
     }
 }
+
 @keyframes not-blink {
     0% {
         opacity: 1;
@@ -540,6 +600,7 @@ $sub-active-color-light: #e2e2e2;
         opacity: 0;
     }
 }
+
 /*======= Main-header css end ======*/
 
 .pcoded {
@@ -553,7 +614,7 @@ $sub-active-color-light: #e2e2e2;
         position: relative;
         display: block;
         font-family: $theme-head-font-family;
-        box-shadow: 0 2px 4px 0 rgba(43,43,43,0.1);
+        box-shadow: 0 2px 4px 0 rgba(43, 43, 43, 0.1);
     }
 
     .pcoded-navbar {
@@ -565,6 +626,7 @@ $sub-active-color-light: #e2e2e2;
             height: calc(100vh - 70px);
             border-radius: 0 0 0 0;
             box-shadow: 0 2px 15px 0 rgba(43, 43, 43, 0.2);
+
             @media only screen and (max-width: 992px) {
                 height: 100%;
             }
@@ -577,6 +639,7 @@ $sub-active-color-light: #e2e2e2;
                 height: 100%;
             }
         }
+
         // .nav-user {
         //     border-radius: 0 10px 10px 0;
         //     background: #fff;
@@ -607,7 +670,7 @@ $sub-active-color-light: #e2e2e2;
             overflow: visible;
         }
 
-        .pcoded-item > .pcoded-hasmenu > .pcoded-submenu {
+        .pcoded-item>.pcoded-hasmenu>.pcoded-submenu {
             border-radius: 0;
         }
     }
@@ -652,14 +715,14 @@ $sub-active-color-light: #e2e2e2;
             bottom: 10px;
         }
 
-        > li {
+        >li {
             display: block;
             list-style: outside none none;
             margin: 0;
             padding: 0;
             position: relative;
 
-            > a {
+            >a {
                 display: block;
                 font-size: 14px;
                 padding: 0 15px;
@@ -672,6 +735,7 @@ $sub-active-color-light: #e2e2e2;
                     cursor: not-allowed;
                 }
             }
+
             // &.active,
             // &.pcoded-trigger,
             // &:hover {
@@ -693,7 +757,7 @@ $sub-active-color-light: #e2e2e2;
                 padding: 0;
                 position: relative;
 
-                > a {
+                >a {
                     display: block;
                     font-size: 14px;
                     font-weight: 400;
@@ -702,7 +766,7 @@ $sub-active-color-light: #e2e2e2;
                     position: relative;
                     transition: all 0s linear;
 
-                    > .pcoded-mtext {
+                    >.pcoded-mtext {
                         transition: all 0s linear;
 
                         &:before {
@@ -711,7 +775,7 @@ $sub-active-color-light: #e2e2e2;
                     }
                 }
 
-                > a .pcoded-micon {
+                >a .pcoded-micon {
                     transition: all 0s linear;
                     font-size: 10px;
                     padding-right: 5px;
@@ -719,7 +783,7 @@ $sub-active-color-light: #e2e2e2;
             }
         }
 
-        > li > a > .pcoded-micon {
+        >li>a>.pcoded-micon {
             font-size: 14px;
             padding: 4px;
             margin-right: 0;
@@ -731,6 +795,7 @@ $sub-active-color-light: #e2e2e2;
             text-align: center;
         }
     }
+
     // &[vertical-placement="left"] {
     //     .pcoded-navbar .pcoded-item {
     //         .pcoded-hasmenu .pcoded-submenu {
@@ -872,7 +937,7 @@ $sub-active-color-light: #e2e2e2;
 .pcoded {
     &[theme-layout="vertical"] {
         .pcoded-navbar .pcoded-item {
-            > li > a {
+            >li>a {
                 text-align: left;
                 padding: 7px 10px 7px 20px;
                 margin: 5px 0 0;
@@ -884,19 +949,19 @@ $sub-active-color-light: #e2e2e2;
                 position: relative;
                 width: 100%;
 
-                li > a {
+                li>a {
                     text-align: left;
                     padding: 10px 10px 10px 20px;
                 }
 
                 .pcoded-hasmenu .pcoded-submenu {
-                    li > a {
+                    li>a {
                         padding-left: 40px;
                     }
                 }
             }
 
-            > .pcoded-hasmenu > .pcoded-submenu {
+            >.pcoded-hasmenu>.pcoded-submenu {
                 width: 100%;
                 margin: 0 auto;
                 border-radius: 0;
@@ -916,6 +981,7 @@ $sub-active-color-light: #e2e2e2;
                 // }
             }
         }
+
         // .pcoded-navbar {
         //     &[navbar-theme^="theme"] {
         //         .pcoded-item > .pcoded-hasmenu > .pcoded-submenu {
@@ -947,54 +1013,54 @@ $sub-active-color-light: #e2e2e2;
                     display: none;
                 }
 
-                &.pcoded-trigger.active > .pcoded-submenu {
+                &.pcoded-trigger.active>.pcoded-submenu {
                     display: block;
                 }
             }
 
             &[item-border="true"] {
-                &[item-border-style="dashed"] li > a {
+                &[item-border-style="dashed"] li>a {
                     border-bottom-style: dashed;
                 }
 
-                &[item-border-style="dotted"] li > a {
+                &[item-border-style="dotted"] li>a {
                     border-bottom-style: dotted;
                 }
 
-                &[item-border-style="solid"] li > a {
+                &[item-border-style="solid"] li>a {
                     border-bottom-style: solid;
                 }
 
-                &[item-border-style="none"] li > a {
+                &[item-border-style="none"] li>a {
                     border: none;
                 }
             }
 
-            &[item-border="false"] > li > a {
+            &[item-border="false"]>li>a {
                 border-bottom-width: 0;
             }
 
             &[item-border="true"] {
-                li > a {
+                li>a {
                     border-bottom-width: 1px;
                 }
 
-                > li > a {
+                >li>a {
                     border-bottom-width: 0;
                 }
             }
 
-            &[subitem-border="false"] .pcoded-hasmenu .pcoded-submenu li > a {
+            &[subitem-border="false"] .pcoded-hasmenu .pcoded-submenu li>a {
                 border-bottom-width: 0;
             }
 
             &[subitem-border="true"] .pcoded-hasmenu .pcoded-submenu li {
-                > a {
+                >a {
                     border-bottom-width: 1px;
                 }
 
                 &:last-child {
-                    > a {
+                    >a {
                         border-bottom-width: 0;
                     }
                 }
@@ -1007,6 +1073,7 @@ $sub-active-color-light: #e2e2e2;
         }
 
         &[vertical-layout="box"] {
+
             #styleSelector,
             .p-chat-user,
             .showChat_inner {
@@ -1021,8 +1088,8 @@ $sub-active-color-light: #e2e2e2;
                 background: transparent;
             }
 
-            .selector-toggle > a {
-                background: rgba(256,256,256,0.3);
+            .selector-toggle>a {
+                background: rgba(256, 256, 256, 0.3);
             }
         }
 
@@ -1103,7 +1170,7 @@ $sub-active-color-light: #e2e2e2;
     }
 
     .pcoded-navbar .pcoded-item .pcoded-hasmenu {
-        .pcoded-submenu li > a {
+        .pcoded-submenu li>a {
             .pcoded-micon {
                 display: none;
                 font-size: 10px;
@@ -1125,31 +1192,31 @@ $sub-active-color-light: #e2e2e2;
             }
         }
 
-        &[subitem-icon="style1"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style1"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: "\e844";
         }
 
-        &[subitem-icon="style2"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style2"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: "\e83f";
         }
 
-        &[subitem-icon="style3"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style3"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: "\e856";
         }
 
-        &[subitem-icon="style4"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style4"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: "\e86b";
         }
 
-        &[subitem-icon="style5"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style5"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: "\e89f";
         }
 
-        &[subitem-icon="style6"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style6"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: '\e89b';
         }
 
-        &[subitem-icon="style7"] .pcoded-submenu li > a .pcoded-mtext:before {
+        &[subitem-icon="style7"] .pcoded-submenu li>a .pcoded-mtext:before {
             content: "";
             color: inherit;
             width: 7px;
@@ -1163,7 +1230,7 @@ $sub-active-color-light: #e2e2e2;
     }
 
     li.pcoded-hasmenu {
-        > a:after {
+        >a:after {
             float: right;
             font-style: normal;
             margin-left: 3px;
@@ -1176,36 +1243,36 @@ $sub-active-color-light: #e2e2e2;
             transition: opacity 0.3s linear;
         }
 
-        .pcoded-submenu li.pcoded-hasmenu > a:after {
+        .pcoded-submenu li.pcoded-hasmenu>a:after {
             top: 0;
         }
 
-        &[dropdown-icon="style1"] > a:after {
+        &[dropdown-icon="style1"]>a:after {
             content: "\e844";
         }
 
-        &.pcoded-trigger[dropdown-icon="style1"] > a:after {
+        &.pcoded-trigger[dropdown-icon="style1"]>a:after {
             content: "\e842";
         }
 
-        &[dropdown-icon="style2"] > a:after {
+        &[dropdown-icon="style2"]>a:after {
             content: "\e847";
         }
 
-        &.pcoded-trigger[dropdown-icon="style2"] > a:after {
+        &.pcoded-trigger[dropdown-icon="style2"]>a:after {
             content: "\e846";
         }
 
-        &[dropdown-icon="style3"] > a:after {
+        &[dropdown-icon="style3"]>a:after {
             content: '\e8b1';
         }
 
-        &.pcoded-trigger[dropdown-icon="style3"] > a:after {
+        &.pcoded-trigger[dropdown-icon="style3"]>a:after {
             content: '\e897';
         }
     }
 
-    &[theme-layout="vertical"] .pcoded-navbar .pcoded-item > li {
+    &[theme-layout="vertical"] .pcoded-navbar .pcoded-item>li {
         // &:hover > a:before {
         //     border-left-style: solid;
         //     border-left-width: 5px;
@@ -1216,6 +1283,7 @@ $sub-active-color-light: #e2e2e2;
         //     top: 0;
         // }
     }
+
     //
     // .pcoded-navbar .pcoded-item .pcoded-hasmenu .pcoded-submenu li:hover > a:before {
     //     border-left-style: solid;
@@ -1227,6 +1295,7 @@ $sub-active-color-light: #e2e2e2;
     //     top: 0;
     // }
     &[theme-layout="vertical"] {
+
         // .pcoded-navbar {
         //     .pcoded-item > li.active > a:before {
         //         border-left-style: solid;
@@ -1277,6 +1346,7 @@ $sub-active-color-light: #e2e2e2;
         }
 
         &[vertical-nav-type="expanded"] {
+
             .pcoded-header .pcoded-left-header,
             .pcoded-navbar {
                 width: 250px;
@@ -1321,6 +1391,7 @@ $sub-active-color-light: #e2e2e2;
 
         &[vertical-placement="left"][vertical-nav-type="expanded"][vertical-effect="shrink"] {
             .pcoded-header {
+
                 &.iscollapsed .pcoded-right-header,
                 .pcoded-right-header {
                     margin-left: 250px;
@@ -1334,6 +1405,7 @@ $sub-active-color-light: #e2e2e2;
 
         &[vertical-placement="right"][vertical-nav-type="expanded"][vertical-effect="shrink"] {
             .pcoded-header {
+
                 &.iscollapsed .pcoded-right-header,
                 .pcoded-right-header {
                     margin-right: 250px;
@@ -1378,10 +1450,11 @@ $sub-active-color-light: #e2e2e2;
         }
 
         &[vertical-nav-type="expanded"] {
-            &[pcoded-device-type="desktop"] .pcoded-navbar .pcoded-item > .pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
-            &[pcoded-device-type="desktop"] .pcoded-navbar.is-hover .pcoded-item > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu,
-            &[pcoded-device-type="tablet"] .pcoded-navbar .pcoded-item > .pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
-            &[pcoded-device-type="tablet"] .pcoded-navbar.is-hover .pcoded-item > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+
+            &[pcoded-device-type="desktop"] .pcoded-navbar .pcoded-item>.pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
+            &[pcoded-device-type="desktop"] .pcoded-navbar.is-hover .pcoded-item>.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu,
+            &[pcoded-device-type="tablet"] .pcoded-navbar .pcoded-item>.pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
+            &[pcoded-device-type="tablet"] .pcoded-navbar.is-hover .pcoded-item>.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                 left: 100%;
                 position: absolute;
                 width: 250px;
@@ -1396,6 +1469,7 @@ $sub-active-color-light: #e2e2e2;
             }
 
             .nav-user {
+
                 img,
                 span {
                     display: none;
@@ -1409,7 +1483,7 @@ $sub-active-color-light: #e2e2e2;
             .pcoded-navbar {
                 width: 50px;
 
-                .pcoded-item > li > a {
+                .pcoded-item>li>a {
                     padding: 10px 13px 4px;
                 }
             }
@@ -1495,28 +1569,28 @@ $sub-active-color-light: #e2e2e2;
         }
 
         .pcoded-navbar .pcoded-item {
-            > li > a .pcoded-mtext {
+            >li>a .pcoded-mtext {
                 opacity: 1;
                 visibility: visible;
                 position: absolute;
                 top: 12px;
             }
 
-            li.pcoded-hasmenu > a:after {
+            li.pcoded-hasmenu>a:after {
                 opacity: 1;
                 visibility: visible;
             }
         }
 
         &[vertical-nav-type="collapsed"] .pcoded-navbar .pcoded-item {
-            > li {
-                > a .pcoded-mtext {
+            >li {
+                >a .pcoded-mtext {
                     opacity: 0;
                     visibility: hidden;
                     position: absolute;
                 }
 
-                &.pcoded-trigger > a .pcoded-mtext {
+                &.pcoded-trigger>a .pcoded-mtext {
                     opacity: 1;
                     visibility: visible;
                     position: absolute;
@@ -1525,7 +1599,7 @@ $sub-active-color-light: #e2e2e2;
             }
 
             li.pcoded-hasmenu {
-                > a:after {
+                >a:after {
                     opacity: 0;
                     visibility: hidden;
                 }
@@ -1546,7 +1620,7 @@ $sub-active-color-light: #e2e2e2;
                 }
 
                 .pcoded-hasmenu {
-                    &.pcoded-trigger > .pcoded-submenu {
+                    &.pcoded-trigger>.pcoded-submenu {
                         left: 50px;
                         position: absolute;
                         width: 240px;
@@ -1554,12 +1628,12 @@ $sub-active-color-light: #e2e2e2;
                         border-left-style: solid;
                         border-left-width: 1px;
 
-                        .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+                        .pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                             position: relative;
                         }
                     }
 
-                    > .pcoded-submenu .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+                    >.pcoded-submenu .pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                         position: absolute;
                     }
                 }
@@ -1813,6 +1887,7 @@ $sub-active-color-light: #e2e2e2;
             padding: 25px 25px 5px 15px;
             margin-bottom: 5px;
             position: relative;
+
             @each $value in $menu-title {
                 $i: index($menu-title, $value);
 
@@ -1822,7 +1897,7 @@ $sub-active-color-light: #e2e2e2;
             }
         }
 
-        .pcoded-search + .pcoded-navigation-label {
+        .pcoded-search+.pcoded-navigation-label {
             border-top: 0 solid transparent;
         }
     }
@@ -1849,20 +1924,20 @@ $sub-active-color-light: #e2e2e2;
             transition: opacity 0.3s linear;
         }
 
-        .pcoded-submenu > li a .pcoded-badge {
+        .pcoded-submenu>li a .pcoded-badge {
             top: 10px;
             right: 2px;
         }
     }
 
-    &[vertical-nav-type="collapsed"] .pcoded-navbar .pcoded-item > li {
-        > a .pcoded-badge {
+    &[vertical-nav-type="collapsed"] .pcoded-navbar .pcoded-item>li {
+        >a .pcoded-badge {
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s linear;
         }
 
-        &.pcoded-trigger > a .pcoded-badge {
+        &.pcoded-trigger>a .pcoded-badge {
             opacity: 1;
             visibility: visible;
             transition: opacity 0.3s linear;
@@ -1876,21 +1951,21 @@ $sub-active-color-light: #e2e2e2;
 
         .pcoded-navbar {
             .pcoded-item {
-                > li {
-                    &.active > a {
+                >li {
+                    &.active>a {
                         &:before {
                             left: auto;
                             right: 0;
                         }
                     }
 
-                    &.pcoded-hasmenu > a:after {
+                    &.pcoded-hasmenu>a:after {
                         left: 8px;
                         right: auto;
                         top: 7px;
                     }
 
-                    > a .pcoded-mtext {
+                    >a .pcoded-mtext {
                         left: auto;
                         right: 0;
                         padding-right: 40px;
@@ -1903,29 +1978,30 @@ $sub-active-color-light: #e2e2e2;
                     top: -2px;
                 }
 
-                > li:hover > a:before {
+                >li:hover>a:before {
                     left: auto;
                     right: 0;
                 }
 
                 .pcoded-hasmenu .pcoded-submenu li {
-                    &:hover > a:before {
+                    &:hover>a:before {
                         left: auto;
                         right: 0;
                     }
 
-                    > a {
+                    >a {
                         .pcoded-mtext:before {
                             float: right;
                             left: 6px;
                             top: 3px;
                             padding-right: 10px;
                         }
+
                         text-align: right;
                     }
                 }
 
-                li .pcoded-submenu li > a .pcoded-badge {
+                li .pcoded-submenu li>a .pcoded-badge {
                     left: 35px;
                     position: absolute;
                     right: auto;
@@ -1945,16 +2021,17 @@ $sub-active-color-light: #e2e2e2;
         }
 
         &[vertical-nav-type="expanded"] {
-            &[pcoded-device-type="desktop"] .pcoded-navbar .pcoded-item > .pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
-            &[pcoded-device-type="desktop"] .pcoded-navbar.is-hover .pcoded-item > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu,
-            &[pcoded-device-type="tablet"] .pcoded-navbar .pcoded-item > .pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
-            &[pcoded-device-type="tablet"] .pcoded-navbar.is-hover .pcoded-item > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+
+            &[pcoded-device-type="desktop"] .pcoded-navbar .pcoded-item>.pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
+            &[pcoded-device-type="desktop"] .pcoded-navbar.is-hover .pcoded-item>.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu,
+            &[pcoded-device-type="tablet"] .pcoded-navbar .pcoded-item>.pcoded-hasmenu.is-hover.pcoded-trigger .pcoded-submenu,
+            &[pcoded-device-type="tablet"] .pcoded-navbar.is-hover .pcoded-item>.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                 left: auto;
                 right: 100%;
             }
         }
 
-        .pcoded-navbar .pcoded-item > li.pcoded-hasmenu.pcoded-trigger .pcoded-submenu li.pcoded-hasmenu > a:after {
+        .pcoded-navbar .pcoded-item>li.pcoded-hasmenu.pcoded-trigger .pcoded-submenu li.pcoded-hasmenu>a:after {
             left: 7px;
             right: auto;
             top: 0;
@@ -1967,7 +2044,7 @@ $sub-active-color-light: #e2e2e2;
                     right: 240px;
                 }
 
-                .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+                .pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                     left: auto;
                 }
             }
@@ -1994,11 +2071,12 @@ $sub-active-color-light: #e2e2e2;
         .pcoded-navbar {
             .pcoded-item {
                 .pcoded-hasmenu .pcoded-submenu li {
-                    > a {
+                    >a {
                         .pcoded-mtext:before {
                             padding-left: 10px;
                             transform: rotate(180deg);
                         }
+
                         text-align: right;
                     }
                 }
@@ -2023,23 +2101,24 @@ body {
             @each $value in $left-navbar-light-theme {
                 $i: index($left-navbar-light-theme, $value);
 
-                &[navbar-theme="themelight#{$i}"] .pcoded-item > {
-                    .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+                &[navbar-theme="themelight#{$i}"] .pcoded-item> {
+                    .pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                         border-left-color: darken($value, 7%);
                         box-shadow: 4px 4px 13px -4px rgba(0, 0, 0, 0.3);
                     }
                 }
             }
+
             @each $value in $left-navbar-theme {
                 $i: index($left-navbar-theme, $value);
 
-                &[navbar-theme="theme#{$i}"] .pcoded-item > {
-                    .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+                &[navbar-theme="theme#{$i}"] .pcoded-item> {
+                    .pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                         border-left-color: lighten($value, 7%);
                         box-shadow: 4px 4px 13px -4px rgba(0, 0, 0, 0.3);
                     }
 
-                    li.pcoded-trigger > a {
+                    li.pcoded-trigger>a {
                         border-bottom: 1px solid lighten($value, 10%);
                     }
                 }
@@ -2076,6 +2155,7 @@ body {
                 margin-right: 0;
             }
         }
+
         @media only screen and (max-width:992px) {
             display: none;
         }
@@ -2110,6 +2190,7 @@ body {
 
             &[navbar-theme="theme#{$i}"] {
                 .nav-user {
+
                     a,
                     span {
                         color: $menu-font-color;
@@ -2119,8 +2200,9 @@ body {
                 .nav-user,
                 .pcoded-inner-navbar {
                     background-color: $value;
+
                     // background-image: url("../images/nav-bg/nav-bg-dark-#{$i}.jpg");
-                    .pcoded-item > .pcoded-hasmenu > .pcoded-submenu:after {
+                    .pcoded-item>.pcoded-hasmenu>.pcoded-submenu:after {
                         border-left-color: $value;
                         border-top-color: $value;
                     }
@@ -2141,8 +2223,8 @@ body {
                 }
 
                 .pcoded-item {
-                    > li {
-                        > a {
+                    >li {
+                        >a {
                             color: $menu-font-color;
 
                             .pcoded-micon {
@@ -2150,48 +2232,51 @@ body {
                             }
                         }
 
-                        &.active > a {
+                        &.active>a {
                             color: $menu-font-color;
                             border-bottom-color: $value;
                         }
 
-                        > a {
+                        >a {
                             border-bottom-color: $value;
                         }
                     }
 
                     li.pcoded-hasmenu .pcoded-submenu {
+
                         // background: $sub-active-color;
-                        li > a {
+                        li>a {
                             border-bottom-color: lighten($value, 10%);
                             color: $menu-font-color;
                         }
                     }
 
-                    > li {
+                    >li {
                         &.pcoded-hasmenu {
-                            > a:after,
-                            .pcoded-submenu li.pcoded-hasmenu > a:after {
+
+                            >a:after,
+                            .pcoded-submenu li.pcoded-hasmenu>a:after {
                                 color: $menu-font-color;
                             }
 
                             &.pcoded-trigger {
-                                > a:after,
-                                .pcoded-submenu li.pcoded-hasmenu.pcoded-trigger > a:after {
+
+                                >a:after,
+                                .pcoded-submenu li.pcoded-hasmenu.pcoded-trigger>a:after {
                                     color: $menu-font-color;
                                 }
                             }
                         }
 
-                        &.active:hover > a,
-                        &:hover > a {
+                        &.active:hover>a,
+                        &:hover>a {
                             color: $menu-font-color;
                         }
                     }
 
                     .pcoded-hasmenu .pcoded-submenu li {
                         &:hover {
-                            > a {
+                            >a {
                                 color: $menu-font-color;
 
                                 &:before {
@@ -2201,41 +2286,43 @@ body {
                         }
 
                         &.active {
-                            > a {
+                            >a {
                                 color: $menu-font-color;
                                 // background-color: $value;
                             }
+
                             // > a .pcoded-mtext:before {
                             //     background-color: $value;
                             // }
-                            > a .pcoded-mtext:after {
+                            >a .pcoded-mtext:after {
                                 border-left-color: $value;
                             }
                         }
+
                         // > a .pcoded-mtext:before {
                         //     background-color: $menu-font-color;
                         // }
-                        > a .pcoded-mtext:after {
+                        >a .pcoded-mtext:after {
                             border-left-color: $menu-font-color;
                         }
                     }
 
-                    > li {
-                        &:hover > a:before {
+                    >li {
+                        &:hover>a:before {
                             border-left-color: $value;
                         }
 
-                        &.pcoded-hasmenu:hover > a:after {
+                        &.pcoded-hasmenu:hover>a:after {
                             color: $menu-font-color;
                         }
 
-                        &.pcoded-trigger > a {
+                        &.pcoded-trigger>a {
                             border-bottom-color: $value;
                         }
                     }
 
-                    > li {
-                        &.pcoded-hasmenu .pcoded-submenu li.pcoded-hasmenu:hover > a:after {
+                    >li {
+                        &.pcoded-hasmenu .pcoded-submenu li.pcoded-hasmenu:hover>a:after {
                             color: $menu-font-color;
                         }
                     }
@@ -2243,13 +2330,14 @@ body {
             }
 
             &[theme-layout="vertical"] {
-                &[vertical-nav-type="collapsed"] .pcoded-navbar[navbar-theme="theme#{$i}"] .pcoded-item > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu,
-                &[vertical-nav-type="sub-expanded"] .pcoded-navbar[navbar-theme="theme#{$i}"] .pcoded-item > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+
+                &[vertical-nav-type="collapsed"] .pcoded-navbar[navbar-theme="theme#{$i}"] .pcoded-item>.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu,
+                &[vertical-nav-type="sub-expanded"] .pcoded-navbar[navbar-theme="theme#{$i}"] .pcoded-item>.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                     border-left-color: transparent;
                 }
 
                 &[vertical-nav-type="ex-popover"] .pcoded-navbar[navbar-theme="theme#{$i}"] .pcoded-item {
-                    > .pcoded-hasmenu.pcoded-trigger > .pcoded-submenu {
+                    >.pcoded-hasmenu.pcoded-trigger>.pcoded-submenu {
                         border-left-color: transparent;
                     }
                 }
@@ -2257,7 +2345,7 @@ body {
                 &[vertical-nav-type="fullpage"] .pcoded-navbar[navbar-theme="theme#{$i}"] {
                     background-color: $value;
 
-                    .pcoded-item > li:hover > a {
+                    .pcoded-item>li:hover>a {
                         color: $menu-font-color;
                     }
 
@@ -2267,10 +2355,12 @@ body {
                 }
             }
         }
+
         @each $value in $left-navbar-light-theme {
             $i: index($left-navbar-light-theme, $value);
 
             &[navbar-theme="themelight#{$i}"] {
+
                 .nav-user,
                 .pcoded-inner-navbar {
                     background-color: $value;
@@ -2291,29 +2381,30 @@ body {
                 }
 
                 .pcoded-item {
-                    > li {
+                    >li {
                         &.pcoded-hasmenu {
-                            > a:after,
-                            .pcoded-submenu li.pcoded-hasmenu > a:after {
+
+                            >a:after,
+                            .pcoded-submenu li.pcoded-hasmenu>a:after {
                                 color: #666;
                             }
                         }
 
-                        &.active:hover > a,
-                        &:hover > a {
+                        &.active:hover>a,
+                        &:hover>a {
                             color: #666;
                         }
 
-                        &.pcoded-trigger > a {
+                        &.pcoded-trigger>a {
                             border-bottom-color: $value;
                         }
 
-                        > a {
+                        >a {
                             color: #666;
                             border-bottom-color: $value;
                         }
 
-                        &.active > a {
+                        &.active>a {
                             color: #FFF;
                         }
                     }
@@ -2322,9 +2413,10 @@ body {
                         background-color: $menu-font-color;
 
                         li {
-                            > a {
-                                border-bottom-color: darken($value,7%);
+                            >a {
+                                border-bottom-color: darken($value, 7%);
                                 color: #666;
+
                                 // .pcoded-mtext:before {
                                 //     background-color: #fff;
                                 // }
@@ -2334,16 +2426,17 @@ body {
                             }
 
                             &:hover {
-                                > a:before {
+                                >a:before {
                                     border-left-color: $value;
                                 }
                             }
 
                             &.active {
-                                > a {
+                                >a {
                                     color: #666;
 
                                     .pcoded-mtext {
+
                                         // &:before {
                                         //     border-bottom-color: $value;
                                         // }
@@ -2373,18 +2466,18 @@ body {
 
                                 li.active,
                                 li:hover {
-                                    > a {
+                                    >a {
                                         color: $value;
                                     }
                                 }
 
-                                li.active > a {
+                                li.active>a {
                                     font-weight: 500;
                                 }
                             }
 
                             &:hover {
-                                > a {
+                                >a {
                                     color: $value;
 
                                     .pcoded-micon {
@@ -2396,6 +2489,7 @@ body {
                                     }
                                 }
                             }
+
                             // &.active,
                             // &:hover {
                             //     > a > .pcoded-mtext:before {
@@ -2404,12 +2498,15 @@ body {
                             // }
                         }
 
-                        > li {
+                        >li {
+
                             &.active,
                             &.pcoded-trigger,
                             &:hover {
-                                > a,
-                                &:hover > a {
+
+                                >a,
+                                &:hover>a {
+
                                     // background: transparent;
                                     // color: #fff;
                                     .pcoded-micon {
@@ -2428,13 +2525,14 @@ body {
 
                             &.active,
                             &.pcoded-trigger {
-                                > a,
-                                &:hover > a {
+
+                                >a,
+                                &:hover>a {
                                     border-left-color: $value;
                                     // background: $sub-active-color;
                                 }
 
-                                &:hover > a {
+                                &:hover>a {
                                     // background: $sub-active-color;
                                 }
                             }
@@ -2442,6 +2540,7 @@ body {
                     }
                 }
             }
+
             @each $value in $left-navbar-theme {
                 $i: index($left-navbar-theme, $value);
 
@@ -2449,16 +2548,18 @@ body {
                     .pcoded-item {
                         li {
                             .pcoded-submenu {
-                                background-color: transparentize($sub-active-color,0.5);
+                                background-color: transparentize($sub-active-color, 0.5);
                             }
                         }
 
-                        > li {
+                        >li {
+
                             &.active,
                             &.pcoded-trigger,
                             &:hover {
-                                > a,
-                                &:hover > a {
+
+                                >a,
+                                &:hover>a {
                                     color: #fff;
                                     background-color: $sub-active-color;
 
@@ -2474,26 +2575,33 @@ body {
 
                             &.active,
                             &.pcoded-trigger {
-                                > a,
-                                &:hover > a {
-                                    background: #f1f7ff;
+
+                                >a,
+                                &:hover>a {
+                                    // background: #f1f7ff;
+                                    // background: rgba(147, 192, 31, .18);
+                                    background: #133f23;
                                 }
 
-                                &:hover > a {
-                                    background: #f1f7ff;
+                                &:hover>a {
+                                    // background: #f1f7ff;
+                                    // background: rgba(147, 192, 31, .18);
+                                    background: #133f23;
                                 }
                             }
                         }
                     }
+
                     @each $value in $active-item {
                         $i: index($active-item, $value);
 
                         &[active-item-theme="theme#{$i}"] {
                             .pcoded-item {
-                                > li {
+                                >li {
+
                                     &.active,
                                     &.pcoded-trigger {
-                                        > a {
+                                        >a {
                                             background: $sub-active-color;
                                             color: $menu-font-color;
 
@@ -2506,13 +2614,13 @@ body {
                                             }
                                         }
 
-                                        &:hover > a {
+                                        &:hover>a {
                                             background: $sub-active-color;
                                         }
                                     }
 
                                     &:hover {
-                                        > a {
+                                        >a {
                                             background: transparent;
                                             color: #fff;
 
@@ -2531,6 +2639,7 @@ body {
                     }
                 }
             }
+
             @each $value in $left-navbar-light-theme {
                 $i: index($left-navbar-light-theme, $value);
 
@@ -2538,16 +2647,18 @@ body {
                     .pcoded-item {
                         li {
                             .pcoded-submenu {
-                                background-color: transparentize($sub-active-color-light,0.5);
+                                background-color: transparentize($sub-active-color-light, 0.5);
                             }
                         }
 
-                        > li {
+                        >li {
+
                             &.active,
                             &.pcoded-trigger,
                             &:hover {
-                                > a,
-                                &:hover > a {
+
+                                >a,
+                                &:hover>a {
                                     color: $left-navbar-theme;
                                     background-color: $sub-active-color-light;
 
@@ -2563,26 +2674,29 @@ body {
 
                             &.active,
                             &.pcoded-trigger {
-                                > a,
-                                &:hover > a {
+
+                                >a,
+                                &:hover>a {
                                     background: $sub-active-color-light;
                                 }
 
-                                &:hover > a {
+                                &:hover>a {
                                     background: $sub-active-color-light;
                                 }
                             }
                         }
                     }
+
                     @each $value in $active-item {
                         $i: index($active-item, $value);
 
                         &[active-item-theme="theme#{$i}"] {
                             .pcoded-item {
-                                > li {
+                                >li {
+
                                     &.active,
                                     &.pcoded-trigger {
-                                        > a {
+                                        >a {
                                             background: $sub-active-color-light;
                                             color: $left-navbar-theme;
 
@@ -2595,13 +2709,13 @@ body {
                                             }
                                         }
 
-                                        &:hover > a {
+                                        &:hover>a {
                                             background: $sub-active-color-light;
                                         }
                                     }
 
                                     &:hover {
-                                        > a {
+                                        >a {
                                             background: transparent;
                                             color: $sub-active-color;
 
@@ -2627,12 +2741,14 @@ body {
         .pcoded-navbar {
             @each $value in $active-item {
                 $i: index($active-item, $value);
+
                 &[active-item-theme="theme#{$i}"] {
                     .pcoded-item {
-                        li.pcoded-hasmenu .pcoded-submenu li{
+                        li.pcoded-hasmenu .pcoded-submenu li {
+
                             &.active,
                             &:hover {
-                                > a {
+                                >a {
                                     // background: $value;
                                     color: $value;
 
@@ -2650,10 +2766,12 @@ body {
                                 }
                             }
                         }
+
                         li {
+
                             &.active,
                             &:hover {
-                                > a {
+                                >a {
                                     // background: $value;
                                     color: $value;
 
@@ -2672,12 +2790,14 @@ body {
                             }
                         }
 
-                        > li {
+                        >li {
+
                             &.active,
                             &.pcoded-trigger,
                             &:hover {
-                                > a,
-                                &:hover > a {
+
+                                >a,
+                                &:hover>a {
                                     // background: $value;
                                     color: $value;
 
@@ -2694,21 +2814,26 @@ body {
                     }
                 }
             }
+
             @each $value in $left-navbar-light-theme {
                 $i: index($left-navbar-light-theme, $value);
+
                 &[navbar-theme="themelight#{$i}"] {
-                    .pcoded-item li .pcoded-submenu{
+                    .pcoded-item li .pcoded-submenu {
                         background: $value;
                     }
                 }
             }
+
             @each $value in $left-navbar-theme {
                 $i: index($left-navbar-theme, $value);
+
                 &[navbar-theme="theme#{$i}"] {
-                    .pcoded-item li .pcoded-submenu{
+                    .pcoded-item li .pcoded-submenu {
                         background: $value;
+
                         &.pcoded-trigger>a:after,
-                        &.pcoded-trigger .pcoded-submenu li.pcoded-hasmenu.pcoded-trigger>a:after{
+                        &.pcoded-trigger .pcoded-submenu li.pcoded-hasmenu.pcoded-trigger>a:after {
                             color: #fff;
                         }
                     }
@@ -2723,7 +2848,7 @@ body {
 }
 
 .pcoded {
-    .selector-toggle > a {
+    .selector-toggle>a {
         position: absolute;
         top: 0;
         width: 60px;
@@ -2739,7 +2864,7 @@ body {
 
     &[theme-layout="horizontal"],
     &[vertical-placement="left"] {
-        .selector-toggle > a {
+        .selector-toggle>a {
             left: -80px;
             border-right: 0;
             border-radius: 50% 0 0 50%;
@@ -2747,7 +2872,7 @@ body {
     }
 
     &[vertical-placement="right"] {
-        .selector-toggle > a {
+        .selector-toggle>a {
             right: -80px;
             border-left: 0;
             border-radius: 0 50% 50% 0;
@@ -2759,11 +2884,12 @@ body {
     }
 }
 
-.selector-toggle > a:before {
+.selector-toggle>a:before {
     font: {
         family: 'feather';
         size: 20px;
     }
+
     content: "\e8c3";
     position: relative;
     float: left;
@@ -2777,7 +2903,7 @@ body {
     animation: mymove 1.3s infinite linear;
 }
 
-.open .selector-toggle > a:before {
+.open .selector-toggle>a:before {
     content: "\e8f6";
     animation: mymove 0s infinite linear;
 }
@@ -2833,7 +2959,7 @@ body {
         padding-bottom: 15px;
 
         .radio {
-            > label {
+            >label {
                 padding-left: 0;
             }
 
@@ -2861,6 +2987,7 @@ body {
                 i {
                     color: $primary-color;
                 }
+
                 background-color: transparent;
             }
 
@@ -2868,6 +2995,7 @@ body {
                 i {
                     color: $inverse-color;
                 }
+
                 background-color: transparent;
             }
         }
@@ -2916,6 +3044,7 @@ body {
                 font: {
                     weight: 500;
                 }
+
                 border-bottom: 1px solid #e9e9e9;
 
                 &.main-title {
@@ -2933,7 +3062,7 @@ body {
         }
     }
 
-    > ul > li > .sub-title {
+    >ul>li>.sub-title {
         color: #9c9c9c;
         display: block;
         font-size: 13px;
@@ -2971,6 +3100,7 @@ body {
         &:hover {
             text-decoration: none;
         }
+
         width: 45px;
         height: 40px;
 
@@ -3018,6 +3148,7 @@ body {
                 background: #F6F7FB;
             }
         }
+
         @each $value in $menu-title {
             $i: index($menu-title, $value);
 
@@ -3025,13 +3156,16 @@ body {
                 background: $value;
             }
         }
+
         $temp: 1;
+
         @each $value in $header-theme {
             $i: index($header-theme, $value);
 
             &[header-theme="theme#{$i}"] {
                 .head {
                     background: transparent;
+
                     // &:after,
                     &:before {
                         background: $value;
@@ -3056,6 +3190,7 @@ body {
                 }
             }
         }
+
         // @each $value in $header-theme-light {
         //     $i: index($header-theme-light, $value);
         //
@@ -3077,6 +3212,7 @@ body {
                 background: $value;
             }
         }
+
         @each $value in $left-navbar-light-theme {
             $i: index($left-navbar-light-theme, $value);
 
@@ -3084,6 +3220,7 @@ body {
                 background: $value;
             }
         }
+
         @each $value in $active-item {
             $i: index($active-item, $value);
 
@@ -3099,13 +3236,13 @@ body {
                 }
 
                 &:before {
-                    background: lighten($dark-layout-color,10%);
+                    background: lighten($dark-layout-color, 10%);
                 }
             }
 
             .head {
                 &:after {
-                    background: lighten($dark-layout-color,10%);
+                    background: lighten($dark-layout-color, 10%);
                 }
 
                 &:before {
@@ -3128,13 +3265,14 @@ body {
             }
 
             &:hover {
-                background-color: transparentize($danger-color,0.2);
+                background-color: transparentize($danger-color, 0.2);
 
                 i {
                     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
                 }
             }
         }
+
         @each $value in $box-bg-color {
             $i: index($box-bg-color, $value);
 
@@ -3147,7 +3285,7 @@ body {
 
 .pcoded {
     &[theme-layout="vertical"] {
-        &[vertical-placement="right"] .pcoded-navbar .pcoded-item > li > a .pcoded-micon {
+        &[vertical-placement="right"] .pcoded-navbar .pcoded-item>li>a .pcoded-micon {
             float: none;
             position: relative;
             z-index: 1051;
@@ -3155,13 +3293,13 @@ body {
             top: 1px;
         }
 
-        &[vertical-nav-type="collapsed"][vertical-placement="right"] .pcoded-navbar .pcoded-item > li {
-            > a .pcoded-micon i {
+        &[vertical-nav-type="collapsed"][vertical-placement="right"] .pcoded-navbar .pcoded-item>li {
+            >a .pcoded-micon i {
                 left: 0;
             }
 
-            &.pcoded-hasmenu.pcoded-trigger > a .pcoded-micon i,
-            &.pcoded-trigger.active > a .pcoded-micon i {
+            &.pcoded-hasmenu.pcoded-trigger>a .pcoded-micon i,
+            &.pcoded-trigger.active>a .pcoded-micon i {
                 left: 94%;
             }
         }
@@ -3173,12 +3311,13 @@ body {
 
     &[pcoded-device-type="tablet"],
     &[pcoded-device-type="phone"] {
-        .pcoded-navbar[pcoded-navbar-position="absolute"] + .pcoded-content {
+        .pcoded-navbar[pcoded-navbar-position="absolute"]+.pcoded-content {
             // padding-top: 70px;
         }
     }
 
     &[theme-layout="vertical"] {
+
         &[vertical-nav-type="fullpage"] .pcoded-main-container,
         &[vnavigation-view="view3"] .pcoded-main-container {
             position: static;
@@ -3187,6 +3326,7 @@ body {
 
     .pcoded-header {
         $temp: 1;
+
         @each $value in $header-theme {
             $i: index($header-theme, $value);
 
@@ -3200,6 +3340,7 @@ body {
                 }
             }
         }
+
         @each $value in $header-theme-light {
             $i: index($header-theme-light, $value);
 
@@ -3218,7 +3359,9 @@ body {
             }
         }
     }
+
     $temp: 1;
+
     @each $value in $header-theme {
         $i: index($header-theme, $value);
 
@@ -3243,6 +3386,7 @@ body {
         }
 
         .pcoded-header {
+
             .pcoded-left-header,
             .pcoded-right-header {
                 transition: all 0.5s ease-in-out;
@@ -3258,13 +3402,13 @@ body {
             }
 
             .pcoded-item {
-                > li {
-                    > a .pcoded-mtext {
+                >li {
+                    >a .pcoded-mtext {
                         transition-delay: 0.20s;
                         transform: rotateX(90deg);
                     }
 
-                    &.pcoded-trigger > a .pcoded-mtext {
+                    &.pcoded-trigger>a .pcoded-mtext {
                         transition: all 0.3s ease-in-out;
                         transform: rotateX(90deg);
                     }
@@ -3277,8 +3421,9 @@ body {
                     }
 
                     &.pcoded-hasmenu {
+
                         &.pcoded-trigger a:after,
-                        > a:after {
+                        >a:after {
                             transition: all 0.5s ease-in-out;
                             transform: rotateX(90deg);
                         }
@@ -3287,7 +3432,7 @@ body {
             }
         }
 
-        .pcoded-navbar .pcoded-item > li.pcoded-hasmenu > a:after {
+        .pcoded-navbar .pcoded-item>li.pcoded-hasmenu>a:after {
             transform: rotateX(90deg);
             transition: opacity 0.5s linear;
         }
@@ -3296,8 +3441,10 @@ body {
 
 body {
     .pcoded {
+
         &[pcoded-device-type="phone"][vertical-nav-type="expanded"],
         &[pcoded-device-type="tablet"][vertical-nav-type="expanded"] {
+
             .pcoded-navbar,
             .pcoded-navbar[pcoded-navbar-position="fixed"] {
                 position: absolute;
@@ -3311,21 +3458,22 @@ body {
 
         &[theme-layout="vertical"] {
             &[vertical-placement="right"][vertical-nav-type="collapsed"] {
-                .pcoded-navbar .pcoded-item > li > a .pcoded-micon {
+                .pcoded-navbar .pcoded-item>li>a .pcoded-micon {
                     left: 0;
                 }
 
-                .pcoded-navbar .pcoded-item > li.pcoded-trigger > a .pcoded-micon {
+                .pcoded-navbar .pcoded-item>li.pcoded-trigger>a .pcoded-micon {
                     left: calc(100% - 23px);
                 }
 
-                .pcoded-item > li.pcoded-trigger > a > .pcoded-mtext {
+                .pcoded-item>li.pcoded-trigger>a>.pcoded-mtext {
                     padding-right: 90px;
                 }
             }
         }
 
         &[vertical-placement="right"] {
+
             .showChat_inner,
             .users {
                 right: auto;
@@ -3351,7 +3499,7 @@ body {
                     right: -40px;
                     border-radius: 0 50% 50% 0;
                     padding: 12px 7px 12px 0;
-                    box-shadow: 2px 0 9px -2px rgba(0,0,0,0.3);
+                    box-shadow: 2px 0 9px -2px rgba(0, 0, 0, 0.3);
                 }
             }
 
@@ -3381,6 +3529,7 @@ body {
                         }
 
                         .header-notification {
+
                             .profile-notification,
                             .show-notification {
                                 right: auto;
@@ -3423,9 +3572,11 @@ body {
         }
 
         .pcoded {
+
             &[pcoded-device-type="phone"],
             &[pcoded-device-type="tablet"] {
                 &[vertical-nav-type="expanded"] {
+
                     .pcoded-navbar,
                     .pcoded-navbar[pcoded-navbar-position="fixed"] {
                         top: 0;
@@ -3438,6 +3589,7 @@ body {
             bottom: 0;
             top: auto;
             z-index: 1050;
+
             @media only screen and (max-width: 992px) {
                 .pcoded-navbar {
                     top: -70px;
@@ -3489,10 +3641,12 @@ body {
         }
     }
 }
+
 // for responsive
 
 .pcoded[pcoded-device-type="tablet"],
 .pcoded[pcoded-device-type="phone"] {
+
     .pcoded-header[pcoded-header-position="relative"],
     .pcoded-header[pcoded-header-position="absolute"] {
         position: fixed;

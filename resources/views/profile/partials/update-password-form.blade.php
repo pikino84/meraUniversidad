@@ -1,48 +1,110 @@
 <section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {{ __('Update Password') }}
+
+    <div class="mera-form-group">
+
+        <h2 class="title_deleted">
+            {{ __('Actualizar contraseña') }}
         </h2>
 
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
+        <p class="text-muted subtitle_deleted">
+            {{ __('Asegúrate de utilizar una contraseña segura y difícil de adivinar para proteger tu cuenta.') }}
         </p>
-    </header>
 
-    <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6">
+    </div>
+
+
+    <form method="post" action="{{ route('password.update') }}">
+
         @csrf
         @method('put')
 
-        <div>
-            <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-text-input id="update_password_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-            <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
+
+        <div class="mera-form-group">
+
+            <label>
+                {{ __('Contraseña actual') }}
+            </label>
+
+            <x-text-input
+                id="update_password_current_password"
+                name="current_password"
+                type="password"
+                class="form-control mera-input"
+                placeholder="Contraseña actual"
+                autocomplete="current-password" />
+
+            <x-input-error :messages="$errors->updatePassword->get('current_password')" />
+
         </div>
 
-        <div>
-            <x-input-label for="update_password_password" :value="__('New Password')" />
-            <x-text-input id="update_password_password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
+
+
+        <div class="mera-form-group">
+
+            <label>
+                {{ __('Nueva contraseña') }}
+            </label>
+
+            <x-text-input
+                id="update_password_password"
+                name="password"
+                type="password"
+                class="form-control mera-input"
+                placeholder="Nueva contraseña"
+                autocomplete="new-password" />
+
+            <x-input-error :messages="$errors->updatePassword->get('password')" />
+
         </div>
 
-        <div>
-            <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
+
+
+        <div class="mera-form-group">
+
+            <label>
+                {{ __('Confirmar contraseña') }}
+            </label>
+
+            <x-text-input
+                id="update_password_password_confirmation"
+                name="password_confirmation"
+                type="password"
+                class="form-control mera-input"
+                placeholder="Confirmar contraseña"
+                autocomplete="new-password" />
+
+            <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" />
+
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+
+
+        <div class="mera-form-actions">
+
+            <button type="submit" class="btn mera-btn-save">
+
+                <i class="fa fa-save"></i>
+
+                Actualizar contraseña
+
+            </button>
+
 
             @if (session('status') === 'password-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600 dark:text-gray-400"
-                >{{ __('Saved.') }}</p>
+
+            <span class="text-success ml-3">
+
+                <i class="fa fa-check-circle"></i>
+
+                Contraseña actualizada correctamente.
+
+            </span>
+
             @endif
+
         </div>
+
+
     </form>
+
 </section>
