@@ -1,0 +1,191 @@
+<!--
+  Catálogo de cursos para https://meracorporation.com/cursos-university/
+  Pegar completo en el módulo "Código" de Divi, REEMPLAZANDO el bloque actual (#cursos_footer + <script>).
+
+  Mejoras respecto al código anterior:
+   - Paginación (12 por página) y buscador, usando /api/courses?page=N.
+   - Sin doble slash: usa las URLs absolutas que entrega la API (course_url / cover_image_url).
+   - Seguro: los textos se insertan con textContent (antes, HTML en el nombre/descripción de un
+     curso se ejecutaba dentro de meracorporation.com → XSS).
+   - Imagen de respaldo si una portada no existe, estados de carga/vacío/error accesibles.
+   - Línea de marca MERA: Montserrat + paleta oficial (media kit).
+-->
+<div id="mera-catalogo" class="mera-cat">
+  <div class="mera-cat__header">
+    <h1 class="mera-cat__title">Catálogo de Cursos</h1>
+    <form class="mera-cat__search" role="search" onsubmit="return false">
+      <label class="mera-cat__sr" for="mera-cat-q">Buscar curso</label>
+      <input id="mera-cat-q" type="search" placeholder="Buscar curso…" autocomplete="off">
+    </form>
+  </div>
+
+  <p class="mera-cat__status" aria-live="polite"></p>
+  <div class="mera-cat__grid"></div>
+  <nav class="mera-cat__pager" aria-label="Paginación de cursos"></nav>
+</div>
+
+<style>
+  .mera-cat { --g:#024D25; --g2:#55882B; --lime:#93C01F; --sky:#81CFF4; --aqua:#8CBCC4;
+    font-family: 'Montserrat', Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 48px 20px; }
+  .mera-cat__header { display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .mera-cat__title { margin:0; color:var(--g); font-weight:800; font-size:clamp(1.6rem,3vw,2.4rem); }
+  .mera-cat__search input { width:min(320px,100%); padding:12px 20px; border:1px solid #cfe3d6; border-radius:999px; font:inherit; }
+  .mera-cat__search input:focus { outline:none; border-color:var(--sky); box-shadow:0 0 0 4px rgba(129,207,244,.3); }
+  .mera-cat__status { color:#6b7280; font-size:.9rem; min-height:1.4em; }
+  .mera-cat__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:24px; }
+  .mera-cat__card { display:flex; flex-direction:column; overflow:hidden; border-radius:18px; background:#fff;
+    box-shadow:0 6px 24px rgba(2,77,37,.08); transition:transform .2s, box-shadow .2s; }
+  .mera-cat__card:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(2,77,37,.14); }
+  .mera-cat__card img { width:100%; aspect-ratio:16/9; object-fit:cover; background:#f2f7f4; }
+  .mera-cat__body { display:flex; flex:1; flex-direction:column; gap:8px; padding:18px; }
+  .mera-cat__tag { align-self:flex-start; padding:2px 10px; border-radius:999px; background:rgba(147,192,31,.18); color:var(--g); font-size:.72rem; font-weight:700; }
+  .mera-cat__name { margin:0; color:var(--g); font-size:1.05rem; font-weight:700; line-height:1.3; }
+  .mera-cat__desc { flex:1; margin:0; color:#4b5563; font-size:.9rem; line-height:1.5; }
+  .mera-cat__link { align-self:flex-start; margin-top:6px; padding:10px 22px; border-radius:999px; background:var(--lime); color:var(--g);
+    font-weight:700; text-decoration:none; }
+  .mera-cat__link:hover, .mera-cat__link:focus-visible { background:var(--g); color:#fff; }
+  .mera-cat__pager { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:36px; }
+  .mera-cat__pager button { min-width:42px; height:42px; padding:0 14px; border:1px solid #cfe3d6; border-radius:999px; background:#fff;
+    color:var(--g); font:inherit; font-weight:600; cursor:pointer; }
+  .mera-cat__pager button[aria-current="page"] { background:var(--g); border-color:var(--g); color:#fff; }
+  .mera-cat__pager button:disabled { opacity:.4; cursor:default; }
+  .mera-cat__sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .mera-cat__skeleton { height:340px; border-radius:18px; background:linear-gradient(90deg,#eef4f0 25%,#f7faf8 50%,#eef4f0 75%);
+    background-size:200% 100%; animation:meraShimmer 1.2s infinite; }
+  @keyframes meraShimmer { to { background-position:-200% 0; } }
+</style>
+
+<script>
+(function () {
+  var API = 'https://cursos.meracorporation.com/api/courses';
+  var ORIGIN = 'https://cursos.meracorporation.com/';
+  var FALLBACK = ORIGIN + 'images/logo_university.svg';
+  var PER_PAGE = 12;
+
+  var root = document.getElementById('mera-catalogo');
+  var grid = root.querySelector('.mera-cat__grid');
+  var pager = root.querySelector('.mera-cat__pager');
+  var status = root.querySelector('.mera-cat__status');
+  var input = root.querySelector('#mera-cat-q');
+  var state = { page: 1, search: '' };
+  var timer;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text; // textContent: nunca interpretar HTML de la API
+    return n;
+  }
+
+  // Compatibilidad: si la API aún no tiene los campos absolutos, arma la URL sin doble slash.
+  function absolute(full, relative) {
+    if (full) return full;
+    return relative ? ORIGIN + String(relative).replace(/^\/+/, '') : '';
+  }
+
+  function card(c) {
+    var art = el('article', 'mera-cat__card');
+    var img = el('img');
+    img.src = absolute(c.cover_image_url, c.cover_image) || FALLBACK;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.onerror = function () { img.onerror = null; img.src = FALLBACK; img.style.objectFit = 'contain'; img.style.padding = '28px'; };
+    art.appendChild(img);
+
+    var body = el('div', 'mera-cat__body');
+    if (c.category) body.appendChild(el('span', 'mera-cat__tag', c.category));
+    body.appendChild(el('h2', 'mera-cat__name', c.name));
+    var desc = c.description || '';
+    body.appendChild(el('p', 'mera-cat__desc', desc.length > 160 ? desc.slice(0, 157) + '…' : desc));
+
+    var a = el('a', 'mera-cat__link', 'Ver curso');
+    a.href = absolute(c.course_url, c.url);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.setAttribute('aria-label', 'Ver curso ' + c.name + ' (nueva pestaña)');
+    body.appendChild(a);
+
+    art.appendChild(body);
+    return art;
+  }
+
+  function pageButton(label, page, opts) {
+    var b = el('button', null, label);
+    b.type = 'button';
+    if (opts && opts.current) b.setAttribute('aria-current', 'page');
+    if (opts && opts.aria) b.setAttribute('aria-label', opts.aria);
+    b.disabled = !!(opts && opts.disabled);
+    b.addEventListener('click', function () { load(page, true); });
+    return b;
+  }
+
+  function renderPager(meta) {
+    pager.innerHTML = '';
+    if (meta.last_page <= 1) return;
+    var cur = meta.current_page, last = meta.last_page;
+    pager.appendChild(pageButton('‹', cur - 1, { disabled: cur === 1, aria: 'Página anterior' }));
+    var pages = [1, cur - 1, cur, cur + 1, last].filter(function (p, i, a) { return p >= 1 && p <= last && a.indexOf(p) === i; }).sort(function (a, b) { return a - b; });
+    pages.forEach(function (p, i) {
+      if (i && p - pages[i - 1] > 1) pager.appendChild(el('span', null, '…'));
+      pager.appendChild(pageButton(String(p), p, { current: p === cur, aria: 'Página ' + p }));
+    });
+    pager.appendChild(pageButton('›', cur + 1, { disabled: cur === last, aria: 'Página siguiente' }));
+  }
+
+  // Si la API todavía es la versión anterior (arreglo plano), se pagina y filtra aquí.
+  function paginateLocally(list) {
+    var q = state.search.toLowerCase();
+    var items = list.slice().reverse().filter(function (c) {
+      return !q || (c.name + ' ' + (c.description || '')).toLowerCase().indexOf(q) !== -1;
+    });
+    var last = Math.max(1, Math.ceil(items.length / PER_PAGE));
+    var page = Math.min(state.page, last);
+    return {
+      data: items.slice((page - 1) * PER_PAGE, page * PER_PAGE),
+      meta: { current_page: page, per_page: PER_PAGE, total: items.length, last_page: last }
+    };
+  }
+
+  function skeleton() {
+    grid.innerHTML = '';
+    for (var i = 0; i < 6; i++) grid.appendChild(el('div', 'mera-cat__skeleton'));
+  }
+
+  function load(page, scroll) {
+    state.page = page;
+    skeleton();
+    status.textContent = 'Cargando cursos…';
+    var url = API + '?page=' + page + '&per_page=' + PER_PAGE + (state.search ? '&search=' + encodeURIComponent(state.search) : '');
+
+    fetch(url, { headers: { Accept: 'application/json' } })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (res) { return Array.isArray(res) ? paginateLocally(res) : res; })
+      .then(function (res) {
+        grid.innerHTML = '';
+        var total = res.meta.total;
+        if (!total) {
+          status.textContent = state.search ? 'No hay cursos que coincidan con "' + state.search + '".' : 'No hay cursos disponibles por el momento.';
+          pager.innerHTML = '';
+          return;
+        }
+        res.data.forEach(function (c) { grid.appendChild(card(c)); });
+        status.textContent = total + (total === 1 ? ' curso' : ' cursos') + ' · página ' + res.meta.current_page + ' de ' + res.meta.last_page;
+        renderPager(res.meta);
+        if (scroll) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      })
+      .catch(function (err) {
+        grid.innerHTML = '';
+        pager.innerHTML = '';
+        status.textContent = 'Error al cargar los cursos. Intenta de nuevo más tarde.';
+        console.error(err);
+      });
+  }
+
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { state.search = input.value.trim(); load(1, false); }, 350);
+  });
+
+  load(1, false);
+})();
+</script>

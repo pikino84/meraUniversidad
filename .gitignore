@@ -52,3 +52,6 @@ yarn-error.log*
 # Otros archivos temporales
 *.bak
 *.swp
+
+# PHPUnit
+.phpunit.result.cache

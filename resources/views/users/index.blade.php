@@ -3,163 +3,90 @@
 @section('title', 'Usuarios')
 
 @section('content')
-<div class="page-header mera-page-header">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <div class="header-title-wrapper">
-                <span class="header-line"></span>
-                <div>
-                    <h5 class="mera-title">Usuarios</h5>
-                    <p class="mera-subtitle">
-                        Administración y gestión de usuarios del sistema
-                    </p>
-                </div>
+@include('partials.page-header', [
+    'title' => 'Usuarios',
+    'subtitle' => 'Administración y gestión de usuarios del sistema',
+    'action' => ['url' => route('users.create'), 'label' => 'Nuevo usuario'],
+])
+
+<div class="card mera-table-card mb-3">
+    <div class="card-body">
+        <form method="GET" action="{{ route('users.index') }}" role="search" class="row g-2 align-items-end">
+            <div class="col-md-9">
+                <label for="user-search" class="form-label">Buscar por nombre o correo</label>
+                <input id="user-search" type="search" name="search" value="{{ $search }}" class="form-control mera-input" placeholder="Ej. juan@meracorporation.com">
             </div>
-
-            @if (session('success'))
-            <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    swal("¡Éxito!", "{{ session('success') }}", "success");
-                });
-            </script>
-            @elseif (session('error'))
-            <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    swal("¡Error!", "{{ session('error') }}", "error");
-                });
-            </script>
-            @endif
-
-        </div>
-
-        <div class="col-md-4 text-right text-md-right">
-            <a href="{{ route('users.create') }}" class="btn mera-btn-primary">
-                <span class="mera-btn-icon">+</span>
-                Nuevo Usuario
-            </a>
-        </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn mera-btn-primary flex-fill"><i class="fa fa-search" aria-hidden="true"></i> Buscar</button>
+                @if ($search !== '')
+                <a href="{{ route('users.index') }}" class="btn mera-btn-cancel" aria-label="Limpiar búsqueda" title="Limpiar búsqueda"><i class="fa fa-times" aria-hidden="true"></i></a>
+                @endif
+            </div>
+        </form>
     </div>
 </div>
 
+<div class="mera-results-bar"><span>{{ $users->total() }} {{ $users->total() === 1 ? 'usuario' : 'usuarios' }}</span></div>
+
 <div class="card mera-table-card">
-
     <div class="card-block table-border-style">
-
         <div class="table-responsive">
-
-            <table class="table mera-table table-striped table-hover">
-
+            <table class="table mera-table mera-table-stack table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Roles</th>
-                        <th class="text-center">Acciones</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Correo</th>
+                        <th scope="col">Rol</th>
+                        <th scope="col" class="text-center">Acciones</th>
                     </tr>
                 </thead>
-
                 <tbody>
-
                     @forelse ($users as $user)
-
                     <tr>
-
-                        <td>
+                        <td data-label="Nombre">
                             <div class="user-name">
                                 {{ $user->name }}
+                                @if ($user->is(auth()->user()))
+                                <small class="text-muted">(tú)</small>
+                                @endif
                             </div>
                         </td>
-
-                        <td>
-                            <span class="user-email">
-                                {{ $user->email }}
-                            </span>
+                        <td data-label="Correo"><span class="user-email">{{ $user->email }}</span></td>
+                        <td data-label="Rol">
+                            @forelse ($user->roles as $role)
+                            <span class="mera-badge">{{ $role->name }}</span>
+                            @empty
+                            <span class="text-muted">Sin rol</span>
+                            @endforelse
                         </td>
-
-
-                        <td>
-
-                            @foreach ($user->roles as $role)
-
-                            <span class="mera-badge">
-                                {{ $role->name }}
-                            </span>
-
-                            @endforeach
-
-                        </td>
-
-
-                        <td class="text-center">
-
-                            <a href="{{ route('users.edit', $user) }}"
-                                class="mera-action-btn mera-edit-btn">
-
-                                <i class="fas fa-pencil-alt"></i>
-
+                        <td class="text-center text-nowrap">
+                            @can('update', $user)
+                            <a href="{{ route('users.edit', $user) }}" class="mera-action-btn mera-edit-btn"
+                                title="Editar" aria-label="Editar usuario {{ $user->name }}">
+                                <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                             </a>
-
-
-                            <form action="{{ route('users.destroy', $user) }}"
-                                method="POST"
-                                style="display:inline;"
-                                id="delete-form-{{ $user->id }}">
-
-                                @csrf
-                                @method('DELETE')
-
-
-                                <button type="button"
-                                    class="mera-action-btn mera-delete-btn"
-                                    onclick="confirmDelete({{ $user->id }})">
-
-                                    <i class="fa fa-trash"></i>
-
-                                </button>
-
-                            </form>
-
-
-                            <script>
-                                function confirmDelete(userId) {
-                                    swal({
-                                        title: "¿Estás seguro?",
-                                        text: "Esta acción no se puede deshacer.",
-                                        icon: "warning",
-                                        buttons: ["Cancelar", "Eliminar"],
-                                        dangerMode: true,
-                                    }).then((willDelete) => {
-                                        if (willDelete) {
-                                            document.getElementById(`delete-form-${userId}`).submit();
-                                        }
-                                    });
-                                }
-                            </script>
-
-
+                            @endcan
+                            @can('delete', $user)
+                            @include('partials.delete-button', [
+                                'action' => route('users.destroy', $user),
+                                'label' => "Eliminar usuario {$user->name}",
+                                'confirm' => "¿Eliminar a {$user->name}?",
+                                'detail' => 'Perderá el acceso al sistema. Esta acción no se puede deshacer.',
+                            ])
+                            @endcan
                         </td>
-
                     </tr>
-
-
                     @empty
-
                     <tr>
-                        <td colspan="4" class="text-center">
-                            No hay usuarios registrados.
+                        <td colspan="4" class="text-center py-4">
+                            {{ $search !== '' ? 'No hay usuarios que coincidan con la búsqueda.' : 'No hay usuarios registrados.' }}
                         </td>
                     </tr>
-
                     @endforelse
-
-
                 </tbody>
-
             </table>
-
         </div>
-
+        <div class="mt-3">{{ $users->links() }}</div>
     </div>
-
 </div>
 @endsection

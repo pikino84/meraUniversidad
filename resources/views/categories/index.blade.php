@@ -3,149 +3,31 @@
 @section('title', 'Categorías')
 
 @section('content')
+@include('partials.page-header', [
+    'title' => 'Categorías',
+    'subtitle' => 'Organiza los cursos mediante categorías y subcategorías',
+    'action' => ['url' => route('categories.create'), 'label' => 'Nueva categoría'],
+])
 
-<div class="page-header mera-page-header">
-
-    <div class="row align-items-center">
-
-        <div class="col-md-8">
-
-            <div class="header-title-wrapper">
-
-                <span class="header-line"></span>
-
-                <div>
-
-                    <h5 class="mera-title">
-                        Categorías
-                    </h5>
-
-                    <p class="mera-subtitle">
-                        Organiza los cursos mediante categorías y subcategorías
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-4 text-right">
-
-            <a
-                href="{{ route('categories.create') }}"
-                class="btn mera-btn-primary">
-
-                <span class="mera-btn-icon">
-                    +
-                </span>
-
-                Nueva Categoría
-
-            </a>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-@if (session('success'))
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        swal("¡Éxito!", "{{ session('success') }}", "success");
-    });
-</script>
-
-@endif
-
-
-@if (session('error'))
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        swal("¡Error!", "{{ session('error') }}", "error");
-    });
-</script>
-
-@endif
-
-
+@php($flat = \App\Models\Category::flat())
 
 <div class="card mera-table-card">
-
     <div class="card-block">
-
-        @forelse($categories as $category)
-
-        @include('categories.components.tree-item',[
-        'category'=>$category,
-        'level'=>0
-        ])
-
-        @empty
-
+        @if ($categories->isEmpty())
         <div class="text-center py-5">
-
-            <i
-                class="fa fa-folder-open"
-                style="font-size:55px;color:#81CFF4;">
-            </i>
-
-            <h5 class="mt-3">
-
-                No existen categorías registradas.
-
-            </h5>
-
+            <i class="fa fa-folder-open" style="font-size:55px;color:#81CFF4;" aria-hidden="true"></i>
+            <h2 class="h5 mt-3">No existen categorías registradas.</h2>
             <p class="text-muted">
-
-                Comienza creando la primera categoría.
-
+                Comienza creando la <a href="{{ route('categories.create') }}">primera categoría</a>.
             </p>
-
         </div>
-
-        @endforelse
-
+        @else
+        <ul class="list-unstyled mb-0" aria-label="Árbol de categorías">
+            @foreach ($categories as $category)
+                @include('categories.components.tree-item', ['category' => $category, 'flat' => $flat])
+            @endforeach
+        </ul>
+        @endif
     </div>
-
 </div>
-
 @endsection
-
-
-@push('scripts')
-
-<script>
-    function confirmDelete(categoryId) {
-
-        swal({
-
-            title: "¿Estás seguro?",
-
-            text: "Eliminar una categoría puede afectar sus cursos relacionados.",
-
-            icon: "warning",
-
-            buttons: ["Cancelar", "Eliminar"],
-
-            dangerMode: true
-
-        }).then((willDelete) => {
-
-            if (willDelete) {
-
-                document.getElementById(`delete-form-${categoryId}`).submit();
-
-            }
-
-        });
-
-    }
-</script>
-
-@endpush

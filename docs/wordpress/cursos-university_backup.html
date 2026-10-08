@@ -1,0 +1,41 @@
+<?php
+/*
+Template Name: Catálogo de Cursos Mera
+*/
+get_header(); ?>
+
+<div id="cursos_footer">
+  <div class="cursos-container">
+    <h1 class="cursos-titulo">Catálogo de Cursos</h1>
+    <div id="curso-grid" class="curso-grid">
+      <!-- Cursos serán cargados dinámicamente aquí -->
+    </div>
+  </div>
+</div>
+
+<script>
+  fetch("https://cursos.meracorporation.com/api/courses")
+    .then(response => response.json())
+    .then(courses => {
+      const container = document.getElementById("curso-grid");
+      if (!courses.length) {
+        container.innerHTML = "<p class='curso-mensaje'>No hay cursos disponibles por el momento.</p>";
+        return;
+      }
+
+      container.innerHTML = courses.map(curso => `
+      <div class="curso-card">
+        <img src="https://cursos.meracorporation.com/${curso.cover_image}" alt="${curso.name}" class="curso-imagen">
+        <h3 class="curso-nombre">${curso.name}</h3>
+        <p class="curso-descripcion">${curso.description}</p>
+        <a href="https://cursos.meracorporation.com/${curso.url}" target="_blank" class="curso-enlace">Ver curso</a>
+      </div>
+    `).join('');
+    })
+    .catch(err => {
+      document.getElementById("curso-grid").innerHTML = "<p class='curso-mensaje'>Error al cargar los cursos.</p>";
+      console.error(err);
+    });
+</script>
+
+<?php get_footer(); ?>

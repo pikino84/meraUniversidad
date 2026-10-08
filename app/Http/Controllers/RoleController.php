@@ -2,69 +2,98 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
-
+/**
+ * Solo accesible para Super Admin (ver routes/web.php).
+ */
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    /** Roles de los que depende la app: no se pueden renombrar ni eliminar. */
+    public const SYSTEM_ROLES = User::PANEL_ROLES;
+
+    public function index(): View
     {
-        $roles = Role::with('permissions')->get();
-        return view('roles.index', compact('roles'));
+        $roles = Role::with('permissions:id,name')->withCount('users')->orderBy('name')->get();
+
+        return view('roles.index', ['roles' => $roles, 'systemRoles' => self::SYSTEM_ROLES]);
     }
 
-
-    public function create()
+    public function create(): View
     {
-        $permissions = Permission::all();
-        return view('roles.create', compact('permissions'));
+        return view('roles.create', ['permissions' => Permission::orderBy('name')->get()]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|unique:roles,name',
-            'permissions' => 'required|array',
-        ]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'unique:roles,name'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
+        ], [], ['name' => 'nombre del rol', 'permissions' => 'permisos']);
 
-        $role = Role::create(['name' => $request->name]);
-
-        $role->syncPermissions($request->permissions); // ← esta línea asigna los permisos
+        DB::transaction(function () use ($data) {
+            $role = Role::create(['name' => trim($data['name'])]);
+            $role->syncPermissions($data['permissions'] ?? []);
+        });
 
         return redirect()->route('roles.index')->with('success', 'Rol creado con éxito.');
     }
 
-    public function edit(Role $role)
-    {        
-        $permissions = Permission::all();
-        return view('roles.edit', compact('role', 'permissions'));
+    public function edit(Role $role): View
+    {
+        return view('roles.edit', [
+            'role' => $role->load('permissions:id,name'),
+            'permissions' => Permission::orderBy('name')->get(),
+            'isSystemRole' => in_array($role->name, self::SYSTEM_ROLES, true),
+        ]);
     }
 
-
-    public function update(Request $request, Role $role)
+    public function update(Request $request, Role $role): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|unique:roles,name,' . $role->id,
-            'permissions' => 'required|array',
-        ]);
+        $isSystemRole = in_array($role->name, self::SYSTEM_ROLES, true);
 
-        $role->update(['name' => $request->name]);
+        $data = $request->validate([
+            'name' => [
+                'required', 'string', 'max:100',
+                Rule::unique('roles', 'name')->ignore($role->id),
+                function ($attribute, $value, $fail) use ($isSystemRole, $role) {
+                    if ($isSystemRole && $value !== $role->name) {
+                        $fail('Los roles del sistema no se pueden renombrar.');
+                    }
+                },
+            ],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
+        ], [], ['name' => 'nombre del rol', 'permissions' => 'permisos']);
 
-        $role->syncPermissions($request->permissions); // ← Actualiza los permisos
+        DB::transaction(function () use ($role, $data) {
+            $role->update(['name' => trim($data['name'])]);
+            $role->syncPermissions($data['permissions'] ?? []);
+        });
 
         return redirect()->route('roles.index')->with('success', 'Rol actualizado.');
     }
 
-
-    public function destroy(Role $role)
+    public function destroy(Role $role): RedirectResponse
     {
+        if (in_array($role->name, self::SYSTEM_ROLES, true)) {
+            return redirect()->route('roles.index')->with('error', 'Los roles del sistema no se pueden eliminar.');
+        }
+
+        if ($role->users()->exists()) {
+            return redirect()->route('roles.index')->with('error', 'No se puede eliminar un rol asignado a usuarios. Reasígnalos primero.');
+        }
+
         $role->delete();
 
-        return redirect()->route('roles.index')->with('success', 'Rol eliminado.');
+        return redirect()->route('roles.index')->with('success', "Rol «{$role->name}» eliminado.");
     }
 }

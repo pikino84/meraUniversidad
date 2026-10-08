@@ -2,45 +2,49 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Str;
 
+/**
+ * Crea los Super Admin iniciales SIN credenciales en el código.
+ *
+ *   SEED_SUPERADMIN_EMAILS="uno@empresa.com,dos@empresa.com"
+ *   SEED_SUPERADMIN_PASSWORD=    (opcional; si falta se genera una aleatoria y se muestra una vez)
+ *
+ * No modifica usuarios existentes (no cambia contraseñas), solo asegura el rol.
+ */
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        /*
-        Francisco Ayapantecalth 	jfcruz@outlook.com 	super admin 	
-        Jesus Armando Castro Tun 	jesus.castro@meracorporation.com 	super admin 	
-        
-        */
-        // Crear roles
-        $superAdminRole = Role::firstOrCreate(['name' => 'super admin']);
+        $emails = array_filter(array_map('trim', explode(',', (string) env('SEED_SUPERADMIN_EMAILS', ''))));
 
-        // Crear usuario Super Admin Francisco
-        $superAdmin = User::firstOrCreate(
-            ['email' => 'jfcruz@outlook.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => Hash::make('P4$$wOrd-2025SA'),
-            ]
-        );
-        // crear usuario Super Admin Jesus Armando Castro Tun
-        $superAdmin3 = User::firstOrCreate(
-            ['email' => 'jesus.castro@meracorporation.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => Hash::make('P4$$wOrd-2025SA'),
-            ]
-        );
-        ;
-        // Asignar rol de super admin a los usuarios creados
-        $superAdmin->assignRole($superAdminRole);
-        $superAdmin3->assignRole($superAdminRole);
+        if ($emails === []) {
+            $this->command?->warn('SEED_SUPERADMIN_EMAILS vacío: no se creó ningún Super Admin.');
+
+            return;
+        }
+
+        foreach ($emails as $email) {
+            $user = User::where('email', $email)->first();
+
+            if (! $user) {
+                $password = env('SEED_SUPERADMIN_PASSWORD') ?: Str::password(16);
+
+                $user = User::create([
+                    'name' => 'Super Admin',
+                    'email' => $email,
+                    'password' => Hash::make($password),
+                ]);
+
+                if (! env('SEED_SUPERADMIN_PASSWORD')) {
+                    $this->command?->info("Super Admin {$email} creado. Contraseña temporal: {$password}");
+                }
+            }
+
+            $user->assignRole(User::ROLE_SUPER_ADMIN);
+        }
     }
 }

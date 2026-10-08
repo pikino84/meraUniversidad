@@ -1,25 +1,13 @@
-<option
-    value="{{ $category->id }}"
-    {{ (string) $selected === (string) $category->id ? 'selected' : '' }}>
-
+@unless ($excludedIds->contains($category->id))
+<option value="{{ $category->id }}" @selected((string) $selected === (string) $category->id)>
     {{ str_repeat('— ', $level) }}{{ $category->name }}
-
 </option>
-
-
-@if($category->childrenRecursive->count())
-
-@foreach($category->childrenRecursive as $child)
-
-@include(
-'categories.components.select-option',
-[
-'category' => $child,
-'level' => $level + 1,
-'selected' => $selected,
-]
-)
-
+@foreach ($category->childrenRecursive as $child)
+    @include('categories.components.select-option', [
+        'category' => $child,
+        'level' => $level + 1,
+        'selected' => $selected,
+        'excludedIds' => $excludedIds,
+    ])
 @endforeach
-
-@endif
+@endunless

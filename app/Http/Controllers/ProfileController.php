@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,11 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        if ($user->isSuperAdmin() && User::superAdminCount() <= 1) {
+            return Redirect::route('profile.edit')
+                ->with('error', 'Eres el último Super Admin: asigna el rol a otra persona antes de eliminar tu cuenta.');
+        }
 
         Auth::logout();
 

@@ -2,39 +2,24 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * Roles del sistema. Idempotente (se puede correr N veces) y basado en NOMBRES, no en IDs.
+ */
 class RolesAndPermissionsSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        // Limpiar cache de roles y permisos
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // Crear permisos
-        $permissions = [
-            'Editor'
-        ];
-
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+        foreach (User::PANEL_ROLES as $role) {
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
 
-        // Crear roles y asignar permisos
-        $roles = [
-            'super admin' => Permission::all(),
-            'Editor' => ['Editor'],
-        ];
-
-        foreach ($roles as $roleName => $perms) {
-            $role = Role::firstOrCreate(['name' => $roleName]);
-            if (is_array($perms)) {
-                $role->syncPermissions($perms);
-            } else {
-                $role->syncPermissions($perms);
-            }
-        }
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

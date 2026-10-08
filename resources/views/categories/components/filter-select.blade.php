@@ -1,24 +1,6 @@
-<select
-    name="category_id"
-    class="form-control mera-input">
-
-    <option value="">
-        Todas las categorías
-    </option>
-
-
-    @foreach($categories as $category)
-
-    @include(
-    'categories.components.filter-option',
-    [
-    'category' => $category,
-    'level' => 0,
-    'selected' => request('category_id')
-    ]
-    )
-
-    @endforeach
-
-
-</select>
+{{-- Obsoleto: usar categories.components.select. Se mantiene por compatibilidad. --}}
+@include('categories.components.select', [
+    'name' => 'category_id',
+    'selected' => request('category_id'),
+    'placeholder' => 'Todas las categorías',
+])

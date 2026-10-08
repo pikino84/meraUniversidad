@@ -5,20 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         return view('dashboard', [
-            'usersCount'      => User::count(),
-            'coursesCount'    => Course::count(),
-            'categoriesCount' => Category::count(),
+            'usersCount' => User::count(),
+            'coursesCount' => Course::count(),
+            'uncategorizedCount' => Course::whereNull('category_id')->count(),
+            'categoriesCount' => count(Category::flat()),
+            'rolesCount' => Role::count(),
             'recentCourses' => Course::latest()->take(5)->get(),
-            // 'recentActivity' => ActivityLog::latest()->take(10)->get(),
-            'rolesCount'      => Role::count(),
+            'categoryPaths' => Category::pathMap(),
         ]);
     }
 }
