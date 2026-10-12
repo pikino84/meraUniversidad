@@ -6,7 +6,8 @@ Plataforma interna de cursos (Mera Corporation). Un panel administrativo permite
 
 ## 0. REGLAS OBLIGATORIAS (leer antes de cualquier acción)
 
-1. **Nunca hacer `git commit` ni `git push` sin la autorización explícita del usuario.** Se hacen los cambios, se muestra el diff y se espera un "sí" explícito. Una autorización vale para un solo commit o push.
+0. **Idioma: todas las respuestas al usuario son SIEMPRE en español**, incluidos resúmenes, guías de despliegue, mensajes intermedios y notas de resultados. El código y los comentarios siguen las convenciones de §3.
+1. **Nunca hacer `git commit` ni `git push` sin la autorización explícita del usuario. Nunca de forma automática.** Se hacen los cambios, se muestra el resumen o diff y se espera un "sí" explícito. Una autorización vale para un solo commit o push: el siguiente requiere pedirla de nuevo. Esto también aplica a merge, rebase, tags y cualquier operación que modifique el remoto.
 2. **Antes de borrar, sobrescribir o modificar datos, generar un backup.** Esto aplica a:
    - **Base de datos:** antes de `migrate`, `migrate:fresh`, `migrate:rollback`, `db:wipe`, `db:seed`, `DROP`, `TRUNCATE`, `DELETE`/`UPDATE` masivos, importaciones o restauraciones:
      ```bash
@@ -83,7 +84,8 @@ app/Support/Like         LIKE escapado y portable (ESCAPE '!')
 config/mera.php          límites, extensiones permitidas, rutas, URL base de cursos, caché API
 resources/js/modules/    flash.js (mensajes por JSON), confirm.js (data-confirm), upload.js (progreso)
 resources/views/partials page-header, flash, form-errors, delete-button, user-menu, cover (respaldo de portada), brand-fonts
-docs/wordpress/          Snippet del catálogo para meracorporation.com/cursos-university (pegar en Divi)
+docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/cursos-university (tema Divi-child), README con
+                         instrucciones de sustitución, respaldo de la plantilla anterior y alternativa en JS
 ```
 
 ### Almacenamiento de cursos
@@ -91,7 +93,7 @@ docs/wordpress/          Snippet del catálogo para meracorporation.com/cursos-u
 - `storage/app/public/cursos/<carpeta>-cover-xxxxxx.(jpg|png|webp)`: portada, con la extensión detectada por contenido. Algunos cursos antiguos guardan `cover.png` dentro de su carpeta; al reemplazar el ZIP, la portada se rescata.
 - `storage/app/tmp/course-uploads/`: extracción temporal (privada).
 - `storage/app/trash/courses/`: papelera. Se purga a los 30 días.
-- `storage/app/public/.htaccess`: bloquea `.php`/`.phtml`/`.phar`… (respuesta 403) y archivos ocultos; envía `nosniff`. Lo regenera `mera:harden-storage`.
+- `storage/app/public/.htaccess`: bloquea `.php`/`.phtml`/`.phar`… (respuesta 403) y archivos ocultos; envía `nosniff`. Lo regenera `mera:harden-storage` (**versión v2**: usa `RewriteRule … [F]` porque LiteSpeed ignora `RemoveHandler`/`Require`; el comando detecta la versión anterior y la reescribe). Mismo criterio en `public/pages/.htaccess`.
 
 ### Convenciones
 - Código y comentarios en español; clases y métodos en inglés.
@@ -103,7 +105,7 @@ docs/wordpress/          Snippet del catálogo para meracorporation.com/cursos-u
 - Lógica de archivos de cursos: **solo** vía `CourseStorage` / `CourseManager`.
 - Al tocar un controlador: FormRequest + Policy, sin `$request->all()`.
 
-## 4. Estado de la auditoría (2026-10-08)
+## 4. Estado de la auditoría (actualizado 2026-10-12)
 
 ✅ = resuelto y cubierto por pruebas · 🟡 = mitigado o parcial · ⏳ = pendiente (requiere decisión o autorización)
 
@@ -129,8 +131,8 @@ docs/wordpress/          Snippet del catálogo para meracorporation.com/cursos-u
 | S17 | Dependencias vulnerables | 🟡 npm: axios actualizado (lo que queda es tooling de build). ⏳ composer: 46 avisos (Laravel 10 EOL, guzzle, symfony…). Plan en §7 |
 | S18 | Composer global con `disable-tls=true` y `secure-http=false` | ✅ Reactivado el 2026-10-08 (respaldo `%APPDATA%/Composer/config.json.bak-20261008_170009`). `composer diagnose`: HTTPS a Packagist y GitHub OK. ⏳ El **propio Composer** está desactualizado y tiene avisos: `composer self-update` |
 | S19 | XSS en meracorporation.com/cursos-university: el script de WordPress inserta nombre y descripción con `innerHTML` | ✅ Publicado el 2026-10-08: `docs/wordpress/page-catalogo-cursos.php` (render PHP + `esc_html`, paginación y búsqueda). Verificado en vivo. Respaldo de la plantilla anterior en `docs/wordpress/cursos-university_backup.html` |
-| S20 | 🔴 **47 scripts PHP de demo de la plantilla ejecutables en producción** (`public/pages/**`): `file-upload/file-upload.php` permite **subir cualquier archivo sin login y ejecutarlo**; también hay `filer/php/ajax_upload_file.php`, `ajax_remove_file.php` y `j-pro/php/action.php` (correo). El servidor comparte cuenta con ~15 sitios | ✅ `public/pages/.htaccess` bloquea PHP (verificado en local: 403; CSS/JS siguen en 200). ⏳ En el servidor, `file-upload.php` aparece **modificado localmente**: revisar `git diff` y las carpetas `uploads/` por si hubo intrusión |
-| S21 | `public/info.php` (phpinfo) público en producción; no está en git | ⏳ Borrarlo en el servidor (respaldo antes) |
+| S20 | 🔴 **47 scripts PHP de demo de la plantilla ejecutables en producción** (`public/pages/**`): `file-upload/file-upload.php` permite **subir cualquier archivo sin login y ejecutarlo**; también hay `filer/php/ajax_upload_file.php`, `ajax_remove_file.php` y `j-pro/php/action.php` (correo). El servidor comparte cuenta con ~15 sitios | ✅ `public/pages/.htaccess` bloquea PHP (verificado en local: 403; CSS/JS siguen en 200). Revisión del servidor (2026-10-12): `file-upload.php` fue **vaciado** (0 bytes) el 2026-04-07, sin carpeta `uploads/` ni PHP ajenos a la plantilla; **sin indicios de intrusión**. ⚠ Tras el `pull`, **LiteSpeed ignoró `RemoveHandler`/`Require all denied`** (siguieron en 200/500). Corregido con `RewriteRule … [F]`, que LiteSpeed sí respeta (verificado en local: 403; CSS/JS en 200). ⏳ Falta desplegar ese cambio y verificar en producción |
+| S21 | `public/info.php` (phpinfo) público en producción; no está en git | ✅ Movido a `~/backups_cursos/` el 2026-10-12 (ahora responde 404) |
 | S22 | Producción con `APP_ENV=local` y `APP_DEBUG=true`: los errores muestran código, rutas y variables | ⏳ Cambiar a `production`/`false` en el despliegue |
 
 ### Calidad (QA)
@@ -141,15 +143,15 @@ docs/wordpress/          Snippet del catálogo para meracorporation.com/cursos-u
 | Q3 | No se podía editar un usuario sin cambiar su contraseña | ✅ |
 | Q4 | Categoría duplicada → 500; no se permitían homónimas bajo padres distintos | ✅ Únicas entre hermanos; slug único |
 | Q5 | Borrado en cascada silencioso | ✅ La confirmación muestra el impacto; lógica explícita (no depende del motor de BD) |
-| Q6 | `CourseController_base.php` (clase duplicada) | ⏳ Respaldado; falta autorización para borrarlo (ver §6) |
+| Q6 | `CourseController_base.php` (clase duplicada) | 🟡 Respaldado; **se conserva por decisión del usuario** (§6) |
 | Q7 | `moveDirectory` silencioso al renombrar | ✅ Ya no se mueven carpetas al renombrar |
 | Q8 | Seeders con IDs fijos | ✅ Idempotentes y basados en nombres |
 | Q9 | Perfil solo para admins | ✅ Disponible para cualquier usuario autenticado |
 | Q10 | Mensajes `session()` dentro de JS | ✅ JSON + `flash.js` |
 | Q11 | IDs duplicados en formularios de borrado | ✅ `data-confirm` |
-| Q12 | Pruebas borraban la BD; 21 de 25 fallaban | ✅ 58 pruebas verdes en sqlite + candado |
+| Q12 | Pruebas borraban la BD; 21 de 25 fallaban | ✅ 61 pruebas verdes (213 aserciones) en sqlite + candado |
 | Q13 | Validaciones en inglés | ✅ `lang/es` |
-| Q14 | Código heredado (Lounge, Client, agencias…) | 🟡 Tablas eliminadas; los archivos de código esperan autorización (§6) |
+| Q14 | Código heredado (Lounge, Client, agencias…) | 🟡 Tablas eliminadas (migración con guarda); los archivos **se conservan por decisión del usuario** (§6) |
 | Q15 | Lógica de slug duplicada | ✅ Trait `HasUniqueSlug` |
 | Q16 | No existía `public/storage` | ✅ `storage:link` ejecutado en local |
 | Q17 | Doble slash `cursos.meracorporation.com//storage/…`. Causa: la API devolvía `/storage/…` y el WordPress antepone `…com/` | ✅ La API devuelve `storage/…` sin `/` inicial en los campos originales, más `course_url`/`cover_image_url` absolutos. El WordPress actual queda corregido sin cambios |
@@ -181,28 +183,104 @@ docs/wordpress/          Snippet del catálogo para meracorporation.com/cursos-u
 | U9 | Dos librerías de iconos | ⏳ |
 | U10 | Filtros sin contador ni opción de limpiar | ✅ Contador, chip del filtro activo, limpiar, "ver cursos" por categoría |
 
-## 5. Checklist de despliegue a producción
+## 5. Despliegue a producción (en curso)
 
-1. **Backup** de la BD de producción y de `storage/app/public/cursos` (regla 2).
-2. `git pull` (cuando el usuario lo autorice) → `composer install --no-dev -o` → `npm ci && npm run build`.
-3. `php artisan migrate --force`: solo elimina tablas legacy **vacías**; si alguna tiene datos, la conserva y lo registra en el log.
-4. `php artisan storage:link` (si no existe) → `php artisan mera:harden-storage` → verificar que `https://cursos.meracorporation.com/storage/cursos/x.php` responda 403. Probar antes en LiteSpeed; si `storage` responde 500, quitar el bloque `php_flag` del `.htaccess`.
-5. `.env`: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://cursos.meracorporation.com`, `MERA_COURSES_URL` vacío (los cursos siguen en el mismo subdominio), resto de `MERA_*` según `.env.example`.
-6. `php artisan config:cache && php artisan route:cache && php artisan view:cache`.
-7. Cron de `schedule:run` en cPanel.
-8. **Rotar las contraseñas de super admin** (ver §7). Es obligatorio.
-9. **WordPress:** ✅ ya publicado (2026-10-08). Tras el despliegue, comprobar que siga mostrando 109 cursos (la API nueva agrega campos y es compatible).
-10. Verificar: login, crear un curso de prueba, `/api/courses`, `/api/courses?page=1`, y que un enlace del WordPress abra **sin** `//storage`.
+**Flujo del proyecto:** local (rama `dev`) → GitHub `pikino84/meraUniversidad` (rama `dev`) → el servidor hace `git pull` en `~/cursos.meracorporation.com`. **`dev` funciona como producción**; `main` está desactualizada y no se usa. El commit con toda la auditoría es **`d33a001`** (subido a `origin/dev` el 2026-10-08).
 
-## 6. Pendiente de autorización del usuario
+### Datos del servidor (salida de SSH, 2026-10-08)
+- Rama `dev` en `ea4bd1c` antes del despliegue. PHP CLI 8.1.34. Laravel 10.48.29. Node 18.20.8 (nvm). Composer en `~/bin/composer`. `/usr/bin/mysqldump`.
+- BD `merabl_cursos`, usuario `merabl_usr_cursos`.
+- Cambios locales del servidor (no están en git): `package-lock.json`, `public/.htaccess` (solo líneas comentadas de límites PHP) y `public/pages/file-upload/file-upload.php` (vaciado el 2026-04-07). Sin rastrear: `.user.ini` (upload/post 512M, memory 512M, max_execution_time 300).
+- Había `bootstrap/cache/config.php` y `routes-v7.php` de agosto → obligatorio `php artisan optimize:clear` tras el pull.
+- `.env` con `APP_ENV=local`, `APP_DEBUG=true` y `APP_URL=https://university.meracorporation.com/` (ese dominio también sirve la app).
+- Disco al 98 % (182 GB libres). CloudLinux limita CPU/IO: comprimir los 9 GB de cursos con gzip no avanza (se canceló).
+- El crontab no tiene el scheduler de Laravel.
 
-- **Código heredado:** el usuario decidió **conservarlo por ahora**. Está respaldado en `storage/backups/code_removed_20261008_154752/`: `CourseController_base.php`, `LoungeController.php`, `Auth/RegisteredUserController.php`, `Models/Lounge.php`, `Models/Client.php`, `views/lounges/*`, `views/auth/register.blade.php`, `views/welcome.blade.php` y los seeders `Lounge`, `Status`, `RolePermission` y `ModelHasRoles`. No tiene rutas ni lo usa nada.
-- ⏳ **PENDIENTE AL PASAR A PRODUCCIÓN: rotar las contraseñas de Super Admin** con `php artisan mera:rotate-password --super-admins` (decisión del usuario: se hará en el despliegue; ver §7).
-- ⏳ **Portadas rotas en producción (3):** cursos módulo 2, 3 y 5 de Mera Way 2.0 (NetSuite); su `cover_image` apunta a archivos inexistentes. Volver a subir la portada desde el panel después del despliegue.
-- ⏳ **104 de 109 cursos sin categoría:** categorizarlos para que los filtros sirvan.
-- ⏳ `composer self-update` (Composer desactualizado, con avisos de seguridad).
-- **Decisiones de negocio:** ¿los cursos deben ser públicos? (S8). ¿Subdominio separado para el contenido? (S5).
-- **QA visual** antes de unificar CSS e iconos y de limpiar `public/` (P6, P7, U9).
+### Fases y avance
+| Fase | Qué | Estado |
+|---|---|---|
+| 0 | Contención y revisión de intrusión | ✅ 2026-10-12. `info.php` movido a `~/backups_cursos/` (responde 404). Sin indicios de intrusión |
+| 1 | Respaldo | 🔄 Hecho: `.env`, diff de cambios del servidor, commit anterior. ❓ Confirmar con el usuario: `mysqldump` (falló por los marcadores `<…>` de la guía) e inventario de cursos |
+| 2 | Actualizar código | 🟡 2026-10-12: producción ya corre `d33a001` (verificado: la API trae `id`, `/register` da 404, `info.php` 404). ⏳ Falta desplegar el commit con el `.htaccess` v2 y correr `php artisan mera:harden-storage` (los PHP de `pages/` seguían en 200) |
+| 3 | `.env` de producción + cachés | ⏳ |
+| 4 | Rotar contraseñas Super Admin | ⏳ |
+| 5 | Cron del scheduler | ⏳ |
+| 6 | Verificación | ⏳ |
+
+**Fase 1 (pendiente, comandos correctos):**
+```bash
+cd ~/cursos.meracorporation.com && TS=$(date +%Y%m%d_%H%M)
+rm -f ~/backups_cursos/cursos_*.tar.gz     # tar incompleto del intento cancelado
+mysqldump --single-transaction --no-tablespaces -u merabl_usr_cursos -p merabl_cursos > ~/backups_cursos/bd_$TS.sql
+tail -1 ~/backups_cursos/bd_$TS.sql        # debe decir "-- Dump completed"
+find storage/app/public/cursos -type f -printf '%s %p\n' | sort -k2 > ~/backups_cursos/inventario_cursos_$TS.txt
+```
+El tar completo de los cursos **no es necesario para este despliegue**: ningún paso toca `storage/app/public/cursos` (solo se agrega un `.htaccess`). Si se quiere, después: `nohup nice -n 19 tar -cf ~/backups_cursos/cursos_$TS.tar -C storage/app/public cursos &` (sin gzip, porque mp4 y mp3 ya vienen comprimidos), o usar JetBackup de cPanel.
+
+**Fase 2:**
+```bash
+php artisan down
+git checkout -- package-lock.json
+git pull origin dev
+~/bin/composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force          # solo borra las 7 tablas heredadas si están vacías
+php artisan mera:harden-storage
+php artisan optimize:clear
+```
+
+**Fase 3.** En `.env`: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://cursos.meracorporation.com` (`MERA_COURSES_URL` vacío). Luego:
+```bash
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan up
+```
+
+**Fase 4:** `php artisan mera:rotate-password --super-admins`. Rota los 5 Super Admin y muestra las contraseñas **una sola vez**.
+
+**Fase 5:** agregar con `crontab -e`:
+`* * * * * cd /home/merabl/cursos.meracorporation.com && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1`
+
+**Fase 6 (verificación):**
+- `pages/**/*.php` y `storage/cursos/x.php` responden 403 (con el `.htaccess` v2; la v1 no funcionó en LiteSpeed).
+- `info.php` responde 404.
+- Los errores ya no muestran detalles.
+- Funcionan el login, `/api/courses`, `/api/courses?page=1`, WordPress (109 cursos, sin `//storage`) y la subida de un curso de prueba.
+- El inventario de cursos queda igual al de la Fase 1.
+
+**Reversa:**
+```bash
+git checkout $(cat ~/backups_cursos/commit_anterior_*.txt)
+cp ~/backups_cursos/env_* .env
+~/bin/composer install
+php artisan optimize:clear
+```
+La BD casi no cambia (solo se eliminan tablas vacías).
+
+## 6. Pendientes (por prioridad)
+
+### Inmediatos: terminar el despliegue
+1. ⏳ **Terminar §5.** El código nuevo ya está en producción, pero los scripts de `pages/` siguen ejecutables hasta desplegar el `.htaccess` v2 (`git pull` + `php artisan mera:harden-storage`). Confirmar también las fases 3 (`APP_DEBUG=false`), 4, 5 y 6.
+2. ⏳ **Rotar las contraseñas de Super Admin** (Fase 4). **Obligatorio**: el repo es público (S4).
+3. ⏳ **Hacer privado el repositorio** de GitHub (decisión del usuario).
+
+### Después del despliegue
+4. ⏳ **3 portadas rotas** (cursos módulo 2, 3 y 5 de Mera Way 2.0 NetSuite): volver a subirlas desde "Editar curso".
+5. ⏳ **104 de 109 cursos sin categoría:** categorizarlos. Opcional: filtro por categoría en la página de WordPress (la API ya lo soporta con `category_id`).
+6. ⏳ **Respaldo completo de los cursos** (9 GB) en segundo plano o con JetBackup.
+7. ⏳ `composer self-update` (local), luego `composer update` dentro de Laravel 10 (cierra parte de los 46 avisos) y `php artisan test`.
+8. ⏳ **Actualizar PHP y Laravel:** subir `cursos.` a PHP 8.3/8.4 en MultiPHP Manager y migrar 10 → 13 (§7). Localmente hace falta PHP 8.3+.
+9. ⏳ Limpiar el CSS viejo del catálogo en `Divi-child/style.css` (líneas ~5342-5426) y renombrar `docs/wordpress/cursos-university_backup.html` a `.php.bak` (contiene PHP).
+
+### Decisiones de negocio
+- ¿Los cursos deben ser públicos o solo para personal autenticado? (S8)
+- ¿Servir el contenido de los cursos desde otro subdominio para aislar su JS del panel? (S5)
+
+### Conservado por decisión del usuario (no borrar sin pedirlo)
+- **Código heredado** sin uso, respaldado en `storage/backups/code_removed_20261008_154752/`: `CourseController_base.php`, `LoungeController.php`, `Auth/RegisteredUserController.php`, `Models/Lounge.php`, `Models/Client.php`, `views/lounges/*`, `views/auth/register.blade.php`, `views/welcome.blade.php` y los seeders `Lounge`, `Status`, `RolePermission` y `ModelHasRoles`.
+- Los backups locales en `storage/backups/` (no se suben a git).
+
+### Mejoras futuras (requieren QA visual)
+- Unificar el framework de CSS (Bootstrap + Tailwind) y los iconos (P6, U9); limpiar las ~5000 páginas de plantilla sin uso en `public/` (P7); miniaturas de portadas (P8); `favicon.ico` de 0 bytes (U8).
 
 ## 7. Notas para el paso a producción
 
@@ -265,3 +343,20 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 - **Logo:** siempre en minúsculas ("mera"). En texto corrido la marca va en MAYÚSCULAS: "MERA". Tagline: *Vision · Values · Results*. No rotar, deformar ni cambiar el tagline.
 - **Tailwind:** colores `mera-green`, `mera-secondary`, `mera-accent`, `mera-sky`, `mera-aqua`; `darkMode: class`, para que el modo oscuro del sistema operativo no cambie la marca.
 - **Componentes:** botones redondeados (pill), tarjetas con `border-radius: 16-18px` y sombras verdes suaves. En móvil las tablas pasan a tarjetas (`.mera-table-stack` + `data-label` en cada `<td>`).
+
+## 9. Bitácora de lo realizado
+
+| Fecha | Qué se hizo |
+|---|---|
+| 2026-10-08 | Auditoría inicial (seguridad, QA, rendimiento, UX/UI) y primera versión de este CLAUDE.md. |
+| 2026-10-08 | **Incidente:** `php artisan test` vació la BD local `merabl_cursos` (había configuración cacheada y la conexión era MySQL). Se restauró desde un dump de producción, con respaldo previo, y se aislaron las pruebas (sqlite `:memory:` + candado en `TestCase`). Origen de las reglas 2, 3 y 4. |
+| 2026-10-08 | Correcciones S1-S16, Q1-Q16 y P1-P5: servicios de cursos (`CourseStorage`, `CoursePackageExtractor`, `CourseManager`), políticas y roles, FormRequests, caché de categorías y API, papelera, comandos `mera:*`, localización `es`, pruebas. Migración de tablas legacy aplicada en local (con respaldo). |
+| 2026-10-08 | UX/UI y marca: Montserrat + paleta del media kit, login rediseñado, subida con progreso, tablas como tarjetas en móvil, respaldo de portadas, catálogo público `/cursos`. Revisado con capturas de escritorio (1366 px) y móvil (390 px). |
+| 2026-10-08 | API: corregido el doble slash (rutas sin `/` inicial), campos absolutos `course_url`/`cover_image_url` y paginación opcional `?page=`. |
+| 2026-10-08 | WordPress: nueva plantilla `page-catalogo-cursos.php` (render PHP, paginación, búsqueda, sin XSS), **publicada por el usuario** y verificada en vivo. |
+| 2026-10-08 | Composer local: TLS reactivado (`disable-tls`/`secure-http`), con respaldo de `config.json`. |
+| 2026-10-08 | Hallazgo S20: 47 scripts PHP de la plantilla ejecutables en producción → `public/pages/.htaccess`. |
+| 2026-10-08 | Commit **`d33a001`** subido a `origin/dev` (autorizado por el usuario). |
+| 2026-10-09 | Reglas: respuestas siempre en español (regla 0) y commit/push nunca automáticos (regla 1). |
+| 2026-10-12 | Despliegue, Fase 0: `info.php` retirado; revisión sin indicios de intrusión. Fase 1 parcial: falta `mysqldump` e inventario (§5). |
+| 2026-10-12 | Producción ya corre `d33a001` (verificado desde fuera). Se detectó que LiteSpeed ignora `RemoveHandler`/`Require all denied`: `public/pages/.htaccess` y el `.htaccess` de storage (v2, en `CourseStorage`) pasan a usar `RewriteRule … [F]`. Verificado en local (PHP 403, CSS/JS/portadas 200) con 61 pruebas en verde. CLAUDE.md reorganizado (§5 despliegue con avance, §6 pendientes por prioridad, §9 bitácora). Commit y push autorizados por el usuario. |

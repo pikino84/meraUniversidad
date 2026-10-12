@@ -14,7 +14,7 @@ use RuntimeException;
  */
 class CourseStorage
 {
-    public const HTACCESS_MARKER = '# mera:harden-storage';
+    public const HTACCESS_MARKER = '# mera:harden-storage v2';
 
     public function storageRoot(): string
     {
@@ -106,7 +106,13 @@ class CourseStorage
 # dentro de storage/app/public (servido como /storage). Regenerar con:
 #   php artisan mera:harden-storage
 
-# Desactiva el intérprete PHP (mod_php). En PHP-FPM/LSAPI lo cubre el bloque FilesMatch.
+# 1) mod_rewrite: es lo que LiteSpeed (producción) sí respeta; RemoveHandler y
+#    "Require all denied" pueden ser ignorados con LSAPI. Responde 403.
+RewriteEngine On
+RewriteRule \.(php[0-9]?|phtml|phar|pht|phps|cgi|pl|py|sh|asp|aspx|jsp)$ - [F,NC,L]
+RewriteRule (^|/)\. - [F,L]
+
+# 2) Desactiva el intérprete PHP (mod_php). Apache también lo cubre con FilesMatch.
 <IfModule mod_php.c>
     php_flag engine off
 </IfModule>

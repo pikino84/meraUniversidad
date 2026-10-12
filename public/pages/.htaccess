@@ -3,6 +3,13 @@
 # que cualquiera podía ejecutar, p. ej. pages/file-upload/file-upload.php permitía subir un .php
 # y ejecutarlo en el servidor. La aplicación no usa ninguno: aquí se bloquea su ejecución.
 
+# 1) mod_rewrite: es lo que LiteSpeed (producción) sí respeta; RemoveHandler y
+#    "Require all denied" fueron ignorados allí (verificado el 2026-10-12: 200/500). Responde 403.
+RewriteEngine On
+RewriteRule \.(php[0-9]?|phtml|phar|pht|phps|cgi|pl|py|sh|asp|aspx|jsp|sql|lang|json)$ - [F,NC,L]
+RewriteRule (^|/)\. - [F,L]
+
+# 2) Capas adicionales para Apache.
 <IfModule mod_php.c>
     php_flag engine off
 </IfModule>
