@@ -6,6 +6,7 @@ import swal from 'sweetalert';
 import { initConfirmForms } from './modules/confirm';
 import { initFlashMessages } from './modules/flash';
 import { initUploadForms } from './modules/upload';
+import { initProgramProgress } from './modules/program-progress';
 
 window.Alpine = Alpine;
 window.swal = swal; // usado por vistas antiguas y por los módulos
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFlashMessages();
     initConfirmForms();
     initUploadForms();
+    initProgramProgress();
     initMobileMenu();
 });
 

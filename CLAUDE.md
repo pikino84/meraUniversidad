@@ -61,6 +61,8 @@ Cron en el servidor (necesario para la purga de papelera y la limpieza del activ
 routes/web.php
   /                      → redirect /login
   /cursos                → CatalogController (público)
+  /<programa>            → ProgramController (público). Programas definidos en config('mera.programs');
+                           hoy: /proceso-de-manipulacion-de-alimentos
   auth:                  /profile (cualquier usuario autenticado)
   role super admin|admin → dashboard, users, categories, courses
   role super admin       → roles, permissions, activity-logs
@@ -81,7 +83,8 @@ app/Models/
   Category               árbol desde UNA consulta cacheada (flat/tree/pathMap/descendantIdsOf)
   User                   $hidden password, roles PANEL_ROLES, LogsActivity
 app/Support/Like         LIKE escapado y portable (ESCAPE '!')
-config/mera.php          límites, extensiones permitidas, rutas, URL base de cursos, caché API
+config/mera.php          límites, extensiones permitidas, rutas, URL base de cursos, caché API y **programas**
+                         (módulos resueltos por slug del curso, ruta de respaldo, evaluación/encuesta)
 resources/js/modules/    flash.js (mensajes por JSON), confirm.js (data-confirm), upload.js (progreso)
 resources/views/partials page-header, flash, form-errors, delete-button, user-menu, cover (respaldo de portada), brand-fonts
 docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/cursos-university (tema Divi-child), README con
@@ -115,11 +118,11 @@ docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/curs
 | S1 | RCE por `.php` dentro del ZIP | ✅ Lista blanca de extensiones + `.htaccess` (verificado en Apache: 403, no se ejecuta) |
 | S2 | Portada con extensión del cliente y SVG | ✅ `mimes:jpg,jpeg,png,webp` + extensión detectada por contenido |
 | S3 | Slug vacío borraba **todos** los cursos | ✅ Slug nunca vacío + `CourseStorage::resolve()` + carpetas inmutables |
-| S4 | Contraseñas de super admin en `UserSeeder`. **El repo de GitHub es PÚBLICO**, así que están expuestas | 🟡 Eliminadas del código. ✅ Rotadas en producción el 2026-10-12 (`mera:rotate-password --super-admins`). Cada persona debe cambiar la suya en "Mi perfil". ⏳ Hacer privado el repo |
+| S4 | Contraseñas de super admin en `UserSeeder`. **El repo de GitHub es PÚBLICO**, así que están expuestas | 🟡 Eliminadas del código. ✅ Rotadas en producción el 2026-10-12 (`mera:rotate-password --super-admins`). Cada persona debe cambiar la suya en "Mi perfil". ⏳ Hacer privado el repo (delegado: D2, §6) |
 | S5 | JS de los cursos en el mismo origen que el panel | 🟡 Hoy panel y cursos comparten `cursos.meracorporation.com`. `MERA_COURSES_URL` permite moverlos a otro subdominio (p. ej. `contenido.`) sin tocar código. ⏳ Decisión pendiente |
 | S6 | Escalada de privilegios (admin → super admin) | ✅ UserPolicy, roles del sistema protegidos, último super admin protegido |
 | S7 | Registro público abierto | ✅ Rutas eliminadas (404) |
-| S8 | Contenido de cursos sin control de acceso | ⏸ **En espera (2026-10-12):** el usuario consultará por correo si los cursos deben ser públicos o solo para personal de MERA. Hoy son públicos para **cualquiera en internet**, sin login: `/cursos`, `/api/courses`, la página de WordPress y los enlaces directos `/storage/cursos/<carpeta>/index.html`. `/cursos` no tiene `noindex`. Opciones: (a) públicos + `noindex`; (b) solo personal: login de colaboradores (ideal SSO Microsoft/Google), servir `storage/cursos` vía Laravel con sesión y adaptar WordPress; (c) restricción por IP (deja fuera remoto/móvil) |
+| S8 | Contenido de cursos sin control de acceso | ⏸ **Delegado (D1, §6):** se consultó por correo si los cursos deben ser públicos o solo para personal de MERA. Hoy son públicos para **cualquiera en internet**, sin login: `/cursos`, `/api/courses`, la página de WordPress y los enlaces directos `/storage/cursos/<carpeta>/index.html`. `/cursos` no tiene `noindex`. Opciones: (a) públicos + `noindex`; (b) solo personal: login de colaboradores (ideal SSO Microsoft/Google), servir `storage/cursos` vía Laravel con sesión y adaptar WordPress; (c) restricción por IP (deja fuera remoto/móvil) |
 | S9 | Bomba ZIP | ✅ Límites de archivos y de tamaño descomprimido |
 | S10 | Zip-slip incompleto | ✅ Rutas absolutas, `\`, `..` y symlinks rechazados |
 | S11 | Fuga de `$e->getMessage()` | ✅ Mensajes genéricos; el detalle va al log |
@@ -187,7 +190,7 @@ docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/curs
 
 **Flujo del proyecto:** local (rama `dev`) → GitHub `pikino84/meraUniversidad` (rama `dev`) → el servidor hace `git pull` en `~/cursos.meracorporation.com`. **`dev` funciona como producción**; `main` está desactualizada y no se usa.
 
-**Estado: ✅ desplegado el 2026-10-12** (commits `d33a001` + `856697e`). Respaldos en el servidor: `~/backups_cursos/` (BD `bd_20261012_1743.sql`, `.env` previos, diff de cambios del servidor, commit anterior, inventario de cursos, crontab previo, build anterior, `.htaccess` previos y los 48 PHP de `public/pages/` en `pages_php_<fecha>/`).
+**Estado: ✅ desplegado el 2026-10-12** (commits `d33a001`, `856697e` y `858c681`; producción en `858c681`). Respaldos en el servidor: `~/backups_cursos/` (BD `bd_20261012_1743.sql`, `.env` previos, diff de cambios del servidor, commit anterior, inventario de cursos, crontab previo, build anterior, `.htaccess` previos y los 48 PHP de `public/pages/` en `pages_php_<fecha>/`).
 
 ### Lecciones del despliegue (LEER antes del próximo)
 1. **No compilar en el servidor.** `npm run build` falla: CloudLinux tiene una glibc vieja (`GLIBC_2.29 not found`, binario nativo de rollup). Se compila **en local** (`npm run build`), se empaqueta `public/build` en un ZIP, se sube por el Administrador de archivos de cPanel y se descomprime en `public/`.
@@ -207,7 +210,7 @@ docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/curs
 - PHP CLI 8.1.34 (`/usr/local/bin/php`). Laravel 10.48.29. Node 18.20.8 (nvm, **no sirve para compilar**). Composer en `~/bin/composer`. `/usr/bin/mysqldump`. Servidor web **LiteSpeed**.
 - BD `merabl_cursos`, usuario `merabl_usr_cursos` (credenciales en el `.env`).
 - `.env`: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://cursos.meracorporation.com`. Cachés `config`/`route`/`view` activas, así que tras cambiar el `.env` hay que ejecutar `php artisan config:cache`.
-- Cambios propios del servidor (no están en git): `public/.htaccess` (solo líneas comentadas) y `.user.ini` (upload/post 512M, memory 512M, max_execution_time 300). Los PHP de `public/pages/` se **movieron** fuera de la raíz web, así que `git status` del servidor los muestra como borrados hasta que se quiten del repo (§6).
+- Cambios propios del servidor (no están en git): `public/.htaccess` (solo líneas comentadas) y `.user.ini` (upload/post 512M, memory 512M, max_execution_time 300). Los PHP de demo de `public/pages/` ya no existen ni en el repo ni en el servidor (copia en `~/backups_cursos/pages_php_*`). Además, `tests/Feature/Courses/CourseManagementTest.php` aparece modificado en el servidor (§6, por revisar).
 - Crontab: `* * * * * cd /home/merabl/cursos.meracorporation.com && /usr/local/bin/php artisan schedule:run >> /dev/null 2>&1` (purga de papelera 03:00 y `activitylog:clean` los domingos). La cuenta comparte crontab con ~15 sitios: **no tocar las otras líneas**.
 - Disco al 98 %. CloudLinux limita CPU/IO: `tar -czf` de los 9 GB de cursos no avanza.
 
@@ -230,24 +233,28 @@ php artisan optimize:clear && php artisan config:cache && php artisan route:cach
 
 **Reversa:** `git checkout $(cat ~/backups_cursos/commit_anterior_<fecha>.txt)`, restaurar `~/backups_cursos/env_*` como `.env`, ejecutar `~/bin/composer install` y `php artisan optimize:clear`. Los PHP de demo se pueden devolver desde `~/backups_cursos/pages_php_*/`.
 
-## 6. Pendientes (por prioridad)
+## 6. Pendientes
 
-### Inmediatos
-1. ✅ **Quitados del repositorio los 48 PHP de `public/pages/`** (2026-10-12, autorizado por el usuario; respaldo en `storage/backups/code_removed_20261012_pages_php/`). En producción ya estaban fuera de la raíz web; el próximo `git pull` solo confirma su ausencia.
-2. ⏳ **Hacer privado el repositorio** de GitHub (decisión del usuario). Las contraseñas expuestas ya se rotaron (S4).
-3. ⏳ Que cada Super Admin cambie en "Mi perfil" la contraseña temporal generada por la rotación.
+**Estado (2026-10-12):** producción corre `858c681`. **Abierto a nuestro cargo:** publicar el programa `/proceso-de-manipulacion-de-alimentos` (hecho en local con pruebas en verde; falta autorización de commit/push y desplegar: `git pull` → `npm ci && npm run build` → `php artisan config:cache && php artisan route:cache && php artisan view:cache`). La ruta depende de `config('mera.programs')`, así que **sin volver a cachear rutas y configuración la página da 404**.
 
-### Después del despliegue
-4. ⏳ **3 portadas rotas** (cursos módulo 2, 3 y 5 de Mera Way 2.0 NetSuite): volver a subirlas desde "Editar curso".
-5. ⏳ **104 de 109 cursos sin categoría:** categorizarlos. Opcional: filtro por categoría en la página de WordPress (la API ya lo soporta con `category_id`).
-6. ⏳ **Respaldo completo de los cursos** (9 GB) en segundo plano o con JetBackup.
-7. ⏳ `composer self-update` (local), luego `composer update` dentro de Laravel 10 (cierra parte de los 46 avisos) y `php artisan test`.
-8. ⏳ **Actualizar PHP y Laravel:** subir `cursos.` a PHP 8.3/8.4 en MultiPHP Manager y migrar 10 → 13 (§7). Localmente hace falta PHP 8.3+.
-9. ⏳ Limpiar el CSS viejo del catálogo en `Divi-child/style.css` (líneas ~5342-5426) y renombrar `docs/wordpress/cursos-university_backup.html` a `.php.bak` (contiene PHP).
+### Delegado a otras áreas (comunicado por correo el 2026-10-12): NO actuar sin instrucción explícita del usuario
+Estos puntos no le corresponden a este equipo. Se enviaron por correo a los responsables. No se trabajan, no se proponen como "siguiente paso" y no se modifica nada relacionado hasta que el usuario lo indique.
 
-### Decisiones de negocio
-- ⏸ ¿Los cursos deben ser públicos o solo para personal autenticado? (S8). **En espera:** se consultará por correo; no cambiar el acceso hasta tener respuesta.
-- ¿Servir el contenido de los cursos desde otro subdominio para aislar su JS del panel? (S5)
+| # | Tema | Responsable | Ref. |
+|---|---|---|---|
+| D1 | **Acceso a los cursos:** ¿públicos o solo para personal de MERA? Hoy cualquiera en internet los ve sin login, y `/cursos` no tiene `noindex`. **No cambiar el acceso hasta tener respuesta** | Dirección / RR. HH. / Capacitación | S8 |
+| D2 | **Repositorio de GitHub público** (`pikino84/meraUniversidad`): hacerlo privado. Expone este CLAUDE.md (estructura del servidor, hallazgos de seguridad) y el historial con las contraseñas antiguas (ya rotadas) | Dueño de la cuenta `pikino84` | S4 |
+| D3 | **Contraseñas temporales de los 5 Super Admin:** entregarlas por canal privado; cada persona la cambia en "Mi perfil" y también en otros servicios donde haya reutilizado la anterior | Cada Super Admin | S4 |
+| D4 | **3 portadas rotas (404):** módulos 2 (Ajuste de Inventario), 3 (Crear una Orden de Traslado) y 5 (Introducir Solicitudes) de Mera Way 2.0 (NetSuite). Volver a subirlas desde "Editar curso" | Responsables del contenido | — |
+| D5 | **115 de 120 cursos sin categoría** (solo hay categoría en Código de Ética, con 2 cursos, y Protocolo Sismos, con 3). Definir categorías y asignarlas. La API ya permite filtrar por `category_id` | Capacitación | — |
+| D6 | **Hosting:** PHP 8.1 del sitio fuera de soporte (subir `cursos.` a 8.3/8.4 en MultiPHP Manager), disco al 98 %, sin respaldo completo de los cursos (9 GB; JetBackup), y una sola cuenta cPanel compartida por ~15 sitios | Administrador del hosting | §7 |
+| D7 | **Actualizar Laravel 10 → 13** (fuera de soporte, 46 avisos de Composer). Depende de D6 y requiere aprobación y tiempo asignado | Decisión de quien asigne el trabajo | S17, §7 |
+| D8 | **¿Servir el contenido de los cursos desde otro subdominio** (p. ej. `contenido.`) para aislar su JavaScript del panel? | TI / Dirección | S5 |
+| D9 | **WordPress:** limpiar el CSS viejo del catálogo en `Divi-child/style.css` (líneas ~5342-5426) | Administrador de meracorporation.com | — |
+
+### Para revisar (interno, menor)
+- En el servidor, `git status` muestra **`tests/Feature/Courses/CourseManagementTest.php` modificado** en producción, fuera de git. No afecta al sitio (no es público ni lo carga la app). Revisar con `git diff tests/` en el servidor antes del próximo `pull`; si no tiene nada útil, descartarlo con `git checkout -- tests/` (con respaldo previo, regla 2).
+- `docs/wordpress/cursos-university_backup.html` contiene PHP: renombrarlo a `.php.bak` en el próximo commit que toque `docs/`.
 
 ### Conservado por decisión del usuario (no borrar sin pedirlo)
 - **Código heredado** sin uso, respaldado en `storage/backups/code_removed_20261008_154752/`: `CourseController_base.php`, `LoungeController.php`, `Auth/RegisteredUserController.php`, `Models/Lounge.php`, `Models/Client.php`, `views/lounges/*`, `views/auth/register.blade.php`, `views/welcome.blade.php` y los seeders `Lounge`, `Status`, `RolePermission` y `ModelHasRoles`.
@@ -336,3 +343,5 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 | 2026-10-12 | Producción ya corre `d33a001` (verificado desde fuera). Se detectó que LiteSpeed ignora `RemoveHandler`/`Require all denied`: `public/pages/.htaccess` y el `.htaccess` de storage (v2, en `CourseStorage`) pasan a usar `RewriteRule … [F]`. Verificado en local (PHP 403, CSS/JS/portadas 200) con 61 pruebas en verde. CLAUDE.md reorganizado (§5 despliegue con avance, §6 pendientes por prioridad, §9 bitácora). Commit y push autorizados por el usuario. |
 | 2026-10-12 | **Despliegue completado** (fases 1-6). Dump de la BD (leyendo credenciales del `.env`), inventario de cursos, `git pull` (`d33a001` y luego `856697e`), `composer --no-dev`, `migrate` (tablas heredadas), build compilado en local y subido (el servidor no puede compilar: glibc vieja), `.env` de producción + cachés, contraseñas de Super Admin rotadas, cron del scheduler. Los 48 PHP de `public/pages/` se movieron fuera de la raíz web. Causa de los estilos rotos y de los `.htaccess` ignorados: permisos 600/700 (umask 077 + ZIP de Windows) → `chmod`. `CourseStorage::harden()` ahora fuerza `0644`. Verificado en producción: PHP en `pages/` y `storage/` → 403, assets → 200, inventario igual. |
 | 2026-10-12 | Quitados del repo los 48 PHP de demo de `public/pages/` (respaldo local en `storage/backups/code_removed_20261012_pages_php/`). `harden()` fuerza `0644`. S8 (acceso a cursos) queda en espera de consulta por correo. Commit autorizado por el usuario. |
+| 2026-10-12 | Producción en `858c681` (servidor actualizado con `pull`). Todos los pendientes restantes pasan a **delegados** (§6, D1-D9) y se comunican por correo; ya no son tareas de este equipo. Detectado `tests/…/CourseManagementTest.php` modificado en el servidor (por revisar). |
+| 2026-10-12 | **Programa público "Proceso de manipulación de alimentos"** en `/proceso-de-manipulacion-de-alimentos` (a partir del HTML que entregó el usuario). Mejoras sobre el original: documento HTML completo (`lang`, `viewport`, metadatos para compartir), módulos resueltos **por slug** (re-subir un ZIP ya no rompe enlaces), logo como archivo (`images/logo-mera-blanco.png`) en lugar de 19 KB en base64, sin modo oscuro automático (regla de marca), jerarquía de encabezados y `aria-label` con aviso de pestaña nueva, `rel="noopener noreferrer"`, avance por dispositivo (localStorage: "Visto", "Continúa aquí", barra, aviso al terminar, reiniciar), `prefers-reduced-motion`. Genérico: otro programa = otra entrada en `config/mera.php`. 65 pruebas en verde. **Pendiente: autorización de commit y push; tras el `pull` en el servidor: `npm ci && npm run build`, `php artisan config:cache && php artisan route:cache && php artisan view:cache`.** |

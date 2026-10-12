@@ -7,6 +7,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-| Públicas:   /, /cursos (catálogo)
+| Públicas:   /, /cursos (catálogo), /<programa> (config mera.programs)
 | auth:       perfil propio (cualquier usuario autenticado)
 | panel:      super admin | admin  → dashboard, usuarios, categorías, cursos
 | super:      super admin          → roles, permisos, historial
@@ -25,6 +26,11 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/login')->name('home');
 
 Route::get('/cursos', [CatalogController::class, 'index'])->name('catalog.index');
+
+// Programas públicos (config/mera.php → programs), p. ej. /proceso-de-manipulacion-de-alimentos
+Route::get('/{program}', [ProgramController::class, 'show'])
+    ->whereIn('program', array_keys(config('mera.programs', [])))
+    ->name('programs.show');
 
 $panelRoles = 'role:'.implode('|', User::PANEL_ROLES);
 

@@ -71,4 +71,38 @@ return [
         'courses_cache_minutes' => (int) env('MERA_API_COURSES_CACHE_MINUTES', 10),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Programas: páginas públicas que agrupan varios cursos en un recorrido
+    |--------------------------------------------------------------------------
+    | La clave es la URL pública (cursos.meracorporation.com/<clave>).
+    | Cada módulo se resuelve por el SLUG del curso en la BD: si se vuelve a subir el ZIP
+    | (carpeta nueva), el enlace sigue funcionando. "fallback_path" solo se usa si el curso
+    | no existe en la BD (p. ej. en un entorno local sin esos registros).
+    | "start" es el ancla opcional de inicio dentro del curso (Articulate: "#/slide/…").
+    | Para agregar otro programa basta con otra entrada aquí (no requiere código nuevo).
+    */
+    'programs' => [
+
+        'proceso-de-manipulacion-de-alimentos' => [
+            'title' => 'Proceso de manipulación de alimentos',
+            'eyebrow' => 'Curso en línea',
+            'lead' => 'Aprende paso a paso cómo cuidar los alimentos que servimos. Hacer las cosas bien es parte de lo que somos.',
+            'description' => 'Curso en línea de MERA: 5 módulos sobre el manejo higiénico de alimentos, con evaluación final.',
+            'modules' => [
+                ['title' => 'Recepción y almacenamiento operativo', 'course_slug' => 'modulo-1-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-1-manejo-higienico-latam', 'start' => '#/slide/saz3GISUgN'],
+                ['title' => 'Proceso en cocina: del congelador a la mesa', 'course_slug' => 'modulo-2-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-2-manejo-higienico-latam', 'start' => '#/slide/WL8kWAa7Y'],
+                ['title' => 'Control químico y verificación de la desinfección', 'course_slug' => 'modulo-3-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-3-manejo-higienico-latam', 'start' => '#/slide/DNs52HQKF'],
+                ['title' => 'Normativa de seguridad, agua y químicos', 'course_slug' => 'modulo-4-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-4-manejo-higienico-latam', 'start' => '#/slide/8BnH6wHF8'],
+                ['title' => 'Exclusión de plagas y manejo integral de residuos', 'course_slug' => 'modulo-5-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-5-manejo-higienico-latam', 'start' => '#/slide/g5SbzQZUF'],
+            ],
+            'actions' => [
+                ['type' => 'evaluation', 'title' => 'Evaluación', 'text' => 'Muestra lo que aprendiste. Contesta con calma.', 'button' => 'Hacer evaluación', 'url' => 'https://forms.cloud.microsoft/r/3e12BETYuE?origin=lprLink'],
+                ['type' => 'survey', 'title' => 'Encuesta', 'text' => 'Cuéntanos qué te pareció el curso. Tu opinión nos ayuda a mejorar.', 'button' => 'Contestar encuesta', 'url' => 'https://forms.cloud.microsoft/r/6qpNWit2U3?origin=lprLink'],
+            ],
+            'values' => ['Pasión', 'Integridad', 'Excelencia', 'Respeto'],
+        ],
+
+    ],
+
 ];
