@@ -92,6 +92,9 @@ class CourseStorage
 
         File::ensureDirectoryExists($this->storageRoot(), 0755);
         File::put($path, $this->htaccessContents());
+        // El servidor web (LiteSpeed lee los estáticos con otro usuario) debe poder leerlo:
+        // con un umask restrictivo (p. ej. 077) quedaba en 600 y se ignoraba en silencio.
+        @chmod($path, 0644);
 
         return true;
     }
