@@ -30,7 +30,6 @@
                 name="current_password"
                 type="password"
                 class="form-control mera-input"
-                placeholder="Contraseña actual"
                 autocomplete="current-password" />
 
             <x-input-error :messages="$errors->updatePassword->get('current_password')" />
@@ -50,7 +49,7 @@
                 name="password"
                 type="password"
                 class="form-control mera-input"
-                placeholder="Nueva contraseña"
+                placeholder="Mínimo 8 caracteres, con letras y números"
                 autocomplete="new-password" />
 
             <x-input-error :messages="$errors->updatePassword->get('password')" />
@@ -70,12 +69,18 @@
                 name="password_confirmation"
                 type="password"
                 class="form-control mera-input"
-                placeholder="Confirmar contraseña"
+                placeholder="Escríbela de nuevo"
                 autocomplete="new-password" />
 
             <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" />
 
         </div>
+
+        {{-- Auditoría UI 2026-10-14 (#15): mostrar u ocultar las contraseñas de este formulario. --}}
+        <label class="mera-show-passwords">
+            <input type="checkbox" class="form-check-input" data-show-passwords>
+            Mostrar contraseñas
+        </label>
 
 
 

@@ -51,7 +51,7 @@
                         <td data-label="Acciones" class="text-center text-nowrap">
                             @if ($canRestore)
                             <form method="POST" action="{{ route('trash.restore', $course) }}" class="d-inline"
-                                data-confirm="¿Restaurar «{{ $course->name }}»?"
+                                data-confirm="¿Restaurar el módulo?" data-confirm-strong="{{ $course->name }}" data-confirm-tone="info"
                                 data-confirm-detail="Vuelve a la lista de módulos y su link funciona de nuevo. Si estaba en una carpeta, regresa al final de su idioma."
                                 data-confirm-button="Restaurar">
                                 @csrf
@@ -66,7 +66,11 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center py-4">La papelera está vacía.</td>
+                        <td colspan="5" class="mera-empty-state">
+                            <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                            <strong>La papelera está vacía</strong>
+                            <span>Cuando se elimine un módulo aparecerá aquí durante {{ $days }} días, por si hay que restaurarlo.</span>
+                        </td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -77,6 +81,6 @@
 </div>
 
 <p class="small text-muted mt-2">
-    Los módulos que se borraron antes de que existiera esta pantalla no aparecen aquí: sus archivos solo se pueden recuperar desde el servidor.
+    ¿Buscas un módulo que se borró antes del 14 de octubre de 2026? No aparece aquí: pide ayuda a soporte para recuperarlo.
 </p>
 @endsection

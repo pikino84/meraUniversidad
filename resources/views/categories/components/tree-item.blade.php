@@ -39,7 +39,8 @@
                     @include('partials.delete-button', [
                         'action' => route('categories.destroy', $category),
                         'label' => "Eliminar categoría {$category->name}",
-                        'confirm' => "¿Eliminar la categoría «{$category->name}»?",
+                        'confirm' => '¿Eliminar la categoría?',
+                        'strong' => $category->name,
                         'detail' => $detail,
                     ])
                 </div>

@@ -29,7 +29,7 @@ class CourseController extends Controller
         $courses = Course::query()
             ->with(['category:id,name,parent_id', 'group:id,name,slug'])
             ->search($request->input('search'))
-            ->inCategoryTree($request->input('category_id'))
+            ->when(config('mera.categories_enabled'), fn ($q) => $q->inCategoryTree($request->input('category_id')))
             ->when($request->input('carpeta') === 'sin', fn ($q) => $q->whereNull('course_group_id'))
             ->when(ctype_digit((string) $request->input('carpeta')), fn ($q) => $q->where('course_group_id', (int) $request->input('carpeta')))
             // U23: orden elegible (recientes por defecto).
@@ -46,7 +46,8 @@ class CourseController extends Controller
             'courses' => $courses,
             'categories' => Category::tree(),
             'categoryPaths' => Category::pathMap(),
-            'filtering' => $request->filled('search') || $request->filled('category_id') || $request->filled('carpeta'),
+            'filtering' => $request->filled('search') || $request->filled('carpeta')
+                || (config('mera.categories_enabled') && $request->filled('category_id')),
             'groups' => CourseGroup::orderBy('position')->orderBy('name')->get(['id', 'name']),
             // F1: archivos faltantes (solo lectura) de los cursos de esta página.
             'missing' => $courses->getCollection()->mapWithKeys(fn (Course $c) => [$c->id => $storage->missingFiles($c->path, $c->cover_image)])->all(),

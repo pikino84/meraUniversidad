@@ -7,10 +7,11 @@
 <p class="text-muted mb-4">Explora los cursos disponibles.</p>
 
 <form method="GET" action="{{ route('catalog.index') }}" role="search" class="row g-2 align-items-end mb-4">
-    <div class="col-md-6">
+    <div class="{{ $withCategories ? 'col-md-6' : 'col-md-9' }}">
         <label for="catalog-search" class="form-label">Buscar</label>
         <input id="catalog-search" type="search" name="search" class="form-control mera-input" value="{{ request('search') }}" placeholder="Nombre del curso…">
     </div>
+    @if ($withCategories)
     <div class="col-md-4">
         <label for="catalog-category" class="form-label">Categoría</label>
         @include('categories.components.select', [
@@ -21,10 +22,11 @@
             'placeholder' => 'Todas',
         ])
     </div>
-    <div class="col-md-2 d-flex gap-2">
+    @endif
+    <div class="{{ $withCategories ? 'col-md-2' : 'col-md-3' }} d-flex gap-2">
         <button class="btn mera-btn-primary flex-fill">Buscar</button>
         @if (request()->hasAny(['search', 'category_id']))
-        <a href="{{ route('catalog.index') }}" class="btn btn-outline-secondary" aria-label="Limpiar filtros">✕</a>
+        <a href="{{ route('catalog.index') }}" class="btn mera-btn-cancel" aria-label="Limpiar búsqueda" title="Limpiar búsqueda"><i class="fa fa-times" aria-hidden="true"></i></a>
         @endif
     </div>
 </form>
@@ -41,7 +43,7 @@
     <article class="mera-catalog-card">
         @include('partials.cover', ['width' => 640, 'height' => 360])
         <div class="mera-catalog-card-body">
-            @if ($course->category_id && isset($categoryPaths[$course->category_id]))
+            @if ($withCategories && $course->category_id && isset($categoryPaths[$course->category_id]))
             <span class="mera-badge align-self-start">{{ $categoryPaths[$course->category_id] }}</span>
             @endif
             <h2>

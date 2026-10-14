@@ -19,6 +19,8 @@ class CategoryAndCatalogTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Las categorías están ocultas por defecto; aquí se prueba su funcionamiento cuando se activan.
+        config(['mera.categories_enabled' => true]);
         $this->admin = $this->userWithRole(User::ROLE_ADMIN);
     }
 

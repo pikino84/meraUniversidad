@@ -14,7 +14,7 @@
         <form method="GET" action="{{ route('users.index') }}" role="search" class="row g-2 align-items-end">
             <div class="col-md-9">
                 <label for="user-search" class="form-label">Buscar por nombre o correo</label>
-                <input id="user-search" type="search" name="search" value="{{ $search }}" class="form-control mera-input" placeholder="Ej. juan@meracorporation.com">
+                <input id="user-search" type="search" name="search" value="{{ $search }}" class="form-control mera-input" placeholder="Nombre o correo">
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <button class="btn mera-btn-primary flex-fill"><i class="fa fa-search" aria-hidden="true"></i> Buscar</button>
@@ -66,8 +66,8 @@
                                 <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                             </a>
                             <form method="POST" action="{{ route('users.invite', $user) }}" class="d-inline"
-                                data-confirm="¿Enviar a {{ $user->email }} un link para cambiar su contraseña?"
-                                data-confirm-detail="Su contraseña actual sigue funcionando hasta que use el link."
+                                data-confirm="¿Enviar link para cambiar la contraseña?" data-confirm-strong="{{ $user->email }}" data-confirm-tone="info"
+                                data-confirm-detail="Le llegará un correo con el link. Su contraseña actual sigue funcionando hasta que lo use."
                                 data-confirm-button="Enviar link">
                                 @csrf
                                 <button type="submit" class="mera-action-btn mera-add-btn" title="Enviar link de contraseña"
@@ -80,7 +80,8 @@
                             @include('partials.delete-button', [
                                 'action' => route('users.destroy', $user),
                                 'label' => "Eliminar usuario {$user->name}",
-                                'confirm' => "¿Eliminar a {$user->name}?",
+                                'confirm' => '¿Eliminar al usuario?',
+                                'strong' => "{$user->name} · {$user->email}",
                                 'detail' => 'Perderá el acceso al sistema. Esta acción no se puede deshacer.',
                             ])
                             @endcan

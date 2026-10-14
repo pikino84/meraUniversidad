@@ -8,6 +8,14 @@
 
 return [
 
+    // Categorías (2026-10-14): OCULTAS en el panel y en el catálogo /cursos mientras Capacitación
+    // decide si las quiere y cómo (se preguntará por correo; CLAUDE.md §6). Los datos y la API
+    // /api/courses no cambian (el WordPress muestra el nombre de la categoría).
+    'categories_enabled' => (bool) env('MERA_CATEGORIES_ENABLED', false),
+
+    // Módulos por página en el catálogo público /cursos.
+    'catalog_per_page' => (int) env('MERA_CATALOG_PER_PAGE', 12),
+
     // Las fechas se GUARDAN en UTC (config/app.php) y se MUESTRAN en esta zona.
     // No cambiar app.timezone: los registros existentes están en UTC y se mezclarían.
     'display_timezone' => env('MERA_DISPLAY_TIMEZONE', 'America/Mexico_City'),

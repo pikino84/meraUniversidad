@@ -87,7 +87,8 @@ class ActivityLogController extends Controller
 
         return view('activity_logs.index', [
             'logs' => $logs,
-            'logNames' => self::LOGS,
+            // Con las categorías ocultas no se ofrece su filtro (su historial se conserva).
+            'logNames' => config('mera.categories_enabled') ? self::LOGS : array_diff_key(self::LOGS, ['categorias' => true]),
             'users' => $users,
             'filters' => $filters,
             'describe' => fn (Activity $log) => $this->describe($log),

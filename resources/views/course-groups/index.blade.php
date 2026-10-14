@@ -68,7 +68,8 @@
             @include('partials.delete-button', [
                 'action' => route('course-groups.destroy', $group),
                 'label' => "Eliminar carpeta {$group->name}",
-                'confirm' => "¿Eliminar la carpeta «{$group->name}»?",
+                'confirm' => '¿Eliminar la carpeta?',
+                'strong' => $group->name,
                 'detail' => 'Sus '.($group->es_count + $group->en_count).' módulos NO se borran: regresan a «Sin carpeta» y sus links siguen funcionando.',
             ])
         </div>

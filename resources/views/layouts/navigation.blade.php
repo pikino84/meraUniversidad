@@ -2,45 +2,48 @@
     $isPanelUser = auth()->user()->hasAnyRole(\App\Models\User::PANEL_ROLES);
     $isSuperAdmin = auth()->user()->isSuperAdmin();
 
-    // [ruta, patrón activo, icono, texto, visible]
-    $items = [
-        ['dashboard', 'dashboard', 'fas fa-tachometer-alt', 'Dashboard', $isPanelUser],
-        ['courses.index', 'courses.*', 'fas fa-book', 'Módulos', $isPanelUser],
-        ['course-groups.index', 'course-groups.*', 'fas fa-folder', 'Carpetas de curso', $isPanelUser],
-        ['categories.index', 'categories.*', 'fas fa-tags', 'Categorías', $isPanelUser],
-        ['users.index', 'users.*', 'fas fa-users', 'Usuarios', $isPanelUser],
-        ['roles.index', 'roles.*', 'fas fa-id-badge', 'Roles', $isSuperAdmin],
-        ['permissions.index', 'permissions.*', 'fas fa-key', 'Permisos', $isSuperAdmin],
-        ['activity.logs.index', 'activity.logs.*', 'fas fa-history', 'Historial', $isSuperAdmin],
-        ['trash.index', 'trash.*', 'fas fa-trash-alt', 'Papelera', $isSuperAdmin],
+    // Secciones del menú: [título, [[ruta, patrón activo, icono, texto, visible], …]]
+    $sections = [
+        ['Contenido', [
+            ['dashboard', 'dashboard', 'fas fa-tachometer-alt', 'Dashboard', $isPanelUser],
+            ['courses.index', 'courses.*', 'fas fa-book', 'Módulos', $isPanelUser],
+            ['course-groups.index', 'course-groups.*', 'fas fa-folder', 'Carpetas de curso', $isPanelUser],
+            ['categories.index', 'categories.*', 'fas fa-tags', 'Categorías', $isPanelUser && config('mera.categories_enabled')],
+        ]],
+        ['Administración', [
+            ['users.index', 'users.*', 'fas fa-users', 'Usuarios', $isPanelUser],
+            ['roles.index', 'roles.*', 'fas fa-id-badge', 'Roles', $isSuperAdmin],
+            ['permissions.index', 'permissions.*', 'fas fa-key', 'Permisos', $isSuperAdmin],
+            ['activity.logs.index', 'activity.logs.*', 'fas fa-history', 'Historial', $isSuperAdmin],
+            ['trash.index', 'trash.*', 'fas fa-trash-alt', 'Papelera', $isSuperAdmin],
+        ]],
         // U20: visible para todos, así el menú conserva el elemento activo al entrar a Mi perfil.
-        ['profile.edit', 'profile.*', 'fas fa-user', 'Mi perfil', true],
+        ['Cuenta', [
+            ['profile.edit', 'profile.*', 'fas fa-user', 'Mi perfil', true],
+        ]],
     ];
-
-    $items = array_filter($items, fn ($item) => $item[4]);
 @endphp
-<nav class="pcoded-navbar" aria-label="Menú principal">
+{{-- Menú lateral: lista plana por secciones (antes era un acordeón "Administración" que, al
+     pulsarlo, ocultaba todas las opciones). Auditoría UI 2026-10-14. --}}
+<nav class="pcoded-navbar mera-sidebar" aria-label="Menú principal">
     <div class="nav-list">
         <div class="pcoded-inner-navbar main-menu">
+            @foreach ($sections as [$heading, $items])
+            @php $items = array_filter($items, fn ($item) => $item[4]); @endphp
+            @continue($items === [])
+            <div class="pcoded-navigatio-lavel mera-nav-label">{{ $heading }}</div>
             <ul class="pcoded-item pcoded-left-item">
-                <li class="pcoded-hasmenu {{ menuActive(array_column($items, 1)) }}">
-                    <a href="javascript:void(0)" class="waves-effect waves-dark">
-                        <span class="pcoded-micon"><i class="feather icon-sidebar" aria-hidden="true"></i></span>
-                        <span class="pcoded-mtext">Administración</span>
+                @foreach ($items as [$route, $pattern, $icon, $label])
+                @php $active = request()->routeIs($pattern); @endphp
+                <li class="{{ $active ? 'active' : '' }}">
+                    <a href="{{ route($route) }}" @if ($active) aria-current="page" @endif>
+                        <span class="pcoded-micon"><i class="{{ $icon }}" aria-hidden="true"></i></span>
+                        <span class="pcoded-mtext">{{ $label }}</span>
                     </a>
-                    <ul class="pcoded-submenu">
-                        @foreach ($items as [$route, $pattern, $icon, $label])
-                        <li class="{{ request()->routeIs($pattern) ? 'active' : '' }}">
-                            <a href="{{ route($route) }}" class="waves-effect waves-dark"
-                                @if (request()->routeIs($pattern)) aria-current="page" @endif>
-                                <span class="pcoded-micon"><i class="{{ $icon }}" aria-hidden="true"></i></span>
-                                <span class="pcoded-mtext">{{ $label }}</span>
-                            </a>
-                        </li>
-                        @endforeach
-                    </ul>
                 </li>
+                @endforeach
             </ul>
+            @endforeach
         </div>
     </div>
 </nav>

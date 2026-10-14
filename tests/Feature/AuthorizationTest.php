@@ -116,6 +116,8 @@ class AuthorizationTest extends TestCase
     {
         $this->setUpCourseStorage();
 
+        config(['mera.categories_enabled' => true]);
+
         foreach (['dashboard', 'courses.index', 'courses.create', 'categories.index', 'categories.create', 'users.index', 'users.create'] as $route) {
             $this->actingAs($this->admin)->get(route($route))->assertOk();
         }

@@ -101,11 +101,11 @@
                         <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                     </a>
                     <form method="POST" action="{{ route('courses.ungroup', $module) }}" class="d-inline"
-                        data-confirm="¿Quitar «{{ $module->name }}» de esta carpeta?"
+                        data-confirm="¿Quitar el módulo de esta carpeta?" data-confirm-strong="{{ $module->name }}" data-confirm-tone="info"
                         data-confirm-detail="El módulo no se borra: regresa a «Sin carpeta» y su link sigue igual."
                         data-confirm-button="Quitar">
                         @csrf @method('DELETE')
-                        <button class="mera-action-btn mera-delete-btn" title="Quitar de la carpeta" aria-label="Quitar {{ $module->name }} de la carpeta">
+                        <button class="mera-action-btn mera-neutral-btn" title="Quitar de la carpeta" aria-label="Quitar {{ $module->name }} de la carpeta">
                             <i class="fas fa-unlink" aria-hidden="true"></i>
                         </button>
                     </form>

@@ -16,7 +16,7 @@
         </div>
 
         <form method="POST" action="{{ route('course-groups.publish', $group) }}"
-            data-confirm="{{ $published ? '¿Apagar la página pública?' : '¿Publicar la página?' }}"
+            data-confirm="{{ $published ? '¿Apagar la página pública?' : '¿Publicar la página?' }}" data-confirm-tone="info"
             data-confirm-detail="{{ $published ? 'Quien tenga el link verá «no encontrado» hasta que la vuelvas a publicar.' : 'Cualquier persona con el link podrá ver el curso y abrir sus módulos.' }}"
             data-confirm-button="{{ $published ? 'Apagar' : 'Publicar' }}">
             @csrf @method('PATCH')

@@ -18,7 +18,8 @@
 <div class="card mera-table-card mb-3 mera-filters" id="course-filters">
     <div class="card-body">
         <form method="GET" action="{{ route('courses.index') }}" role="search" aria-label="Filtrar módulos">
-            <div class="row g-2 align-items-end">
+            {{-- Auditoría UI 2026-10-14 (#5): grid con ancho mínimo por filtro (los selects ya no se truncan). --}}
+            <div class="mera-filter-grid {{ config('mera.categories_enabled') ? '' : 'mera-filter-grid--no-category' }}">
                 <div class="col-md-6 col-xl-3">
                     <div class="form-group mera-form-group mb-0">
                         <label for="course-search">Buscar módulo</label>
@@ -38,6 +39,7 @@
                         </select>
                     </div>
                 </div>
+                @if (config('mera.categories_enabled'))
                 <div class="col-md-6 col-xl-2">
                     <div class="form-group mera-form-group mb-0">
                         <label for="course-filter-category">Categoría</label>
@@ -46,10 +48,11 @@
                             'id' => 'course-filter-category',
                             'categories' => $categories,
                             'selected' => request('category_id'),
-                            'placeholder' => 'Todas las categorías',
+                            'placeholder' => 'Todas',
                         ])
                     </div>
                 </div>
+                @endif
                 <div class="col-md-6 col-xl-2">
                     <div class="form-group mera-form-group mb-0">
                         <label for="course-sort">Ordenar por</label>
@@ -85,7 +88,7 @@
     @elseif (ctype_digit((string) request('carpeta')) && ($chip = $groups->firstWhere('id', (int) request('carpeta'))))
     <span class="mera-filter-chip"><i class="fas fa-folder" aria-hidden="true"></i> {{ $chip->name }}</span>
     @endif
-    @if (request('category_id') && isset($categoryPaths[(int) request('category_id')]))
+    @if (config('mera.categories_enabled') && request('category_id') && isset($categoryPaths[(int) request('category_id')]))
     <span class="mera-filter-chip">
         <i class="fas fa-tag" aria-hidden="true"></i>
         {{ $categoryPaths[(int) request('category_id')] }} (incluye subcategorías)
@@ -125,12 +128,14 @@
                         <th scope="col" class="mera-col-check">
                             <input type="checkbox" class="form-check-input" data-bulk-all aria-label="Seleccionar todos los de esta página">
                         </th>
-                        <th scope="col">Portada</th>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">Carpeta · Idioma</th>
+                        <th scope="col" class="d-none d-xxl-table-cell">Portada</th>
+                        <th scope="col" class="mera-col-name">Nombre</th>
+                        <th scope="col" class="mera-nowrap">Carpeta · Idioma</th>
+                        @if (config('mera.categories_enabled'))
                         <th scope="col" class="d-none d-xl-table-cell">Categoría</th>
+                        @endif
                         <th scope="col" class="d-none d-lg-table-cell">Actualizado</th>
-                        <th scope="col" class="text-center">Acciones</th>
+                        <th scope="col" class="text-center mera-col-actions">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,21 +145,23 @@
                             <input type="checkbox" class="form-check-input" value="{{ $course->id }}" data-bulk-item
                                 aria-label="Seleccionar {{ $course->name }}">
                         </td>
-                        <td>
-                            @include('partials.cover', ['class' => 'img-thumbnail', 'width' => 100, 'height' => 56])
+                        <td class="d-none d-xxl-table-cell">
+                            @include('partials.cover', ['class' => 'img-thumbnail', 'width' => 96, 'height' => 54])
                         </td>
-                        <td>
+                        <td class="mera-col-name">
                             <div class="user-name">{{ $course->name }}</div>
                             @include('courses._missing-badge')
                         </td>
                         <td>@include('courses._group-badge')</td>
-                        <td class="d-none d-xl-table-cell">@include('courses._category-badge')</td>
+                        @if (config('mera.categories_enabled'))
+                        <td class="d-none d-xl-table-cell mera-nowrap">@include('courses._category-badge')</td>
+                        @endif
                         <td class="d-none d-lg-table-cell mera-nowrap">
                             <time datetime="{{ $course->updated_at?->toIso8601String() }}" title="{{ $course->updated_at?->timezone(config('mera.display_timezone'))->format('d/m/Y H:i') }}">
                                 {{ $course->updated_at?->timezone(config('mera.display_timezone'))->format('d/m/Y') }}
                             </time>
                         </td>
-                        <td class="text-center text-nowrap">
+                        <td class="text-center text-nowrap mera-col-actions">
                             @include('courses._actions')
                         </td>
                     </tr>
@@ -191,10 +198,12 @@
                 <div class="mera-course-info">
                     <strong>Carpeta:</strong> @include('courses._group-badge')
                 </div>
+                @if (config('mera.categories_enabled'))
                 <div class="mera-course-info">
                     <strong>Categoría:</strong>
                     @include('courses._category-badge')
                 </div>
+                @endif
                 <div class="mera-course-actions">
                     @include('courses._actions')
                 </div>

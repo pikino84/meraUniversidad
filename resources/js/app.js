@@ -9,7 +9,7 @@ import { initUploadForms } from './modules/upload';
 import { initProgramProgress } from './modules/program-progress';
 import { initCourseGroups } from './modules/course-groups';
 import { initSortableModules } from './modules/sortable-modules';
-import { initUnsavedWarning } from './modules/unsaved';
+import { initShowPasswords, initUnsavedWarning } from './modules/unsaved';
 import { initPanelTemplate } from './modules/panel-template';
 
 window.Alpine = Alpine;
@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCourseGroups();
     initSortableModules();
     initUnsavedWarning();
+    initShowPasswords();
     initFiltersToggle();
     initPanelTemplate();
     initMobileMenu();

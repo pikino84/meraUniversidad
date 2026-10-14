@@ -838,7 +838,7 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 }
 
 /* Responsive */
-@media(max-width:768px) {
+@media(max-width: 767.98px) {
     .mera-page-header {
         padding: 20px;
     }
@@ -1091,7 +1091,7 @@ select.mera-input {
 }
 
 /* Responsive */
-@media(max-width:768px) {
+@media(max-width: 767.98px) {
     .mera-form-actions {
         flex-direction: column;
     }
@@ -1418,7 +1418,7 @@ body .pcoded[pcoded-device-type="tablet"][vertical-nav-type="expanded"] .pcoded-
 }
 
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 991.98px) {
 
 
     .mera-table-desktop {
@@ -1726,7 +1726,7 @@ body .pcoded[pcoded-device-type="tablet"][vertical-nav-type="expanded"] .pcoded-
 
 
 
-@media(max-width:768px) {
+@media(max-width: 767.98px) {
 
     .mera-dashboard-card {
 
@@ -1990,7 +1990,7 @@ textarea.mera-input {
 }
 
 /* ---------- Tablas → tarjetas en móvil (usuarios, roles, permisos) ---------- */
-@media (max-width: 768px) {
+@media (max-width: 991.98px) {
     .mera-table-stack thead {
         display: none;
     }
@@ -3238,5 +3238,619 @@ textarea.mera-input {
     .mera-catalog-card:hover {
         transition: none;
         transform: none;
+    }
+}
+
+/* =====================================================================
+   AUDITORÍA UI/UX 2026-10-14 (cursos.meracorporation.com)
+   Va al final a propósito: corrige reglas anteriores de la plantilla y del tema.
+   ===================================================================== */
+:root {
+    --mera-text-muted: #5F6368;      /* ≈ 6.3:1 sobre blanco (antes #888 / #8A8C91, ≈ 3.4:1) */
+    --mera-danger: #C62828;
+    --mera-danger-hover: #A61F1F;
+    --mera-green-soft: #E3F0D0;
+    --mera-green-tint: #EEF5EF;
+}
+
+/* #6 Texto secundario con contraste AA */
+.text-muted,
+.mera-user-role,
+.mera-dashboard-card span,
+.mera-tree-count,
+.mera-table-stack td[data-label]::before {
+    color: var(--mera-text-muted) !important;
+}
+
+/* ---------- #1-#3 Modales (SweetAlert) ---------- */
+.swal-modal {
+    max-width: calc(100vw - 32px);
+    border-radius: 18px;
+}
+
+.swal-title,
+.swal-text,
+.mera-swal-strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.swal-title {
+    font-size: clamp(18px, 4.5vw, 24px);
+    color: #024D25;
+}
+
+.mera-swal-body {
+    padding: 0 8px;
+    color: #3B4A40;
+    text-align: center;
+}
+
+.mera-swal-strong {
+    display: block;
+    margin-bottom: .5rem;
+    font-weight: 700;
+    color: #024D25;
+}
+
+.mera-swal-body p {
+    margin: 0;
+    font-size: 15px;
+}
+
+.swal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.swal-button-container {
+    margin: 0;
+}
+
+.swal-button {
+    min-height: 44px;
+    border-radius: 999px;
+    padding: 10px 24px;
+    font-weight: 700;
+}
+
+/* Cancelar: secundario en contorno (antes #555 sobre verde, 1.35:1) */
+.swal-button.swal-button--cancel,
+.swal-button.mera-swal-cancel {
+    background-color: #fff !important;
+    color: #024D25 !important;
+    border: 1.5px solid #024D25;
+}
+
+.swal-button.swal-button--cancel:hover,
+.swal-button.mera-swal-cancel:hover {
+    background-color: var(--mera-green-tint) !important;
+}
+
+/* Confirmar: primario verde; eliminar: rojo */
+.swal-button.swal-button--confirm,
+.swal-button.mera-swal-confirm {
+    background-color: #024D25 !important;
+    color: #fff !important;
+}
+
+.swal-button.swal-button--danger,
+.swal-button.mera-swal-confirm-danger {
+    background-color: var(--mera-danger) !important;
+    color: #fff !important;
+}
+
+.swal-button.swal-button--danger:hover,
+.swal-button.mera-swal-confirm-danger:hover {
+    background-color: var(--mera-danger-hover) !important;
+}
+
+.swal-button:focus,
+.swal-button:focus-visible {
+    outline: 3px solid #93C01F;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+/* ---------- #4 Jerarquía de botones ----------
+   Primario: verde oscuro · Secundario: contorno · Acento (CTA "Nuevo …", buscar): lima · Peligro: rojo */
+.mera-btn-save {
+    background: #024D25;
+    color: #fff !important;
+    min-height: 44px;
+}
+
+.mera-btn-save:hover,
+.mera-btn-save:focus {
+    background: #55882B;
+    color: #fff !important;
+}
+
+.mera-btn-cancel,
+.mera-btn-outline {
+    background: #fff;
+    color: #024D25 !important;
+    border: 1.5px solid #024D25;
+    border-radius: 30px;
+    font-weight: 700;
+    min-height: 44px;
+}
+
+.mera-btn-cancel:hover,
+.mera-btn-cancel:focus,
+.mera-btn-outline:hover,
+.mera-btn-outline:focus {
+    background: var(--mera-green-tint);
+    color: #024D25 !important;
+    border-color: #024D25;
+}
+
+.mera-btn-outline.btn-sm {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 18px;
+}
+
+.mera-btn-primary:hover {
+    background: #A9D13A;
+    box-shadow: 0 10px 22px rgba(147, 192, 31, .4);
+}
+
+.mera-delete-btn {
+    background: var(--mera-danger);
+    color: #fff;
+}
+
+.mera-delete-btn:hover,
+.mera-delete-btn:focus {
+    background: var(--mera-danger-hover);
+    color: #fff;
+}
+
+.mera-neutral-btn {
+    background: #024D25;
+    color: #fff;
+}
+
+.mera-neutral-btn:hover,
+.mera-neutral-btn:focus {
+    background: #55882B;
+    color: #fff;
+}
+
+/* #13 Objetivos táctiles */
+.mera-action-btn {
+    width: 40px;
+    height: 40px;
+}
+
+.mera-view-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 6px 20px;
+}
+
+/* ---------- #12 / #8 Encabezados de página unificados ---------- */
+.mera-page-header,
+.mera-form-header {
+    background: linear-gradient(135deg, #024D25 0%, #2E6B26 55%, #55882B 100%);
+}
+
+.mera-subtitle,
+.mera-form-header span {
+    color: rgba(255, 255, 255, .92);
+}
+
+.mera-form-card {
+    border-radius: 18px;
+}
+
+.mera-form-header {
+    gap: 18px;
+    padding: 22px 30px;
+}
+
+.mera-form-header h1,
+.mera-form-header .h5 {
+    font-size: 28px;
+}
+
+/* El ícono circular se reemplaza por la misma barra lima de los listados */
+.mera-header-icon {
+    flex: 0 0 6px;
+    width: 6px;
+    height: 45px;
+    border-radius: 10px;
+    background: #93C01F;
+    box-shadow: none;
+    font-size: 0;
+}
+
+.mera-header-icon i {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .mera-form-header h1,
+    .mera-form-header .h5 {
+        font-size: 22px;
+    }
+
+    .mera-form-header {
+        padding: 20px;
+    }
+}
+
+/* ---------- #9 Encabezado de tabla continuo (antes un degradado por celda) ---------- */
+.mera-table thead tr {
+    background: linear-gradient(90deg, #024D25, #55882B);
+}
+
+.mera-table thead th {
+    background: transparent;
+}
+
+/* ---------- #5 Tabla y filtros de Módulos ---------- */
+.mera-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .75rem;
+    align-items: end;
+}
+
+.mera-filter-grid > [class*="col-"] {
+    width: auto;
+    max-width: none;
+    padding: 0;
+}
+
+.mera-table .mera-col-name {
+    min-width: 260px;
+}
+
+.mera-table .mera-col-actions,
+.mera-table .mera-col-check {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.mera-table th.mera-nowrap,
+.mera-table td.mera-nowrap {
+    white-space: nowrap;
+}
+
+.mera-table .img-thumbnail {
+    width: 96px;
+    height: 54px;
+    padding: 0;
+    border-radius: 8px;
+    object-fit: cover;
+    opacity: 1;
+}
+
+/* ---------- #10 / #13 Tarjetas del dashboard con la misma altura ---------- */
+.mera-dashboard-link {
+    display: block;
+    height: calc(100% - 25px);
+    margin-bottom: 25px;
+}
+
+.mera-dashboard-link .mera-dashboard-card {
+    height: 100%;
+    margin-bottom: 0;
+}
+
+.mera-dashboard-note {
+    display: block;
+    margin-top: 2px;
+    color: var(--mera-text-muted);
+    font-size: 12px;
+}
+
+/* ---------- #16 Nombre técnico del rol ---------- */
+.mera-code-badge {
+    display: inline-block;
+    margin-left: .35rem;
+    padding: 1px 8px;
+    border-radius: 6px;
+    background: var(--mera-green-soft);
+    color: #024D25;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
+    font-size: 12px;
+}
+
+/* ---------- #17 Avisos plegables, estados vacíos, mostrar contraseñas ---------- */
+.mera-notice {
+    padding: .85rem 1.1rem;
+    border-radius: 14px;
+    background: #EAF5FB;
+    color: #0F3D52;
+}
+
+.mera-notice summary {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    min-height: 32px;
+    cursor: pointer;
+}
+
+.mera-notice[open] summary {
+    margin-bottom: .4rem;
+}
+
+.mera-empty-state {
+    padding: 2.5rem 1rem !important;
+    text-align: center !important;
+    color: var(--mera-text-muted) !important;
+    background: #fff !important;
+}
+
+.mera-empty-state i {
+    display: block;
+    margin-bottom: .6rem;
+    font-size: 28px;
+    color: #93C01F;
+}
+
+.mera-empty-state strong {
+    display: block;
+    color: #024D25;
+    font-size: 16px;
+}
+
+.mera-show-passwords {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 44px;
+    color: #024D25;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* #14 Inputs en móvil: menos relleno lateral para que quepa el texto */
+@media (max-width: 575.98px) {
+    .mera-input {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+}
+
+/* ---------- Barra superior y menú lateral (#11 y reporte del usuario) ---------- */
+/* El bloque del logo traía su propia sombra (78 px) bajo una barra de 80 px: se veía una
+   línea desfasada solo debajo del logo. Ahora la barra superior es una sola pieza. */
+.header-navbar .navbar-wrapper .navbar-logo {
+    box-shadow: none !important;
+    min-height: 80px;
+}
+
+.mera-sidebar .nav-list {
+    box-shadow: none;
+    border-right: 1px solid #E3ECE6;
+}
+
+.mera-sidebar .pcoded-inner-navbar {
+    padding-top: 8px;
+}
+
+.mera-nav-label {
+    padding: 16px 24px 6px;
+    color: var(--mera-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.pcoded .pcoded-navbar.mera-sidebar .pcoded-item {
+    margin: 0;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar.mera-sidebar .pcoded-item > li > a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar.mera-sidebar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item > li:hover > a {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    margin: 2px 12px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: transparent;
+    color: #024D25;
+    line-height: 1.2;
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar.mera-sidebar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item > li:hover > a {
+    background: var(--mera-green-tint);
+}
+
+.pcoded[theme-layout="vertical"] .pcoded-navbar.mera-sidebar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item > li.active > a,
+.pcoded[theme-layout="vertical"] .pcoded-navbar.mera-sidebar[navbar-theme="theme1"][active-item-theme="theme1"] .pcoded-item > li.active:hover > a {
+    background: var(--mera-green-soft);
+    color: #024D25;
+    font-weight: 700;
+    box-shadow: inset 4px 0 0 #93C01F;
+}
+
+.pcoded .pcoded-navbar.mera-sidebar .pcoded-item > li > a .pcoded-micon {
+    display: inline-flex;
+    flex: 0 0 22px;
+    justify-content: center;
+    width: 22px;
+    margin: 0;
+    background: transparent !important;
+    color: #024D25 !important;
+}
+
+.pcoded .pcoded-navbar.mera-sidebar .pcoded-item > li > a .pcoded-micon i {
+    font-size: 16px;
+    color: inherit;
+}
+
+.pcoded .pcoded-navbar.mera-sidebar .pcoded-item > li > a .pcoded-mtext {
+    font-size: 14px;
+    opacity: 1;
+    color: inherit;
+}
+
+.pcoded .pcoded-navbar.mera-sidebar .pcoded-item > li > a:focus-visible {
+    outline: 3px solid #81CFF4;
+    outline-offset: -3px;
+}
+
+/* La plantilla posiciona el texto del menú en absoluto (para su modo contraído). */
+.pcoded .pcoded-navbar.mera-sidebar .pcoded-item > li > a .pcoded-mtext {
+    position: static;
+    left: auto;
+    padding: 0;
+}
+
+/* Menú contraído en escritorio (botón ☰): solo íconos, centrados. */
+.pcoded[vertical-nav-type="collapsed"] .mera-sidebar .mera-nav-label,
+.pcoded[vertical-nav-type="collapsed"] .pcoded-navbar.mera-sidebar .pcoded-item > li > a .pcoded-mtext {
+    display: none;
+}
+
+.pcoded[vertical-nav-type="collapsed"][theme-layout="vertical"] .pcoded-navbar.mera-sidebar .pcoded-item > li > a {
+    justify-content: center;
+    margin: 4px 6px;
+    padding: 0;
+}
+
+/* ---------- #7 Tablet (768-991 px): tarjetas en dos columnas en lugar de tabla apretada ---------- */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .mera-table-stack tbody {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .mera-table-stack tr {
+        margin-bottom: 0;
+    }
+
+    /* Fila única (estado vacío): ocupa todo el ancho */
+    .mera-table-stack tr:only-child {
+        grid-column: 1 / -1;
+    }
+
+    .mera-courses-mobile {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .mera-courses-mobile > .mera-bulk-all-mobile,
+    .mera-courses-mobile > div {
+        grid-column: 1 / -1;
+    }
+
+    .mera-courses-mobile .mera-course-card {
+        margin-bottom: 0;
+    }
+}
+
+/* ---------- #5 Filtros de Módulos en escritorio: todo en una fila ---------- */
+@media (min-width: 1200px) {
+    .mera-filter-grid {
+        grid-template-columns: minmax(200px, 1.3fr) repeat(3, minmax(160px, 1fr)) auto;
+    }
+}
+
+/* Estado vacío también centrado cuando la tabla pasa a tarjetas */
+.mera-table-stack td.mera-empty-state {
+    text-align: center !important;
+    padding: 2rem 1rem !important;
+}
+
+/* ---------- Bloque del usuario en la barra superior (reporte del usuario 2026-10-14) ----------
+   La plantilla da al <li> 75 px con line-height: 75px y el desplegable queda alineado a la base
+   del texto: avatar, nombre y flecha se veían pegados arriba. Se centra todo en los 80 px. */
+.header-navbar .navbar-wrapper .navbar-container .nav-right {
+    display: flex;
+    align-items: center;
+    height: 80px;
+}
+
+.header-navbar .navbar-wrapper .navbar-container .nav-right > li.user-profile {
+    display: flex;
+    align-items: center;
+    height: 80px;
+    padding: 0 24px 0 12px;
+    line-height: normal;
+}
+
+.header-navbar .nav-right .user-profile .dropdown {
+    display: flex;
+    align-items: center;
+    line-height: normal;
+}
+
+.header-navbar .nav-right .mera-user-toggle {
+    gap: 12px;
+    padding: 6px 8px;
+    border-radius: 999px;
+}
+
+.header-navbar .nav-right .mera-user-toggle:hover,
+.header-navbar .nav-right .mera-user-toggle:focus-visible {
+    background: var(--mera-green-tint) !important;
+}
+
+.header-navbar .nav-right .mera-user-toggle::after {
+    display: none; /* flecha de Bootstrap: ya hay un ícono propio */
+}
+
+.header-navbar .nav-right .mera-avatar {
+    flex: 0 0 40px;
+    border: 2px solid var(--mera-green-soft);
+    box-shadow: none;
+}
+
+.header-navbar .nav-right .mera-user-info {
+    gap: 2px;
+    text-align: left;
+}
+
+.header-navbar .nav-right .mera-user-name {
+    color: #024D25;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.header-navbar .nav-right .mera-user-role {
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.header-navbar .nav-right .mera-user-toggle .icon-chevron-down {
+    color: #024D25;
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* El saludo de la izquierda, centrado con el resto de la barra */
+.header-navbar .nav-left .mera-header-title {
+    display: flex;
+    align-items: center;
+    height: 80px;
+    line-height: normal;
+}
+
+.header-navbar .navbar-wrapper .navbar-container .nav-right .mera-user-toggle i.icon-chevron-down {
+    font-size: 16px !important;
+    margin-left: 2px;
+}
+
+/* Filtros de Módulos sin la columna Categoría (categorías ocultas) */
+@media (min-width: 1200px) {
+    .mera-filter-grid.mera-filter-grid--no-category {
+        grid-template-columns: minmax(220px, 1.6fr) repeat(2, minmax(170px, 1fr)) auto;
     }
 }

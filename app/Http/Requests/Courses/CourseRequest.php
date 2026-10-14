@@ -60,15 +60,22 @@ class CourseRequest extends FormRequest
     }
 
     /**
-     * @return array{name:string,description:string,category_id:?int}
+     * @return array{name:string,description:string,category_id?:?int}
      */
     public function courseData(): array
     {
-        return [
+        $data = [
             'name' => trim($this->input('name')),
             'description' => trim($this->input('description')),
-            'category_id' => $this->filled('category_id') ? (int) $this->input('category_id') : null,
         ];
+
+        // Con las categorías ocultas el formulario no manda el campo: no se toca la categoría
+        // que ya tenga el módulo (si se mandara null, se borraría al editar).
+        if (config('mera.categories_enabled')) {
+            $data['category_id'] = $this->filled('category_id') ? (int) $this->input('category_id') : null;
+        }
+
+        return $data;
     }
 
     public function messages(): array

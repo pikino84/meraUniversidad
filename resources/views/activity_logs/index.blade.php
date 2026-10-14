@@ -5,7 +5,7 @@
 @section('content')
 @include('partials.page-header', [
     'title' => 'Historial de actividad',
-    'subtitle' => 'Quién cambió qué y cuándo (módulos, carpetas, categorías y usuarios)',
+    'subtitle' => 'Quién cambió qué y cuándo (módulos, carpetas de curso y usuarios)',
 ])
 
 @php

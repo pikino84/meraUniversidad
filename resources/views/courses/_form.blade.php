@@ -40,6 +40,8 @@
             </div>
         </div>
 
+        {{-- Categorías ocultas mientras Capacitación decide si las usa (config mera.categories_enabled). --}}
+        @if (config('mera.categories_enabled'))
         <div class="col-md-6">
             <div class="form-group mera-form-group mb-3">
                 <label for="course-category">Categoría</label>
@@ -53,6 +55,7 @@
                 <small class="form-text text-muted">Puedes cambiarla en cualquier momento.</small>
             </div>
         </div>
+        @endif
 
         {{-- Carpeta de curso → idioma → posición (CLAUDE.md §10). Todo opcional. --}}
         @php

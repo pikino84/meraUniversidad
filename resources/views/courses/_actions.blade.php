@@ -17,6 +17,7 @@
 @include('partials.delete-button', [
     'action' => route('courses.destroy', $course),
     'label' => "Eliminar módulo {$course->name}",
-    'confirm' => "¿Eliminar el módulo «{$course->name}»?",
+    'confirm' => '¿Eliminar el módulo?',
+    'strong' => $course->name,
     'detail' => 'Su link deja de funcionar. Un super administrador puede restaurarlo desde «Papelera» durante ' . config('mera.courses.trash_retention_days') . ' días.',
 ])

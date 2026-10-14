@@ -25,7 +25,7 @@ class CourseManager
     ) {}
 
     /**
-     * @param  array{name:string,description:string,category_id:?int}  $data
+     * @param  array{name:string,description:string,category_id?:?int}  $data
      */
     public function create(array $data, UploadedFile $cover, UploadedFile $package): Course
     {
@@ -61,7 +61,7 @@ class CourseManager
     }
 
     /**
-     * @param  array{name:string,description:string,category_id:?int}  $data
+     * @param  array{name:string,description:string,category_id?:?int}  $data
      */
     public function update(Course $course, array $data, ?UploadedFile $cover = null, ?UploadedFile $package = null): Course
     {
@@ -73,8 +73,12 @@ class CourseManager
         $attributes = [
             'name' => $data['name'],
             'description' => $data['description'],
-            'category_id' => $data['category_id'] ?? null,
         ];
+
+        // Solo si viene en los datos: con las categorías ocultas se conserva la actual.
+        if (array_key_exists('category_id', $data)) {
+            $attributes['category_id'] = $data['category_id'];
+        }
 
         try {
             if ($package) {

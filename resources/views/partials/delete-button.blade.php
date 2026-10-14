@@ -1,9 +1,10 @@
 {{--
     Botón de eliminar con confirmación (ver resources/js/modules/confirm.js).
-    @include('partials.delete-button', ['action' => route(...), 'label' => 'Eliminar curso X', 'confirm' => '¿Eliminar…?', 'detail' => '…'])
+    @include('partials.delete-button', ['action' => route(...), 'label' => 'Eliminar módulo X', 'confirm' => '¿Eliminar el módulo?', 'strong' => 'Nombre (opcional)', 'detail' => '…'])
 --}}
 <form action="{{ $action }}" method="POST" class="d-inline"
-    data-confirm="{{ $confirm }}"
+    data-confirm="{{ $confirm }}" data-confirm-tone="danger"
+    @isset($strong) data-confirm-strong="{{ $strong }}" @endisset
     @isset($detail) data-confirm-detail="{{ $detail }}" @endisset>
     @csrf
     @method('DELETE')

@@ -31,7 +31,7 @@
                             <div class="user-name">
                                 {{ \App\Models\User::roleLabel($role->name) }}
                                 @if ($role->name !== \App\Models\User::roleLabel($role->name))
-                                <code class="small">{{ $role->name }}</code>
+                                <span class="mera-code-badge">{{ $role->name }}</span>
                                 @endif
                                 @if ($isSystem)
                                 <small class="text-muted" title="Rol del sistema: no se puede renombrar ni eliminar">
@@ -57,7 +57,8 @@
                             @include('partials.delete-button', [
                                 'action' => route('roles.destroy', $role),
                                 'label' => "Eliminar rol {$role->name}",
-                                'confirm' => "¿Eliminar el rol «{$role->name}»?",
+                                'confirm' => '¿Eliminar el rol?',
+                                'strong' => \App\Models\User::roleLabel($role->name),
                             ])
                             @endunless
                         </td>

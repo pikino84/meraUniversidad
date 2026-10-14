@@ -5,30 +5,37 @@
 @section('content')
 @include('partials.page-header', [
     'title' => 'Dashboard',
-    'subtitle' => 'Bienvenido nuevamente, ' . auth()->user()->name . '.',
+    'subtitle' => 'Resumen de módulos, carpetas de curso y usuarios.',
 ])
 
 @php
     $metrics = [
         ['Carpetas de curso', $groupsCount, 'fas fa-folder-open', 'mera-green', route('course-groups.index'),
             $publishedGroupsCount . ' ' . ($publishedGroupsCount === 1 ? 'publicada' : 'publicadas')],
-        ['Módulos', $coursesCount, 'fas fa-book', 'mera-aqua', route('courses.index'), null],
-        ['Usuarios', $usersCount, 'fas fa-users', 'mera-blue', route('users.index'), null],
-        ['Categorías', $categoriesCount, 'fas fa-tags', 'mera-dark', route('categories.index'), null],
+        ['Módulos', $coursesCount, 'fas fa-book', 'mera-aqua', route('courses.index'),
+            $ungroupedCount . ' sin carpeta'],
+        ['Usuarios', $usersCount, 'fas fa-users', 'mera-blue', route('users.index'), 'con acceso al panel'],
     ];
+
+    // Categorías ocultas mientras Capacitación decide si las usa (config mera.categories_enabled).
+    if (config('mera.categories_enabled')) {
+        $metrics[] = ['Categorías', $categoriesCount, 'fas fa-tags', 'mera-dark', route('categories.index'), null];
+    }
+
+    $metricCol = 'col-xl-' . intdiv(12, count($metrics)) . ' col-md-6';
 @endphp
 
 {{-- MÉTRICAS --}}
 <div class="row">
     @foreach ($metrics as [$label, $value, $icon, $color, $url, $note])
-    <div class="col-xl-3 col-md-6">
-        <a href="{{ $url }}" class="text-decoration-none text-reset">
+    <div class="{{ $metricCol }}">
+        <a href="{{ $url }}" class="text-decoration-none text-reset mera-dashboard-link">
             <div class="mera-dashboard-card">
                 <div class="mera-dashboard-icon {{ $color }}"><i class="{{ $icon }}" aria-hidden="true"></i></div>
                 <div>
                     <span>{{ $label }}</span>
                     <h2 class="h3">{{ number_format($value) }}</h2>
-                    @if ($note)<small class="text-muted">{{ $note }}</small>@endif
+                    @if ($note)<small class="mera-dashboard-note">{{ $note }}</small>@endif
                 </div>
             </div>
         </a>
@@ -42,7 +49,7 @@
         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         Hay <strong>{{ $ungroupedCount }}</strong> {{ $ungroupedCount === 1 ? 'módulo' : 'módulos' }} sin carpeta de curso.
     </span>
-    <a href="{{ route('courses.index', ['carpeta' => 'sin']) }}" class="alert-link">Organizar módulos</a>
+    <a href="{{ route('courses.index', ['carpeta' => 'sin']) }}" class="btn btn-sm mera-btn-outline">Organizar módulos</a>
 </div>
 @endif
 
@@ -89,7 +96,7 @@
                     @else
                     Sin carpeta
                     @endif
-                    @if ($course->category_id && isset($categoryPaths[$course->category_id]))
+                    @if (config('mera.categories_enabled') && $course->category_id && isset($categoryPaths[$course->category_id]))
                     · {{ $categoryPaths[$course->category_id] }}
                     @endif
                 </small>
@@ -104,7 +111,7 @@
     </div>
 </div>
 
-@if ($uncategorizedCount > 0)
+@if (config('mera.categories_enabled') && $uncategorizedCount > 0)
 <p class="small text-muted mt-2">
     <i class="fas fa-tags" aria-hidden="true"></i>
     {{ $uncategorizedCount }} {{ $uncategorizedCount === 1 ? 'módulo no tiene' : 'módulos no tienen' }} categoría (las categorías están en pausa mientras se usan las carpetas).

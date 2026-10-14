@@ -30,3 +30,20 @@ export function initUnsavedWarning() {
         }
     });
 }
+
+/**
+ * Casilla [data-show-passwords]: muestra u oculta las contraseñas de su formulario
+ * (auditoría UI 2026-10-14, #15). Se exporta aquí para no crear otro módulo por 10 líneas.
+ */
+export function initShowPasswords() {
+    document.querySelectorAll('[data-show-passwords]').forEach((checkbox) => {
+        const form = checkbox.closest('form');
+
+        checkbox.addEventListener('change', () => {
+            form?.querySelectorAll('input[data-password], input[type="password"]').forEach((input) => {
+                input.dataset.password = '1';
+                input.type = checkbox.checked ? 'text' : 'password';
+            });
+        });
+    });
+}

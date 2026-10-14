@@ -35,7 +35,8 @@
                             @include('partials.delete-button', [
                                 'action' => route('permissions.destroy', $permission),
                                 'label' => "Eliminar permiso {$permission->name}",
-                                'confirm' => "¿Eliminar el permiso «{$permission->name}»?",
+                                'confirm' => '¿Eliminar el permiso?',
+                                'strong' => $permission->name,
                                 'detail' => $permission->roles_count
                                     ? "Se quitará de {$permission->roles_count} rol(es). Esta acción no se puede deshacer."
                                     : 'Esta acción no se puede deshacer.',

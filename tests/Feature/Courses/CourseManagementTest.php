@@ -208,6 +208,7 @@ class CourseManagementTest extends TestCase
 
     public function test_index_filters_by_category_including_subcategories_and_escapes_like(): void
     {
+        config(['mera.categories_enabled' => true]);
         $parent = Category::factory()->create(['name' => 'Seguridad']);
         $child = Category::factory()->create(['name' => 'Sismos', 'parent_id' => $parent->id]);
         Course::factory()->create(['name' => 'Evacuación', 'category_id' => $child->id]);

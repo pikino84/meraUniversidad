@@ -10,7 +10,7 @@
                 <i class="feather icon-menu" aria-hidden="true"></i>
             </a>
             <a class="text-left" href="{{ $authUser->hasAnyRole(\App\Models\User::PANEL_ROLES) ? route('dashboard') : route('profile.edit') }}">
-                <img class="img-fluid h-10" src="{{ asset('images/logo_university.svg') }}" alt="{{ config('app.name') }}" />
+                <img class="img-fluid h-10" src="{{ asset('images/logo_university.svg') }}" width="110" height="40" alt="MERA University – Ir al inicio" />
             </a>
             <div class="mobile-user">
                 <div class="dropdown-primary dropdown">
@@ -26,11 +26,7 @@
 
         <div class="navbar-container container-fluid">
             <ul class="nav-left">
-                <li>
-                    <a href="#!" data-fullscreen class="waves-effect waves-light" role="button" aria-label="Pantalla completa">
-                        <i class="full-screen feather icon-maximize" aria-hidden="true"></i>
-                    </a>
-                </li>
+                {{-- Auditoría UI 2026-10-14 (#17): se quitó el botón de pantalla completa (sin utilidad en el panel). --}}
                 <li class="mera-header-title">
                     <span>Bienvenido, {{ $authUser->name }}</span>
                 </li>
