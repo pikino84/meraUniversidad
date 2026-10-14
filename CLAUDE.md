@@ -288,16 +288,13 @@ Si en el servidor quedó un `node_modules` de un `npm ci` por error, se puede bo
 
 **Dato para Capacitación:** el módulo 117 "Módulo 3 - Cuando algo no está bien" (contenido del Código de Ética) tenía la categoría "Protocolo Sismos"; ya quedó sin categoría, pero conviene acomodarlo en la carpeta correcta.
 
-### Pendiente (pedido del usuario, 2026-10-14): loader y bloqueo de botones al enviar formularios
-- **Problema:** el loader de página (`partials/page-loader`) solo aparece al **cargar** una página; **no se activa al enviar** un formulario. Al enviar un correo (crear usuario o "Enviar link" en Usuarios) el servidor tarda un poco (SMTP síncrono, ~1-3 s) y no se ve ninguna señal de que algo está pasando.
-- **Hoy:** solo los formularios con `data-confirm` deshabilitan sus botones al confirmar (`confirm.js`), y las subidas de módulos tienen su propia barra de progreso (`upload.js`, `data-upload-form`). El resto de formularios (crear/editar usuario, carpeta, perfil, filtros…) **no bloquea** el botón: un doble clic puede mandar dos solicitudes.
-- **Qué hacer:**
-  1. **Mostrar el loader al enviar** cualquier formulario `POST`/`PUT`/`PATCH`/`DELETE` (reusar el mismo `.mera-loader`, con un texto como "Enviando…"). Excepciones: las subidas con barra propia (`data-upload-form`) y los filtros `GET`.
-  2. **Bloquear de forma general** los botones de envío del formulario (`disabled` + `aria-busy`) en cuanto se envía, para evitar solicitudes dobles. Centralizarlo en un solo módulo JS (y que `confirm.js` lo reutilice).
-  3. **Restaurar** el estado si el usuario vuelve con "Atrás" (`pageshow` con `persisted`) o si el envío no navega (p. ej. validación por XHR), para que los botones no queden bloqueados.
-  4. Pruebas: el formulario de usuario y el de "Enviar link" muestran el loader y no permiten un segundo envío.
+### Hecho en `qa` (2026-10-14): loader y bloqueo de botones al enviar formularios
+- `resources/js/modules/submit-guard.js`: en todo formulario `POST` (incluye PUT/PATCH/DELETE por `_method`) reaparece el loader con "Procesando…" (a los 150 ms, para no parpadear en respuestas rápidas) y se **deshabilitan los botones de envío** (un instante después del envío, para que el navegador no pierda el `name`/`value` del botón pulsado). `confirm.js` lo reutiliza después de confirmar. Al volver con "Atrás" se restaura todo.
+- No aplica a formularios `GET` (filtros), a subidas con barra propia (`data-upload-form`) ni a formularios con `data-no-loader` o `target` externo.
+- Verificado en navegador con servidor lento simulado: triple clic → **1 sola solicitud**; "Enviar link" muestra el loader; las búsquedas no.
 
 ### Para el correo que se va a redactar (pendiente)
+- **Reportes de curso (en desarrollo en `qa`, `docs/reportes/INSTRUCTIVO_REPORTES.md`):** al terminar, explicar el flujo (subir los 3 Excel por corte, actualizar un corte, link para compartir) y **preguntar por la conexión por API** con la plataforma de capacitación (MERA World/SuperCompany): si existe, con qué credenciales y quién la autoriza. Con API ya no habría que exportar ni subir los Excel en cada corte; mientras tanto se trabaja con los archivos.
 - **Categorías:** avisar que **se ocultaron** del panel y del catálogo `/cursos` (2026-10-14) y que los 5 módulos que tenían una quedaron **sin categoría**, libres para acomodarse solo en carpetas. Preguntar: **¿quieren esta funcionalidad?** Y si sí, **¿cómo funcionaría?** (p. ej. temas como Seguridad, Higiene o Liderazgo para agrupar **carpetas de curso**, tomados del código de MERA World: `NRM-HIG-…` → tipo Normativo, área Higiene). Se reactivan sin tocar código con `MERA_CATEGORIES_ENABLED=true` + `config:cache` (las 3 categorías siguen guardadas y el respaldo JSON permite devolver las asignaciones).
 
 ### Delegado a otras áreas (comunicado por correo el 2026-10-12): NO actuar sin instrucción explícita del usuario
@@ -433,6 +430,7 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 | 2026-10-14 | **Despliegue de `be873ba`** (sin migraciones; solo vistas, CSS y build). Verificado. Redactado el correo para Capacitación con el nuevo funcionamiento y la pregunta sobre categorías. |
 | 2026-10-14 | Anotado como pendiente (§6, pedido del usuario): el loader no aparece al enviar formularios (p. ej. al mandar un correo) y falta bloquear de forma general los botones de envío para evitar solicitudes dobles. |
 | 2026-10-14 | Nueva rama de trabajo **`qa`**, creada desde `dev` (`be873ba`). Renombrar `dev` no fue posible (el usuario no es dueño del repo). Flujo: trabajo en `qa`, producción en `dev` (§5). |
+| 2026-10-14 | En `qa`: loader y bloqueo de botones al enviar formularios (`submit-guard.js`). **Reportes de curso, pasos 1-3 de `docs/reportes/INSTRUCTIVO_REPORTES.md` §11:** decisiones de §10 resueltas (acceso admin y super admin, palabras clave + corrección, todos los cortes, link para compartir, actualizar cortes, seeder por curso, API para el correo), `openspout` 4.25.0 con `platform.php` 8.1.34, lector y armado del reporte. **Coincide exactamente con el script de referencia** con los Excel reales (`mera:report-verify`). 132 pruebas en verde. Sin commit. |
 
 ## 10. Carpetas de cursos: ALCANCE APROBADO (2026-10-13)
 

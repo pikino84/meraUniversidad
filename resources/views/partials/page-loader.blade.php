@@ -7,6 +7,7 @@
     - Se quita cuando el DOM y las fuentes están listos, con un tope de 2.5 s.
     - Respaldo sin JS: una animación CSS lo oculta a los 4 s y <noscript> no lo muestra.
     - No es el preloader de la plantilla (P12): con las fuentes en caché desaparece casi al instante.
+    - Al ENVIAR un formulario, submit-guard.js agrega html.mera-busy y el loader reaparece con "Procesando…".
 --}}
 <style>
     .mera-loader {
@@ -52,6 +53,28 @@
         white-space: nowrap;
     }
 
+    .mera-loader__msg {
+        display: none;
+        color: #024D25;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    /* Enviando un formulario (submit-guard.js): se vuelve a mostrar, con mensaje y fondo translúcido.
+       animation: none anula el respaldo de 4 s, que deja el loader oculto para siempre. */
+    /* Más específico que html.mera-loaded .mera-loader (la página ya cargó cuando se envía). */
+    html.mera-busy.mera-busy .mera-loader {
+        animation: none;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        background: rgba(243, 248, 244, .88);
+    }
+
+    html.mera-busy.mera-busy .mera-loader__msg {
+        display: block;
+    }
+
     html.mera-loaded .mera-loader {
         opacity: 0;
         visibility: hidden;
@@ -77,6 +100,7 @@
     <div class="mera-loader__box">
         <img class="mera-loader__logo" src="{{ asset('images/logo_university.svg') }}" width="132" height="48" alt="">
         <span class="mera-loader__spinner" aria-hidden="true"></span>
+        <span class="mera-loader__msg" aria-hidden="true">Procesando…</span>
         <span class="mera-loader__sr">Cargando…</span>
     </div>
 </div>

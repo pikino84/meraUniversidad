@@ -4,6 +4,7 @@ import Alpine from 'alpinejs';
 import swal from 'sweetalert';
 
 import { initConfirmForms } from './modules/confirm';
+import { initSubmitGuard } from './modules/submit-guard';
 import { initFlashMessages } from './modules/flash';
 import { initUploadForms } from './modules/upload';
 import { initProgramProgress } from './modules/program-progress';
@@ -20,6 +21,7 @@ Alpine.start();
 document.addEventListener('DOMContentLoaded', () => {
     initFlashMessages();
     initConfirmForms();
+    initSubmitGuard();
     initUploadForms();
     initProgramProgress();
     initCourseGroups();

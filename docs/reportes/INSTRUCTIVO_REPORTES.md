@@ -5,7 +5,7 @@
 > migrar, pruebas solo en sqlite, build solo en local) aplican a todo lo que se haga aquí.
 > Antes de empezar, leer `CLAUDE.md` §0, §1, §3, §5, §8 y §10.
 
-Creado: 2026-10-14. Estado: **por implementar** (no hay código todavía).
+Creado: 2026-10-14. Estado: **en desarrollo en la rama `qa`** (decisiones de §10 resueltas el 2026-10-14).
 
 ---
 
@@ -127,7 +127,7 @@ Mismo patrón que `CourseManager`: reciben **rutas**, no el `Request`, para pode
   avisos.
 - `SurveyAnswerClassifier`: texto libre → temas (§6.4).
 
-### 5.3 Flujo y pantallas (solo roles del panel; confirmar si también "admin" o solo super admin)
+### 5.3 Flujo y pantallas (super admin y admin; ver respuestas en §10)
 1. En `course-groups/{id}` (show): nueva sección **"Reportes"** con la lista de cortes (fecha,
    % completado, promedio, satisfacción) y el botón **"Nuevo corte"**.
 2. Formulario: los 3 archivos `.xlsx`, fecha de corte (sugerida desde el nombre del archivo) y
@@ -261,7 +261,26 @@ punto (`dash.data(id)`) y el resto de la lógica no cambia.
 5. ¿La configuración de la encuesta y del catálogo se edita en pantalla o basta con un seeder por
    curso en esta fase?
 
+### Respuestas del usuario (2026-10-14)
+1. **Acceso:** **super admin y admin** (roles del panel).
+2. **Comentarios abiertos:** clasificación por **palabras clave + corrección manual en pantalla** (lista "Pendientes de clasificar").
+3. **Historial:** se conservan **todos los cortes** de cada carpeta.
+4. **Compartir:** además del panel y "Descargar HTML", **link para compartir sin sesión**. Diseño: token aleatorio largo por corte, apagado por defecto, con botones "Activar link", "Regenerar" (invalida el anterior) y "Desactivar"; página con `noindex`, solo agregados (sin datos personales) y sin acciones de edición.
+5. **Configuración de encuesta y catálogo:** **seeder por curso** en esta fase (Higiene por defecto).
+6. **Nuevo (no estaba contemplado): actualizar un corte.** Editar título y fecha, y **volver a subir los 3 Excel** para recalcular el mismo corte (p. ej. si se subió un archivo equivocado). Se registra en el historial de actividad.
+7. **API de la plataforma de capacitación:** queda fuera de esta fase; **mencionarlo y preguntarlo en el correo** que se redacte al final de este desarrollo (CLAUDE.md §6, "Para el correo").
+
 ## 11. Orden sugerido de trabajo
+
+### Avance (rama `qa`, 2026-10-14)
+- ✅ **Paso 1:** decisiones de §10 resueltas con el usuario (ver "Respuestas del usuario").
+- ✅ **Paso 2:** `openspout/openspout` **v4.25.0** (la última que acepta PHP 8.1; desde 4.26 exige 8.2) y `composer.json` fijado a `config.platform.php = 8.1.34`. Lector `App\Services\Reports\ReportWorkbookReader` (hoja 1 en streaming, encabezados normalizados como el script, primera coincidencia, celda vacía = `null`) con 6 pruebas.
+- ✅ **Paso 3:** `PersonnelDirectory`, `SurveyAnswerClassifier` y `CourseReportBuilder`, más el comando de solo lectura `php artisan mera:report-verify <personal> <inscripciones> <encuesta> --expected=<esperado.html>`. Con los Excel reales del 2026-10-14 **coincide exactamente** con `generar_reporte.py` en los 4 conjuntos, fila por fila (592 / 444 / 1,634 / 22), y los indicadores de §9 (3,301 · 2,623 = 79 % · 563 · 77.5 con 61 % ≥ 80 · 76 % de 1,634 · aviso de 16 excluidos). Tarda ~22 s en local. 6 pruebas con Excel sintéticos.
+  - Reglas generales en `config/mera.php → reports`; encuesta de Higiene (preguntas favorables, catálogo con palabras clave y archivo de clasificación previa) en `config/report_surveys.php`.
+  - **Satisfacción** = % de personas con las **8** respuestas favorables (así la calcula el JS de la plantilla, `k-rec`).
+  - La clasificación previa de Higiene se copió a `storage/app/reportes/codigos/higiene.csv` (privado; trae números de empleado). **En producción hay que subirla a mano** a esa misma ruta.
+- ⏳ Paso 4 en adelante: migración, controlador, vistas, actualización de cortes, link para compartir, JS/CSS.
+
 1. Leer este documento, `CLAUDE.md` y el script de referencia. Responder §10 con el usuario.
 2. Instalar la librería de Excel (versión compatible con PHP 8.1) y escribir el lector con pruebas.
 3. `CourseReportBuilder` + pruebas de §8 hasta igualar el script de referencia (§9).

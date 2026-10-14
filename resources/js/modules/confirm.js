@@ -1,3 +1,5 @@
+import { lockForm } from './submit-guard';
+
 /**
  * Confirmación genérica antes de enviar un formulario:
  *
@@ -42,11 +44,8 @@ export function initConfirmForms() {
             if (!confirmed) return;
 
             form.dataset.confirmed = '1';
-            // Evita envíos dobles mientras el servidor responde.
-            form.querySelectorAll('button[type="submit"], button:not([type])').forEach((button) => {
-                button.disabled = true;
-                button.setAttribute('aria-busy', 'true');
-            });
+            // Loader + bloqueo de botones (form.submit() no dispara el evento "submit").
+            lockForm(form);
             form.submit();
         });
     });

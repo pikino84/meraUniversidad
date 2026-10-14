@@ -147,4 +147,48 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reportes de curso por carpeta (docs/reportes/INSTRUCTIVO_REPORTES.md §5-§6)
+    |--------------------------------------------------------------------------
+    | Reglas generales de agrupación, IDÉNTICAS al script de referencia (generar_reporte.py).
+    | La definición de cada encuesta (preguntas favorables y temas) está en config/report_surveys.php.
+    */
+    'reports' => [
+        // Tamaño máximo de CADA uno de los 3 Excel (KB).
+        'max_upload_kb' => (int) env('MERA_REPORTS_MAX_UPLOAD_KB', 30720),
+
+        // Extracción temporal PRIVADA de los Excel; se borran siempre al terminar.
+        'temp_root' => storage_path('app/tmp/report-uploads'),
+
+        // Unidad de negocio (reporte de personal) → localidad que se muestra.
+        'localities' => [
+            'Panama' => 'Panamá', 'Bajio' => 'Bajío', 'Ciudad Juarez' => 'Ciudad Juárez', 'Torreon' => 'Torreón',
+            'Cancun Radio' => 'Cancún Radio', 'Cancún T2 Abt2' => 'Cancún T2',
+            'MERA Bogota' => 'Colombia', 'MERA Medellin' => 'Colombia', 'MDE GUACAMOLE GRILL' => 'Colombia',
+        ],
+
+        // Unidades que no entran al reporte (personal de Presidencia; tampoco en el reporte base).
+        'excluded_localities' => ['Cancun C4'],
+
+        // Sin unidad de negocio: Colombia si el departamento o el puesto es de LATAM; si no, se excluye.
+        'colombia_without_unit' => '/LATAM|\bBOG\b|\bMED\b/i',
+        'colombia' => 'Colombia',
+
+        // Departamento → área. Lo que no está aquí va a 'area_other'.
+        'areas' => [
+            'Piso' => 'Piso / Restaurantes', 'Restaurantes' => 'Piso / Restaurantes',
+            'Cocina' => 'Cocina', 'Bar' => 'Bar', 'Almacen' => 'Almacén',
+            'Comisariato Foodcourt' => 'Comisariato', 'Comisariato Food Court PB' => 'Comisariato',
+            'Mantenimiento' => 'Mantenimiento y limpieza', 'Limpieza' => 'Mantenimiento y limpieza',
+        ],
+        'area_other' => 'Corporativo y administrativo / otros',
+
+        // Localidad y área de quien ya no está activo (o no está en el reporte de personal).
+        'inactive' => 'Ya no activo',
+
+        // Encuesta que usan las carpetas si no se indica otra (config/report_surveys.php).
+        'default_survey' => 'higiene',
+    ],
+
 ];

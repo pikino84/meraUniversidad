@@ -1,0 +1,296 @@
+<?php
+
+namespace App\Services\Reports;
+
+use DateTimeImmutable;
+use DateTimeInterface;
+
+/**
+ * Arma los datos de un reporte de curso a partir de los 3 Excel (INSTRUCTIVO_REPORTES.md §6-§7).
+ * Réplica exacta de generar_reporte.py: con los mismos archivos debe dar los mismos datos.
+ *
+ * Recibe RUTAS (no el Request), como CourseManager, para poder moverse a un Job.
+ *
+ * Resultado (nada de datos personales: solo agregados y banderas 0/1 por respuesta):
+ *  - cubo, inicio_mes, encuesta, catalogo: {columns: [...], rows: [[...]]} (contrato con el JS, §7)
+ *  - pending: respuestas abiertas sin clasificación previa, con la propuesta por palabras clave,
+ *    para corregirlas en pantalla. Se guarda el texto, sin número de empleado ni nombre.
+ *  - warnings: avisos para el usuario.
+ *  - summary: totales para la lista de cortes.
+ */
+class CourseReportBuilder
+{
+    private const CUBE_FIELDS = ['asignados', 'completados', 'sin_iniciar', 'calif_n', 'calif_suma', 'b80', 'b70', 'b60', 'b50'];
+
+    /** Largo máximo de cada comentario abierto que se guarda para clasificar. */
+    private const MAX_ANSWER_LENGTH = 500;
+
+    public function __construct(private readonly ReportWorkbookReader $reader) {}
+
+    /**
+     * @param  array  $survey  definición de config/report_surveys.php
+     *
+     * @throws ReportFormatException
+     */
+    public function build(string $personnelPath, string $enrollmentsPath, string $surveyPath, array $survey): array
+    {
+        $warnings = [];
+        $personnel = PersonnelDirectory::fromWorkbook($this->reader, $personnelPath);
+
+        [$cube, $months] = $this->cube($enrollmentsPath, $personnel, $warnings);
+        [$responses, $pending, $summarySurvey] = $this->survey($surveyPath, $personnel, $survey, $warnings);
+
+        $catalog = array_map(fn ($t) => [$t[0], $t[1], $t[2]], $survey['catalog']);
+
+        return [
+            'cubo' => ['columns' => array_merge(['localidad', 'area', 'puesto'], self::CUBE_FIELDS), 'rows' => $cube],
+            'inicio_mes' => ['columns' => ['localidad', 'area', 'mes', 'n'], 'rows' => $months],
+            'encuesta' => $responses,
+            'catalogo' => ['columns' => ['codigo', 'tipo', 'etiqueta'], 'rows' => $catalog],
+            'pending' => $pending,
+            'warnings' => $warnings,
+            'summary' => $this->summary($cube) + $summarySurvey,
+        ];
+    }
+
+    /** @return array{0: list<list<mixed>>, 1: list<list<mixed>>} */
+    private function cube(string $path, PersonnelDirectory $personnel, array &$warnings): array
+    {
+        $rows = $this->reader->rows($path, 'reporte de inscripciones', [
+            'num' => ['No. Empleado'],
+            'prog' => ['Progreso %'],
+            'cal' => ['Calificación'],
+            'ini' => ['Iniciado'],
+            'est' => ['Estatus'],
+        ]);
+
+        $cube = [];
+        $months = [];
+        $excluded = $missing = 0;
+
+        foreach ($rows as $row) {
+            $person = $personnel->find(PersonnelDirectory::employeeNumber($row['num']));
+
+            if ($person === null) {
+                $missing++;
+
+                continue;
+            }
+
+            if ($person['localidad'] === null) {
+                $excluded++;
+
+                continue;
+            }
+
+            $key = $person['localidad']."\x1F".$person['area']."\x1F".$person['puesto'];
+            $cube[$key] ??= array_fill_keys(self::CUBE_FIELDS, 0) + ['calif_suma' => 0.0];
+            $g = &$cube[$key];
+            $g['asignados']++;
+
+            $progress = self::number($row['prog']) ?? 0.0;
+            $completed = strtolower(trim(is_scalar($row['est']) ? (string) $row['est'] : 'none')) === 'completed';
+
+            if ($completed) {
+                $g['completados']++;
+                $grade = self::number($row['cal']);
+
+                if ($grade !== null) {
+                    $g['calif_n']++;
+                    $g['calif_suma'] += $grade;
+                    $g[$grade >= 80 ? 'b80' : ($grade >= 70 ? 'b70' : ($grade >= 60 ? 'b60' : 'b50'))]++;
+                }
+
+                if ($started = self::date($row['ini'])) {
+                    $monthKey = $person['localidad']."\x1F".$person['area']."\x1F".$started->format('Y-m');
+                    $months[$monthKey] = ($months[$monthKey] ?? 0) + 1;
+                }
+            } elseif ($progress == 0) {
+                $g['sin_iniciar']++;
+            }
+
+            unset($g);
+        }
+
+        if ($missing) {
+            $warnings[] = "{$missing} inscritos no están en el reporte de personal (se omiten).";
+        }
+        if ($excluded) {
+            $warnings[] = "{$excluded} inscritos de unidades excluidas o sin unidad (se omiten).";
+        }
+
+        // Mismo orden que sorted() de Python sobre tuplas de texto (por código de carácter).
+        ksort($cube, SORT_STRING);
+        ksort($months, SORT_STRING);
+
+        $cubeRows = [];
+        foreach ($cube as $key => $g) {
+            $cubeRows[] = array_merge(explode("\x1F", $key), array_map(
+                fn ($field) => $field === 'calif_suma' ? round($g[$field], 1) : $g[$field],
+                self::CUBE_FIELDS,
+            ));
+        }
+
+        $monthRows = [];
+        foreach ($months as $key => $n) {
+            $monthRows[] = array_merge(explode("\x1F", $key), [$n]);
+        }
+
+        return [$cubeRows, $monthRows];
+    }
+
+    /** @return array{0: array, 1: list<array>, 2: array} */
+    private function survey(string $path, PersonnelDirectory $personnel, array $survey, array &$warnings): array
+    {
+        $favorable = $survey['favorable'];
+        $columns = ['num' => ['No. Empleado'], 'est' => ['Estatus colaborador']];
+        foreach ($favorable as [$key, $fragment]) {
+            $columns[$key] = [$fragment, false];
+        }
+        $columns['liked'] = [$survey['liked_question'], false];
+        $columns['improve'] = [$survey['improve_question'], false];
+
+        $codeColumns = array_merge(
+            array_values(array_filter(array_column($survey['catalog'], 0), fn ($c) => str_starts_with($c, 'm'))),
+            array_values(array_filter(array_column($survey['catalog'], 0), fn ($c) => str_starts_with($c, 'v'))),
+            ['v_respondio'],
+        );
+
+        $precoded = $this->precoded($survey['precoded_file'] ?? null);
+        $classifier = new SurveyAnswerClassifier($survey['catalog']);
+        $inactive = config('mera.reports.inactive');
+
+        $rows = [];
+        $pending = [];
+        $allFavorable = 0;
+
+        foreach ($this->reader->rows($path, 'encuesta de satisfacción', $columns) as $row) {
+            $num = PersonnelDirectory::employeeNumber($row['num']);
+            $person = $personnel->find($num);
+            $deleted = strtolower(trim(is_scalar($row['est']) ? (string) $row['est'] : '')) === 'deleted';
+
+            [$locality, $area] = ($deleted || $person === null)
+                ? [$inactive, $inactive]
+                : [$person['localidad'] ?? $inactive, $person['area']];
+
+            $flags = [];
+            foreach ($favorable as [$key, , $ok]) {
+                $flags[] = (int) in_array(ReportWorkbookReader::clean($row[$key]), $ok, true);
+            }
+            $allFavorable += (int) (array_sum($flags) === count($flags));
+
+            if ($num !== null && isset($precoded[$num])) {
+                $codes = $precoded[$num];
+            } else {
+                $codes = $classifier->classify($row['liked'], $row['improve']);
+                $pending[] = [
+                    'row' => count($rows),
+                    'liked' => mb_substr(ReportWorkbookReader::clean($row['liked']), 0, self::MAX_ANSWER_LENGTH),
+                    'improve' => mb_substr(ReportWorkbookReader::clean($row['improve']), 0, self::MAX_ANSWER_LENGTH),
+                ];
+            }
+
+            $rows[] = array_merge([$locality, $area], $flags, array_map(fn ($c) => (int) ($codes[$c] ?? 0), $codeColumns));
+        }
+
+        if ($pending) {
+            $warnings[] = count($pending).' respuestas abiertas sin clasificar: el sistema propuso temas por palabras clave; revísalos en "Pendientes de clasificar".';
+        }
+
+        $total = count($rows);
+
+        return [
+            ['columns' => array_merge(['localidad', 'area'], array_column($favorable, 0), $codeColumns), 'rows' => $rows],
+            $pending,
+            ['respuestas' => $total, 'satisfaccion' => $total ? round($allFavorable / $total * 100, 2) : null],
+        ];
+    }
+
+    /**
+     * Clasificación previa (CSV privado): no_empleado → código => 0/1.
+     *
+     * @return array<string, array<string,int>>
+     */
+    private function precoded(?string $file): array
+    {
+        if (! $file || ! is_file($file)) {
+            return [];
+        }
+
+        $handle = fopen($file, 'r');
+        $header = fgetcsv($handle);
+        $map = [];
+
+        if ($header) {
+            $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]); // BOM
+
+            while (($line = fgetcsv($handle)) !== false) {
+                $record = array_combine($header, array_pad($line, count($header), ''));
+                $num = PersonnelDirectory::employeeNumber($record['no_empleado'] ?? null);
+                unset($record['no_empleado']);
+
+                if ($num !== null && $num !== '') {
+                    $map[$num] = array_map(fn ($v) => (int) ($v === '' ? 0 : $v), $record);
+                }
+            }
+        }
+
+        fclose($handle);
+
+        return $map;
+    }
+
+    private function summary(array $cubeRows): array
+    {
+        $sum = array_fill_keys(self::CUBE_FIELDS, 0);
+        foreach ($cubeRows as $row) {
+            foreach (self::CUBE_FIELDS as $i => $field) {
+                $sum[$field] += $row[$i + 3];
+            }
+        }
+
+        return [
+            'asignados' => $sum['asignados'],
+            'completados' => $sum['completados'],
+            'sin_iniciar' => $sum['sin_iniciar'],
+            // 2 decimales: con 1 se redondea dos veces (79.46 → 79.5 → 80).
+            'pct_completado' => $sum['asignados'] ? round($sum['completados'] / $sum['asignados'] * 100, 2) : null,
+            'calif_promedio' => $sum['calif_n'] ? round($sum['calif_suma'] / $sum['calif_n'], 1) : null,
+            'pct_80' => $sum['calif_n'] ? round($sum['b80'] / $sum['calif_n'] * 100, 2) : null,
+        ];
+    }
+
+    /** float(v) de Python: número o null. */
+    private static function number(mixed $value): ?float
+    {
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        $text = is_string($value) ? trim($value) : '';
+
+        return is_numeric($text) ? (float) $text : null;
+    }
+
+    /** a_fecha() del script, más el número de serie de Excel (fechas sin formato de fecha). */
+    private static function date(mixed $value): ?DateTimeInterface
+    {
+        if ($value instanceof DateTimeInterface) {
+            return $value;
+        }
+
+        if ((is_int($value) || is_float($value)) && $value > 20000 && $value < 80000) {
+            return (new DateTimeImmutable('1899-12-30'))->modify('+'.(int) floor($value).' days');
+        }
+
+        $text = is_string($value) ? trim($value) : '';
+        foreach (['Y-m-d H:i:s', 'Y-m-d', 'd/m/Y H:i', 'd/m/Y'] as $format) {
+            $date = DateTimeImmutable::createFromFormat('!'.$format, $text);
+            if ($date !== false && $date->format($format) === $text) {
+                return $date;
+            }
+        }
+
+        return null;
+    }
+}
