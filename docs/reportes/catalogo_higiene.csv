@@ -1,0 +1,23 @@
+codigo,tipo,etiqueta
+m01,mejora,Video de lavado de manos: revisar que el procedimiento sea correcto
+m02,mejora,Termómetro: explicar mejor cómo se calibra y se usa
+m03,mejora,"Evaluación: cambiar las preguntas, son las mismas del año pasado"
+m04,mejora,Evaluación: preguntas más claras y específicas
+m05,mejora,Evaluación: que muestre qué respuestas se fallaron
+m06,mejora,Nuevo curso sobre manejo de químicos
+m07,mejora,"Más ejemplos y casos reales (bar, imágenes, temperaturas)"
+m08,mejora,Curso más corto o con menos módulos
+m09,mejora,"Adaptar el curso al área o puesto (almacén, administrativo, bar)"
+m10,mejora,Juegos y actividades: letra más grande y clara
+m11,mejora,Videos y ejercicios más dinámicos y prácticos
+m12,mejora,Más cursos y seguimiento para reforzar lo aprendido
+v01,valora,Explicaciones claras y fáciles de entender
+v02,valora,"Videos, animaciones y apoyos visuales"
+v03,valora,Ejemplos y casos
+v04,valora,"Actividades, juegos y retroalimentación"
+v05,valora,Contaminación cruzada y riesgos invisibles
+v06,valora,Higiene personal y lavado de manos
+v07,valora,"Manejo de alimentos, etiquetado y almacenamiento (PEPS, refrigeración, termómetro)"
+v08,valora,Útil y aplicable al trabajo y a la vida diaria
+v09,valora,Aprendizaje y refresco de conocimientos
+v_todo,valora,Todo en general

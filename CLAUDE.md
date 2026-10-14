@@ -200,7 +200,11 @@ docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/curs
 
 ## 5. Despliegue a producción
 
-**Flujo del proyecto:** local (rama `dev`) → GitHub `pikino84/meraUniversidad` (rama `dev`) → el servidor hace `git pull` en `~/cursos.meracorporation.com`. **`dev` funciona como producción**; `main` está desactualizada y no se usa.
+**Flujo del proyecto (desde el 2026-10-14):**
+- **`qa`** (creada desde `dev` en `be873ba`): rama de **trabajo**. Todo lo nuevo se hace y se sube aquí primero.
+- **`dev`**: **producción**. El servidor hace `git pull origin dev` en `~/cursos.meracorporation.com`. A `dev` solo llega lo que el usuario aprueba pasar desde `qa` (merge o fast-forward, **solo con autorización**, regla 1).
+- **`main`**: desactualizada; no se usa. No se pudo renombrar `dev` porque el usuario no es dueño del repo (`pikino84`).
+- Al terminar un cambio en `qa`: commit y push a `qa` (con autorización); para producción, pasar `qa` → `dev` (con autorización) y desplegar como indica esta sección.
 
 **Estado: ✅ producción en `19dd31a`** (desplegado el 2026-10-14; antes `d33a001`, `856697e`, `858c681` y `97ce623`). Respaldos en el servidor: `~/backups_cursos/` (BD `bd_20261012_1743.sql`, `.env` previos, diff de cambios del servidor, commit anterior, inventario de cursos, crontab previo, build anterior, `.htaccess` previos y los 48 PHP de `public/pages/` en `pages_php_<fecha>/`).
 
@@ -280,13 +284,18 @@ Si en el servidor quedó un `node_modules` de un `npm ci` por error, se puede bo
 
 ## 6. Pendientes
 
-**Estado (2026-10-14, 13:15):** producción corre **`e501ebd`** (auditoría UI/UX, menú lateral, barra superior, categorías ocultas y catálogo a 12 por página, sobre `19dd31a`). Desplegado con dump `bd_20261014_1308.sql`, build `e501ebd` con intercambio seguro y permisos corregidos, cachés y `mera:detach-categories` (5 módulos sin categoría; respaldo `storage/backups/categorias_de_modulos_20261014_171046.json` en el servidor). Verificado: `/login`, `/cursos`, `/cursos?page=2`, API y programa → 200; `/categories` → 404; catálogo con 12 tarjetas, sin categoría, 0 portadas rotas. Cuenta `jfcruz@outlook.com` borrada en producción. Correo de restablecimiento enviado a los 3 usuarios para validar el flujo. Siguiente paso de negocio: Thania y Pamela acomodan los módulos en carpetas.
-
-**Subido a `dev` (`54f6919`), pendiente de desplegar:** botón de acceso compacto y paginación sin desborde en `/cursos` (§13).
-
-**Subido a `dev` (commit autorizado por el usuario, 2026-10-14), pendiente de desplegar:** cuadrícula del catálogo sin huecos, **loader de página** en los 4 layouts y contenido de los botones centrado (§13, últimos renglones). Solo vistas y CSS, sin migraciones: al desplegar, `git pull`, build `public/build` (§5), permisos y `optimize:clear` + cachés.
+**Estado (2026-10-14, 14:10):** producción corre **`be873ba`** (incluye `54f6919` y `e501ebd`: auditoría UI/UX, menú lateral, barra superior, categorías ocultas, catálogo a 12 por página sin huecos ni desborde, loader de página y botones centrados). Despliegue de `be873ba`: `pull`, `optimize:clear`, build con intercambio seguro, permisos y cachés; verificado `/login`, `/cursos`, `/cursos?page=2`, API, programa y CSS → 200, catálogo sin scroll horizontal. Antes, con `e501ebd`: dump `bd_20261014_1308.sql` y `mera:detach-categories` (5 módulos; respaldo JSON en el servidor). Cuenta `jfcruz@outlook.com` borrada. **Siguiente:** enviar el correo a Capacitación (redactado el 2026-10-14) y que Thania y Pamela acomoden los módulos en carpetas.
 
 **Dato para Capacitación:** el módulo 117 "Módulo 3 - Cuando algo no está bien" (contenido del Código de Ética) tenía la categoría "Protocolo Sismos"; ya quedó sin categoría, pero conviene acomodarlo en la carpeta correcta.
+
+### Pendiente (pedido del usuario, 2026-10-14): loader y bloqueo de botones al enviar formularios
+- **Problema:** el loader de página (`partials/page-loader`) solo aparece al **cargar** una página; **no se activa al enviar** un formulario. Al enviar un correo (crear usuario o "Enviar link" en Usuarios) el servidor tarda un poco (SMTP síncrono, ~1-3 s) y no se ve ninguna señal de que algo está pasando.
+- **Hoy:** solo los formularios con `data-confirm` deshabilitan sus botones al confirmar (`confirm.js`), y las subidas de módulos tienen su propia barra de progreso (`upload.js`, `data-upload-form`). El resto de formularios (crear/editar usuario, carpeta, perfil, filtros…) **no bloquea** el botón: un doble clic puede mandar dos solicitudes.
+- **Qué hacer:**
+  1. **Mostrar el loader al enviar** cualquier formulario `POST`/`PUT`/`PATCH`/`DELETE` (reusar el mismo `.mera-loader`, con un texto como "Enviando…"). Excepciones: las subidas con barra propia (`data-upload-form`) y los filtros `GET`.
+  2. **Bloquear de forma general** los botones de envío del formulario (`disabled` + `aria-busy`) en cuanto se envía, para evitar solicitudes dobles. Centralizarlo en un solo módulo JS (y que `confirm.js` lo reutilice).
+  3. **Restaurar** el estado si el usuario vuelve con "Atrás" (`pageshow` con `persisted`) o si el envío no navega (p. ej. validación por XHR), para que los botones no queden bloqueados.
+  4. Pruebas: el formulario de usuario y el de "Enviar link" muestran el loader y no permiten un segundo envío.
 
 ### Para el correo que se va a redactar (pendiente)
 - **Categorías:** avisar que **se ocultaron** del panel y del catálogo `/cursos` (2026-10-14) y que los 5 módulos que tenían una quedaron **sin categoría**, libres para acomodarse solo en carpetas. Preguntar: **¿quieren esta funcionalidad?** Y si sí, **¿cómo funcionaría?** (p. ej. temas como Seguridad, Higiene o Liderazgo para agrupar **carpetas de curso**, tomados del código de MERA World: `NRM-HIG-…` → tipo Normativo, área Higiene). Se reactivan sin tocar código con `MERA_CATEGORIES_ENABLED=true` + `config:cache` (las 3 categorías siguen guardadas y el respaldo JSON permite devolver las asignaciones).
@@ -421,6 +430,9 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 | 2026-10-14 | **Despliegue de `e501ebd`** en producción (sin migraciones): dump, `pull`, build con intercambio seguro, permisos, cachés y `mera:detach-categories` (5 módulos; respaldo JSON en el servidor). Verificado en navegador. Detectado: paginación de `/cursos` desborda a ~740 px. |
 | 2026-10-14 | Reporte en producción de `/cursos` (tras `e501ebd`): botón de acceso gigante y scroll horizontal por la paginación a ~640 px de ancho efectivo. Corregido en local: regla de ancho completo acotada al encabezado de los listados, botón compacto en el catálogo y vista de paginación publicada (corte `md`, "Página X de Y", `onEachSide(1)`). Revisión a fondo sin desbordes en 6 anchos y 13 pantallas del panel + `/cursos` en 8 anchos. 120 pruebas en verde. Sin commit. |
 | 2026-10-14 | `54f6919` subido a `dev` (botón compacto y paginación de `/cursos`). Después, en local: cuadrícula del catálogo sin huecos (1/2/3/4 columnas), loader de página en los 4 layouts y contenido de botones centrado; revisión de 75 botones y 13 pantallas sin desbordes. 120 pruebas en verde. Commit y push a `dev` autorizados por el usuario. |
+| 2026-10-14 | **Despliegue de `be873ba`** (sin migraciones; solo vistas, CSS y build). Verificado. Redactado el correo para Capacitación con el nuevo funcionamiento y la pregunta sobre categorías. |
+| 2026-10-14 | Anotado como pendiente (§6, pedido del usuario): el loader no aparece al enviar formularios (p. ej. al mandar un correo) y falta bloquear de forma general los botones de envío para evitar solicitudes dobles. |
+| 2026-10-14 | Nueva rama de trabajo **`qa`**, creada desde `dev` (`be873ba`). Renombrar `dev` no fue posible (el usuario no es dueño del repo). Flujo: trabajo en `qa`, producción en `dev` (§5). |
 
 ## 10. Carpetas de cursos: ALCANCE APROBADO (2026-10-13)
 
