@@ -4,7 +4,7 @@
 --}}
 <div class="page-header mera-page-header">
     <div class="row align-items-center">
-        <div class="col-md-8">
+        <div class="col-lg-8">
             <div class="header-title-wrapper">
                 <span class="header-line" aria-hidden="true"></span>
                 <div>
@@ -17,7 +17,7 @@
         </div>
 
         @isset($action)
-        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
             <a href="{{ $action['url'] }}" class="btn mera-btn-primary">
                 <span class="mera-btn-icon" aria-hidden="true">+</span>
                 {{ $action['label'] }}

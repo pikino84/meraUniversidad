@@ -15,6 +15,7 @@
 </head>
 
 <body class="bg-light">
+    @include('partials.page-loader')
     <header class="bg-white border-bottom">
         <div class="container d-flex justify-content-between align-items-center gap-3 py-3">
             <a href="{{ route('catalog.index') }}" class="flex-shrink-0">

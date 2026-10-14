@@ -14,6 +14,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-800 antialiased">
+        @include('partials.page-loader')
         <div class="mera-auth">
             <aside class="mera-auth-brand" aria-hidden="true">
                 <div style="position:relative;z-index:1">

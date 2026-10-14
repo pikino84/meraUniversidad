@@ -813,6 +813,7 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     box-shadow:
         0 6px 15px rgba(147, 192, 31, .35);
     transition: .3s ease;
+    justify-content: center;
 }
 
 .mera-btn-primary:hover {
@@ -3874,4 +3875,57 @@ nav[role="navigation"] {
 
 nav[role="navigation"] .inline-flex.shadow-sm {
     flex-wrap: wrap;
+}
+
+/* Catálogo: columnas fijas por ancho (1/2/3/4). Con 12 por página las filas quedan completas;
+   antes, auto-fill daba 5 columnas en pantallas anchas y la última fila quedaba con 2 (hueco). */
+.mera-catalog-grid {
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+    .mera-catalog-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 992px) {
+    .mera-catalog-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1400px) {
+    .mera-catalog-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* Contenido de los botones de marca siempre centrado (reporte del usuario 2026-10-14): con
+   inline-flex y sin justify-content, en botones anchos ("Buscar", "Filtrar") el texto quedaba
+   pegado a la izquierda. */
+.btn.mera-btn-primary,
+.btn.mera-btn-save,
+.btn.mera-btn-cancel,
+.btn.mera-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+}
+
+/* Botón "Nuevo …" del encabezado: en una sola línea (en tablet ahora va debajo del título) */
+.mera-page-header .mera-btn-primary {
+    white-space: nowrap;
+}
+
+/* "Copiar link" / "Vista previa" en celular: sin partirse en dos líneas */
+@media (max-width: 575.98px) {
+    .mera-public-actions .btn {
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
 }

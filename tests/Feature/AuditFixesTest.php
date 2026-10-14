@@ -219,6 +219,12 @@ class AuditFixesTest extends TestCase
         $this->assertStringContainsString('md:hidden', $html);
         $this->assertStringContainsString('Página 2 de 3', $html);
         $this->assertStringNotContainsString('sm:hidden', $html);
+
+        // Loader de página: primer elemento del <body>, con respaldo sin JS.
+        $this->assertMatchesRegularExpression('#<body[^>]*>\s*<style>#', $html);
+        $this->assertStringContainsString('class="mera-loader"', $html);
+        $this->assertStringContainsString('<noscript><style>.mera-loader { display: none !important; }</style></noscript>', $html);
+        $this->get(route('login'))->assertSee('class="mera-loader"', false);
     }
 
     // U12 --------------------------------------------------------------
