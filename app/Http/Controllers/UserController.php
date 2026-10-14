@@ -30,6 +30,7 @@ class UserController extends Controller
             ->tap(fn ($q) => Like::contains($q, ['name', 'email'], $search))
             ->orderBy('name')
             ->paginate(20)
+            ->onEachSide(1)
             ->withQueryString();
 
         return view('users.index', compact('users', 'search'));

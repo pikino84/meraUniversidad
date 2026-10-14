@@ -205,6 +205,22 @@ class AuditFixesTest extends TestCase
         $this->artisan('mera:detach-categories')->expectsOutputToContain('No hay nada que hacer')->assertSuccessful();
     }
 
+    public function test_catalog_header_button_is_compact_and_pagination_fits_small_screens(): void
+    {
+        \App\Models\Course::factory()->count(30)->create();
+
+        $html = $this->get(route('catalog.index', ['page' => 2]))->assertOk()->getContent();
+
+        // Botón de acceso compacto (antes se estiraba con la regla de móvil de los encabezados).
+        $this->assertStringContainsString('mera-header-cta', $html);
+        $this->assertStringContainsString('aria-label="Acceso administradores"', $html);
+
+        // Paginación: números completos desde md (768 px), en celular "Página X de Y" y pocos números.
+        $this->assertStringContainsString('md:hidden', $html);
+        $this->assertStringContainsString('Página 2 de 3', $html);
+        $this->assertStringNotContainsString('sm:hidden', $html);
+    }
+
     // U12 --------------------------------------------------------------
 
     public function test_roles_are_shown_with_readable_names(): void

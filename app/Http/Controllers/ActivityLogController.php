@@ -78,6 +78,7 @@ class ActivityLogController extends Controller
             ->when($filters['hasta'] ?? null, fn ($q, $d) => $q->where('created_at', '<=', Carbon::parse($d, $tz)->endOfDay()->utc()))
             ->latest()
             ->paginate(25)
+            ->onEachSide(1)
             ->withQueryString();
 
         $users = User::query()

@@ -26,6 +26,7 @@ class CatalogController extends Controller
             ->when($withCategories, fn ($q) => $q->inCategoryTree($request->input('category_id')))
             ->latest()
             ->paginate(max(1, (int) config('mera.catalog_per_page', 12)))
+            ->onEachSide(1) // menos números: la paginación cabe en tablet sin desbordar
             ->withQueryString();
 
         return view('catalog.index', [

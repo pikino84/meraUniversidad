@@ -847,7 +847,9 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
         margin-bottom: 20px;
     }
 
-    .mera-btn-primary {
+    /* Solo el botón "Nuevo …" del encabezado de los listados va a ancho completo en móvil
+       (antes la regla era global y estiraba, p. ej., "Acceso administradores" en /cursos). */
+    .mera-page-header .mera-btn-primary {
         width: 100%;
         justify-content: center;
     }
@@ -3853,4 +3855,23 @@ textarea.mera-input {
     .mera-filter-grid.mera-filter-grid--no-category {
         grid-template-columns: minmax(220px, 1.6fr) repeat(2, minmax(170px, 1fr)) auto;
     }
+}
+
+/* Encabezado del catálogo público: botón de acceso compacto (no se estira junto al logo) */
+.mera-header-cta {
+    flex: 0 0 auto;
+    width: auto;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Paginación: nunca más ancha que la pantalla */
+nav[role="navigation"] {
+    max-width: 100%;
+}
+
+nav[role="navigation"] .inline-flex.shadow-sm {
+    flex-wrap: wrap;
 }

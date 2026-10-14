@@ -40,6 +40,7 @@ class CourseController extends Controller
             }, fn ($q) => $q->latest())
             ->orderByDesc('id')
             ->paginate(config('mera.courses.per_page'))
+            ->onEachSide(1)
             ->withQueryString();
 
         return view('courses.index', [

@@ -16,11 +16,15 @@
 
 <body class="bg-light">
     <header class="bg-white border-bottom">
-        <div class="container d-flex justify-content-between align-items-center py-3">
-            <a href="{{ route('catalog.index') }}">
-                <img src="{{ asset('images/logo_university.svg') }}" alt="{{ config('app.name') }}" class="mera-public-logo">
+        <div class="container d-flex justify-content-between align-items-center gap-3 py-3">
+            <a href="{{ route('catalog.index') }}" class="flex-shrink-0">
+                <img src="{{ asset('images/logo_university.svg') }}" width="121" height="44" alt="MERA University – Catálogo de cursos" class="mera-public-logo">
             </a>
-            <a href="{{ route('login') }}" class="btn btn-sm mera-btn-primary">Acceso administradores</a>
+            {{-- Botón compacto: no crece ni se parte en dos líneas; en celulares angostos dice solo "Acceso". --}}
+            <a href="{{ route('login') }}" class="btn mera-btn-primary mera-header-cta" aria-label="Acceso administradores">
+                <i class="fas fa-lock" aria-hidden="true"></i>
+                <span>Acceso<span class="d-none d-sm-inline"> administradores</span></span>
+            </a>
         </div>
     </header>
 

@@ -23,7 +23,8 @@ class TrashController extends Controller
         $courses = Course::onlyTrashed()
             ->with('group:id,name')
             ->latest('deleted_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->onEachSide(1);
 
         $restorable = $courses->getCollection()->mapWithKeys(fn (Course $c) => [
             $c->id => collect($c->trash_items ?? [])->every(fn ($item) => $storage->inTrash($item['name'])),
