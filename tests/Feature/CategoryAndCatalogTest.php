@@ -66,7 +66,7 @@ class CategoryAndCatalogTest extends TestCase
         $course = Course::factory()->create(['category_id' => $child->id]);
 
         $this->actingAs($this->admin)->get(route('categories.index'))
-            ->assertSee('1 subcategorías y 1 cursos quedarán sin categoría', false);
+            ->assertSee('1 subcategorías y 1 módulos quedarán sin categoría', false);
 
         $this->actingAs($this->admin)->delete(route('categories.destroy', $root))
             ->assertSessionHas('success', fn ($m) => str_contains($m, '1 subcategorías'));

@@ -61,39 +61,25 @@ class ProfileTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    /**
+     * S25: no existe auto-borrado de cuenta (la baja la hace un administrador).
+     */
+    public function test_users_cannot_delete_their_own_account(): void
     {
         $user = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->delete('/profile', [
-                'password' => 'password',
-            ]);
+        $response = $this->actingAs($user)->delete('/profile', ['password' => 'password']);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
-
-        $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertContains($response->status(), [404, 405]);
+        $this->assertNotNull($user->fresh());
+        $this->assertAuthenticated();
     }
 
-    public function test_correct_password_must_be_provided_to_delete_account(): void
+    public function test_profile_page_has_no_delete_account_option(): void
     {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
-                'password' => 'wrong-password',
-            ]);
-
-        $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
-
-        $this->assertNotNull($user->fresh());
+        $this->actingAs(User::factory()->create())->get('/profile')
+            ->assertOk()
+            ->assertDontSee('Eliminar cuenta')
+            ->assertSee('Pídeselo a un administrador');
     }
 }

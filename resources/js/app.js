@@ -7,6 +7,10 @@ import { initConfirmForms } from './modules/confirm';
 import { initFlashMessages } from './modules/flash';
 import { initUploadForms } from './modules/upload';
 import { initProgramProgress } from './modules/program-progress';
+import { initCourseGroups } from './modules/course-groups';
+import { initSortableModules } from './modules/sortable-modules';
+import { initUnsavedWarning } from './modules/unsaved';
+import { initPanelTemplate } from './modules/panel-template';
 
 window.Alpine = Alpine;
 window.swal = swal; // usado por vistas antiguas y por los módulos
@@ -18,6 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initConfirmForms();
     initUploadForms();
     initProgramProgress();
+    initCourseGroups();
+    initSortableModules();
+    initUnsavedWarning();
+    initFiltersToggle();
+    initPanelTemplate();
     initMobileMenu();
 });
 
@@ -42,4 +51,20 @@ function initMobileMenu() {
     });
 
     window.addEventListener('resize', toggleBodyScroll);
+}
+
+/**
+ * Botón "Filtros" en móvil (U19): muestra u oculta el bloque de filtros indicado en aria-controls.
+ */
+function initFiltersToggle() {
+    document.querySelectorAll('[data-filters-toggle]').forEach((button) => {
+        const target = document.getElementById(button.getAttribute('aria-controls'));
+
+        if (!target) return;
+
+        button.addEventListener('click', () => {
+            const open = target.classList.toggle('is-open');
+            button.setAttribute('aria-expanded', String(open));
+        });
+    });
 }

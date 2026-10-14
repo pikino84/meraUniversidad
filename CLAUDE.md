@@ -21,6 +21,7 @@ Plataforma interna de cursos (Mera Corporation). Un panel administrativo permite
 4. **No dejar la configuración cacheada en desarrollo** (`bootstrap/cache/config.php`): hace que Laravel ignore `.env` y `phpunit.xml`. Si existe, `php artisan config:clear`. `config:cache` va solo en producción.
 5. El `.env` local apunta al MySQL de XAMPP (BD de prueba). Nunca apuntarlo a producción. Si alguna vez apunta a un host remoto, detenerse y preguntar.
 6. Antes de una acción irreversible o que salga del equipo (deploy, servicios externos, borrar ramas), confirmar con el usuario.
+7. **El frontend NUNCA se compila en el servidor.** No incluir `npm ci`, `npm install` ni `npm run build` en ninguna guía de despliegue: en CloudLinux fallan (glibc vieja) y además consumen el disco, que está al 98 %. El build se hace **en local**, se empaqueta en ZIP, se sube, se descomprime en `public/` y **se borra el ZIP** (procedimiento en §5, "Frontend (`public/build`)"). Antes de escribir cualquier guía de despliegue, **leer §5 completo**.
 
 ---
 
@@ -41,7 +42,7 @@ Plataforma interna de cursos (Mera Corporation). Un panel administrativo permite
 ```bash
 composer install && npm install
 npm run dev                       # desarrollo (sin esto o sin build, @vite da error 500)
-npm run build                     # producción → public/build
+npm run build                     # producción → public/build (SOLO en local; nunca en el servidor, regla 7)
 php artisan storage:link          # public/storage -> storage/app/public
 php artisan mera:harden-storage   # .htaccess anti-PHP en storage/app/public (idempotente)
 php artisan migrate               # ⚠ backup antes (regla 2)
@@ -61,8 +62,10 @@ Cron en el servidor (necesario para la purga de papelera y la limpieza del activ
 routes/web.php
   /                      → redirect /login
   /cursos                → CatalogController (público)
-  /<programa>            → ProgramController (público). Programas definidos en config('mera.programs');
-                           hoy: /proceso-de-manipulacion-de-alimentos
+  /<slug-por-idioma>     → ProgramController (público). Programas multi-idioma de config('mera.programs'):
+                           /proceso-de-manipulacion-de-alimentos (es) · /food-handling-process (en, sin módulos aún)
+  panel                  → course-groups (carpetas de curso, publish), courses.bulk-move / move / ungroup
+  /<slug-carpeta>[/en]   → CoursePageController (público si está publicada; vista previa para admins). AL FINAL del archivo
   auth:                  /profile (cualquier usuario autenticado)
   role super admin|admin → dashboard, users, categories, courses
   role super admin       → roles, permissions, activity-logs
@@ -83,9 +86,18 @@ app/Models/
   Category               árbol desde UNA consulta cacheada (flat/tree/pathMap/descendantIdsOf)
   User                   $hidden password, roles PANEL_ROLES, LogsActivity
 app/Support/Like         LIKE escapado y portable (ESCAPE '!')
+app/Support/ProgramCatalog  Programas multi-idioma: URL → (programa, idioma), módulos por idioma, formularios
+app/Services/Courses/CourseGroupOrganizer  Acomodo de módulos en carpetas (mover en lote, ordenar, quitar)
+app/Models/CourseGroup   Carpeta de curso; idiomas fijos es/en (CourseGroup::LANGUAGES)
+lang/<idioma>/program.php  Textos traducibles de las páginas de programa
 config/mera.php          límites, extensiones permitidas, rutas, URL base de cursos, caché API y **programas**
                          (módulos resueltos por slug del curso, ruta de respaldo, evaluación/encuesta)
-resources/js/modules/    flash.js (mensajes por JSON), confirm.js (data-confirm), upload.js (progreso)
+app/Http/Middleware/SecurityHeaders  Cabeceras de seguridad globales (CSP en Report-Only; HSTS solo en producción)
+app/Http/Controllers/TrashController Papelera de módulos (solo super admin): borrado suave + restaurar archivos
+app/Services/Users/AccountInvitations Link por correo para crear/cambiar contraseña (broker "invitations", 72 h)
+app/Console/Commands      mera:check-courses (archivos faltantes, solo lectura) · mera:program-folder (carpeta de un programa)
+resources/js/modules/    flash.js (mensajes por JSON), confirm.js (data-confirm), upload.js (progreso),
+                         sortable-modules.js (arrastrar módulos), unsaved.js (aviso de cambios sin guardar)
 resources/views/partials page-header, flash, form-errors, delete-button, user-menu, cover (respaldo de portada), brand-fonts
 docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/cursos-university (tema Divi-child), README con
                          instrucciones de sustitución, respaldo de la plantilla anterior y alternativa en JS
@@ -193,7 +205,7 @@ docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/curs
 **Estado: ✅ desplegado el 2026-10-12** (commits `d33a001`, `856697e` y `858c681`; producción en `858c681`). Respaldos en el servidor: `~/backups_cursos/` (BD `bd_20261012_1743.sql`, `.env` previos, diff de cambios del servidor, commit anterior, inventario de cursos, crontab previo, build anterior, `.htaccess` previos y los 48 PHP de `public/pages/` en `pages_php_<fecha>/`).
 
 ### Lecciones del despliegue (LEER antes del próximo)
-1. **No compilar en el servidor.** `npm run build` falla: CloudLinux tiene una glibc vieja (`GLIBC_2.29 not found`, binario nativo de rollup). Se compila **en local** (`npm run build`), se empaqueta `public/build` en un ZIP, se sube por el Administrador de archivos de cPanel y se descomprime en `public/`.
+1. **No compilar en el servidor (regla 7).** `npm run build` falla: CloudLinux tiene una glibc vieja (`GLIBC_2.29 not found`, binario nativo de rollup). `npm ci` sí corre, pero solo deja un `node_modules` inútil que ocupa disco. Se repitió el error el 2026-10-12 con `97ce623`: la guía volvió a incluir `npm ci && npm run build`. Procedimiento correcto en "Frontend (`public/build`)", más abajo.
 2. **Permisos.** LiteSpeed sirve los estáticos y lee los `.htaccess` con **otro usuario**; el PHP corre como `merabl`. Un archivo en `600` o una carpeta en `700` da **404 en estáticos** y hace que su `.htaccess` se **ignore en silencio**, mientras el PHP se sigue ejecutando. Causas vistas: `umask 077` que quedó activo en la terminal y ZIP creado en Windows con permisos `rwx------`. Tras cualquier despliegue:
    ```bash
    umask 022
@@ -223,8 +235,38 @@ git pull origin dev
 php artisan migrate --force                              # solo si hay migraciones (con mysqldump antes)
 php artisan mera:harden-storage
 php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
-# + chmod de la lección 2, y subir public/build si cambió el frontend (lección 1)
+# + chmod de la lección 2, y subir public/build si cambió el frontend (ver abajo)
 ```
+
+### Frontend (`public/build`): compilar en local, subir el ZIP, descomprimir y borrar el ZIP
+Hace falta cada vez que un commit cambia `resources/css`, `resources/js`, `tailwind.config.js`, `package*.json` o vistas con clases nuevas de Tailwind.
+
+**En local** (Windows). El ZIP se arma con PHP `ZipArchive` porque `Compress-Archive` de PowerShell guarda rutas con `\`, que en Linux quedan mal:
+```bash
+npm run build
+C=$(git rev-parse --short HEAD); mkdir -p storage/deploy
+php -r '$s="public/build";$z=new ZipArchive;$z->open($argv[1],ZipArchive::CREATE|ZipArchive::OVERWRITE);
+foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($s,FilesystemIterator::SKIP_DOTS)) as $f)
+$z->addFile($f->getPathname(),"build/".str_replace("\\","/",substr($f->getPathname(),strlen($s)+1)));$z->close();' "storage/deploy/build_$C.zip"
+```
+Resultado: `storage/deploy/build_<commit>.zip`. Contiene `build/manifest.json` y `build/assets/*`. Está en `.gitignore`, así que no se sube a git.
+
+**Subir:** cPanel → Administrador de archivos → `cursos.meracorporation.com/public/` → Cargar. Si se sube desde la **raíz** del Administrador de archivos, el ZIP queda en `~` (`/home/merabl/`), no en `public/`: en ese caso usar `~/build_<commit>.zip` en los comandos de abajo.
+
+**En el servidor**, después del `git pull`. ⚠ **Nunca mover `build` antes de tener el nuevo extraído y verificado.** Sin `public/build`, todas las páginas con `@vite` dan **500** (pasó el 2026-10-12: el ZIP no estaba en `public/`, el `unzip` falló y el build ya se había movido).
+```bash
+cd ~/cursos.meracorporation.com/public && umask 022
+test -f build_<commit>.zip || echo "FALTA EL ZIP: NO CONTINUAR"          # 1) ¿está el ZIP aquí?
+rm -rf build_nuevo && mkdir build_nuevo && unzip -q build_<commit>.zip -d build_nuevo
+cat build_nuevo/build/manifest.json                                      # 2) debe coincidir con el local
+# 3) solo si el paso 2 está bien: intercambio (el viejo queda de respaldo, regla 2)
+mv build ~/backups_cursos/build_$(date +%Y%m%d_%H%M) && mv build_nuevo/build build
+rmdir build_nuevo && rm build_<commit>.zip                               # borrar el ZIP
+find build -type f -exec chmod 644 {} + && find build -type d -exec chmod 755 {} +
+cd .. && php artisan view:cache
+```
+**Si algo falla:** `mv "$(ls -td ~/backups_cursos/build_* | head -1)" ~/cursos.meracorporation.com/public/build` devuelve el build anterior.
+Si en el servidor quedó un `node_modules` de un `npm ci` por error, se puede borrar (`rm -rf node_modules`): no lo usa nada y ocupa disco.
 
 ### Verificación (lo que se comprobó el 2026-10-12)
 - `/login`, `/cursos`, `/api/courses` y los assets de `build/` → 200. La API devuelve paginación (`meta.total` = 120), rutas sin `/` inicial y URLs absolutas.
@@ -235,7 +277,9 @@ php artisan optimize:clear && php artisan config:cache && php artisan route:cach
 
 ## 6. Pendientes
 
-**Estado (2026-10-12):** producción corre `858c681`. **Abierto a nuestro cargo:** publicar el programa `/proceso-de-manipulacion-de-alimentos` (hecho en local con pruebas en verde; falta autorización de commit/push y desplegar: `git pull` → `npm ci && npm run build` → `php artisan config:cache && php artisan route:cache && php artisan view:cache`). La ruta depende de `config('mera.programs')`, así que **sin volver a cachear rutas y configuración la página da 404**.
+**Estado (2026-10-13):** producción corre **`97ce623`**. **Abierto a nuestro cargo:** carpetas de curso + página pública por carpeta + links multi-idioma + favicon, **implementados en local** (87 pruebas en verde; §10, "Implementación"). Falta autorización de commit/push y desplegar (lleva **migración** y **frontend**: §10, "Despliegue de este cambio"). También están sin commit los cambios previos de este CLAUDE.md.
+
+**Nuevo (2026-10-13):** auditoría en navegador con hallazgos priorizados en **§12**. Ya están corregidos en local (resumen en §12, "Cómo quedó"); solo queda S26 en producción. Todo sigue **sin commit**; el despliegue (3 migraciones, `.env` con `APP_NAME` y correo SMTP, `mera:program-folder` y borrar la cuenta jfcruz) está en §10, "Despliegue de este cambio".
 
 ### Delegado a otras áreas (comunicado por correo el 2026-10-12): NO actuar sin instrucción explícita del usuario
 Estos puntos no le corresponden a este equipo. Se enviaron por correo a los responsables. No se trabajan, no se proponen como "siguiente paso" y no se modifica nada relacionado hasta que el usuario lo indique.
@@ -345,3 +389,371 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 | 2026-10-12 | Quitados del repo los 48 PHP de demo de `public/pages/` (respaldo local en `storage/backups/code_removed_20261012_pages_php/`). `harden()` fuerza `0644`. S8 (acceso a cursos) queda en espera de consulta por correo. Commit autorizado por el usuario. |
 | 2026-10-12 | Producción en `858c681` (servidor actualizado con `pull`). Todos los pendientes restantes pasan a **delegados** (§6, D1-D9) y se comunican por correo; ya no son tareas de este equipo. Detectado `tests/…/CourseManagementTest.php` modificado en el servidor (por revisar). |
 | 2026-10-12 | **Programa público "Proceso de manipulación de alimentos"** en `/proceso-de-manipulacion-de-alimentos` (a partir del HTML que entregó el usuario). Mejoras sobre el original: documento HTML completo (`lang`, `viewport`, metadatos para compartir), módulos resueltos **por slug** (re-subir un ZIP ya no rompe enlaces), logo como archivo (`images/logo-mera-blanco.png`) en lugar de 19 KB en base64, sin modo oscuro automático (regla de marca), jerarquía de encabezados y `aria-label` con aviso de pestaña nueva, `rel="noopener noreferrer"`, avance por dispositivo (localStorage: "Visto", "Continúa aquí", barra, aviso al terminar, reiniciar), `prefers-reduced-motion`. Genérico: otro programa = otra entrada en `config/mera.php`. 65 pruebas en verde. **Pendiente: autorización de commit y push; tras el `pull` en el servidor: `npm ci && npm run build`, `php artisan config:cache && php artisan route:cache && php artisan view:cache`.** |
+| 2026-10-12 | Despliegue de `97ce623`: se volvió a incluir `npm ci && npm run build` en la guía (ya prohibido por la lección 1) y el usuario lo canceló en el servidor. Se agregó la **regla 7** (nunca compilar en el servidor; leer §5 completo antes de cualquier guía) y el procedimiento "Frontend (`public/build`)": build en local → `storage/deploy/build_<commit>.zip` → subir → descomprimir en `public/` → borrar el ZIP. Generado `build_97ce623.zip`. |
+| 2026-10-12 | **Caída parcial** (`/login`, `/cursos` y el programa en 500; la API siguió en 200): la guía movía `public/build` a respaldo **antes** de comprobar que el ZIP estuviera en `public/`; el `unzip` falló y el sitio quedó sin build. Restauración: devolver el build respaldado. Se corrigió el procedimiento (§5, "Frontend"): extraer en `build_nuevo`, verificar el manifest y solo entonces intercambiar. |
+| 2026-10-12 | Sitio restablecido e instalado el build de `97ce623` (el ZIP estaba en `~`; se extrajo en `build_nuevo`, se verificó el manifest y se intercambió). **Programa publicado y verificado en producción:** `/proceso-de-manipulacion-de-alimentos` 200, los 5 módulos 200 (resueltos por slug), evaluación y encuesta presentes, avance funcionando en móvil, sin errores de JS. `/login`, `/cursos`, API y WordPress (120 cursos) en 200; `/register` e `info.php` en 404. Se borró el `node_modules` del servidor. |
+| 2026-10-13 | Nuevo requerimiento en análisis: **carpetas de cursos** en lugar de categorías, con subcarpetas por versión (ES/EN). Se analizaron los 120 módulos de producción (≈25 cursos; hay versiones por región "LATAM") y se redactaron 10 preguntas sin tecnicismos para la cliente (§10). Sin código todavía. |
+| 2026-10-13 | Recorrido del flujo real del colaborador en **SuperCompany / MERA World** (`mera.supercompany.com`), con la sesión de Jesus C. (vista de colaborador, sin acciones que modificaran datos). Hallazgo central: **SuperCompany es el LMS** (inscripción, avance, evaluación, encuesta, firma, DC3) y Mera Universidad solo **aloja el contenido** que se abre con "Ir a Curso". El avance es **manual** ("Marcar como completado"); los cursos son exportaciones web de **isEazy Author**, sin SCORM/xAPI. Los enlaces a los módulos están **pegados a mano** en SuperCompany, con carpeta por slug y doble slash. §10 se reescribe con el proceso actual y 12 preguntas ajustadas. Se agrega §11 (insumos para la futura propuesta de intranet; la propuesta todavía no se redacta). |
+| 2026-10-13 | Tania confirmó que se incorporará **Estados Unidos**. Cuestionario final de 13 preguntas (§10): agrega crecimiento por país e idioma y administración por país; quita orden obligatorio y seguimiento (son de SuperCompany). Migración por selección múltiple (decisión del usuario). Se adoptó en local la versión de CLAUDE.md trabajada en Claude web (respaldo en `storage/backups/`). |
+| 2026-10-13 | **Alcance aprobado:** solo carpetas de curso → Español/Inglés → módulos en orden, con "Mover a…" en lote (§10). Ediciones, países, programas, código de SuperCompany y lo demás pasan a stand by. |
+| 2026-10-13 | **Implementado en local (alcance aprobado §10):** carpetas de curso (`course_groups`, migración aditiva con respaldo previo), idioma y orden por módulo, "Mover a…" en lote, pestañas Español/Inglés, subir y bajar, quitar de carpeta, borrar carpeta sin borrar módulos; campos nuevos en la API (sin quitar ninguno). **Programas multi-idioma:** una URL por idioma (`/proceso-de-manipulacion-de-alimentos` y `/food-handling-process`), textos en `lang/<idioma>/program.php`, módulos por idioma (lista o carpeta de curso), formularios por idioma con respaldo al español y selector de idioma con `hreflang`; el inglés no se publica mientras no tenga módulos. **Favicon** `images/favicon_mera.png` (M blanca sobre verde MERA) en todos los layouts. 77 pruebas en verde; revisado en escritorio y móvil. Pendiente: commit/push (autorización) y despliegue. |
+| 2026-10-13 | **Página pública por carpeta** (sacada de stand by por el usuario): `/<slug>` y `/<slug>/en`; nace **apagada** (404 al público, vista previa para admins) hasta pulsar "Publicar"; link estable al renombrar y editable; links reservados protegidos; descripción y formularios ES/EN con respaldo al español; recuadro "Página pública" con copiar link. Migración aditiva `2026_10_13_000001`. En local la carpeta de prueba del usuario ("Example") se conservó: se descartó rehacer la primera migración para no borrarla. 87 pruebas en verde. |
+| 2026-10-13 | **Auditoría en navegador del entorno local** (QA, UX/UI, accesibilidad, móvil 375 px y seguridad), con sesión de Super Admin y sin modificar datos. Hallazgos nuevos en §12: F1-F4, S23-S27, P9-P12, U11-U27, con prioridad y orden sugerido. Sin código todavía. |
+| 2026-10-13 | **Correcciones de la auditoría §12 (local, sin commit):** 22 hallazgos resueltos y F2 parcial (detalle en §12, "Cómo quedó"). Nuevos: middleware `SecurityHeaders`, comando `mera:check-courses`, ruta `course-groups.reorder`, módulos JS `sortable-modules`, `unsaved` y filtros plegables. CLAUDE.md unificado con la versión de Claude web. 102 pruebas en verde, build local y QA visual en 1366 y 375 px con un usuario QA temporal (respaldo de la BD antes; usuario borrado al terminar). |
+| 2026-10-13 | **Decisiones del usuario sobre §12 (local, sin commit):** U15 (Cursos → Módulos en el panel), F2 (pantalla Papelera con Restaurar; migración aditiva `2026_10_13_000002`, respaldo de BD antes), U24 (link por correo para crear contraseña; broker `invitations`), cuenta jfcruz@outlook.com borrada en local (dump antes; falta en producción), `delete-user-form` borrado con respaldo, y el programa de alimentos ahora toma módulos y formularios de la carpeta `manipulacion-de-alimentos` sin cambiar su URL (comando `mera:program-folder`). Incidente menor: un `preg_replace` dejó vacío `HasUniqueSlug.php`; se recuperó del historial de la sesión. 112 pruebas en verde, build local y QA visual. |
+| 2026-10-13 | **P11, P10 y U27 (local, sin commit):** P11 medido en local (6-76 ms por página) y en producción (~200 ms en `/login`, la mayor parte red/TLS): sin problema de rendimiento; la lentitud local es del entorno (sin OPcache, `artisan serve`). P10: fuera jQuery UI, Waves, `widget.css` y `script.js` de la plantilla (~297 KB), reemplazado por `panel-template.js`; capturas antes/después de 13 pantallas sin cambios visibles. U27: tarjetas del catálogo con un solo enlace y portada con espacio reservado. Indicación del usuario: los datos locales no reflejan producción; el acomodo de contenido lo hacen Thania y Pamela. 114 pruebas en verde. |
+| 2026-10-14 | Plantilla de correo con la línea de marca MERA (invitación y "olvidé mi contraseña", en español). Cuenta SMTP definida: `notificaciones@meracorporation.com` (contraseña solo en el `.env` del servidor). 115 pruebas en verde. Commit y push a `dev` autorizados por el usuario. |
+
+## 10. Carpetas de cursos: ALCANCE APROBADO (2026-10-13)
+
+**Lo único que se implementa ahora** (decisión del usuario, 2026-10-13). Todo lo demás de esta sección queda en **stand by** (ver "Análisis previo", más abajo): no implementarlo ni proponerlo como siguiente paso.
+
+### Qué se construye
+**Curso (carpeta) → Idioma (Español / Inglés) → Módulos en orden.**
+- **Módulo = un registro actual de `courses`.** No se crea una tabla de módulos nueva ni se mueve ningún archivo.
+- **Curso (carpeta):** tabla nueva (p. ej. `course_groups`): nombre, slug, orden. Sin portada ni descripción obligatorias.
+- **Idioma:** solo dos valores fijos, `es` y `en`. Se guardan en el módulo (columna `language`), no en una tabla. Dentro de cada carpeta se muestran como dos subcarpetas: Español e Inglés.
+- **En el módulo:** columnas nuevas, todas *nullable*: `course_group_id`, `language`, `position`. Un módulo sin carpeta aparece en "Sin carpeta".
+
+### Panel (solo administradores)
+- Lista de carpetas de curso: crear, renombrar, ordenar y borrar. Al borrar una carpeta, sus módulos regresan a "Sin carpeta"; no se borra ningún módulo.
+- Dentro de una carpeta: dos pestañas o subcarpetas, **Español** e **Inglés**, con los módulos en orden y forma de cambiarlo (número o subir/bajar).
+- **Acomodo de lo existente:** selección múltiple de módulos → "Mover a…" (carpeta + idioma). Capacitación hace el acomodo de los ~120 módulos.
+- Al subir o editar un módulo: elegir carpeta, idioma y posición (opcionales).
+
+### Restricciones (no negociables)
+- **Ninguna URL de módulo cambia.** Los enlaces pegados en MERA World (SuperCompany) apuntan a `storage/cursos/<carpeta>/index.html`. La carpeta de curso es solo una agrupación en la BD.
+- `/api/courses`, el catálogo `/cursos`, la página de WordPress y `/proceso-de-manipulacion-de-alimentos` siguen funcionando igual. Se pueden **agregar** campos a la API, pero no quitar ni renombrar.
+- Las **categorías** actuales no se borran en esta fase (la API usa `category_id`). Su reemplazo queda en stand by.
+- Migración solo aditiva, con respaldo previo (regla 2), pruebas en sqlite (regla 3) y build en local (regla 7).
+- Las versiones LATAM o por país **no** son un tercer idioma: por ahora Capacitación decide si las pone en el mismo curso (en Español o Inglés) o en una carpeta aparte (p. ej., "Manejo de alimentos LATAM").
+
+### Implementación (2026-10-13, en local; pendiente commit y despliegue)
+**Carpetas de curso** (alcance aprobado):
+- **Migración** `2026_10_13_000000_create_course_groups_table`, solo aditiva:
+  - Tabla `course_groups` (`name`, `slug`, `position`).
+  - En `courses`: `course_group_id` (nullable, FK `nullOnDelete`), `language` (`es`/`en`) y `position` (nullable).
+  - Ninguna URL ni archivo cambia.
+- **Código:**
+  - `App\Models\CourseGroup` (idiomas fijos en `CourseGroup::LANGUAGES`).
+  - `Course::group()` y el scope `ordered()`.
+  - `App\Services\Courses\CourseGroupOrganizer`: mover en lote, subir/bajar, colocar en posición, quitar, borrar carpeta y renumerar sin huecos. Toda la lógica de acomodo pasa por aquí.
+  - `CourseGroupController`, rutas `course-groups.*`, `courses.bulk-move`, `courses.move` y `courses.ungroup`.
+- **Panel:**
+  - Menú "Carpetas de curso".
+  - Lista de carpetas con conteo ES/EN.
+  - Detalle con pestañas Español/Inglés: subir/bajar, ver, editar y quitar.
+  - En Cursos: filtro "Carpeta", columna "Carpeta · Idioma" y selección múltiple con la barra "Mover a…". "Agregar módulos" llega con la carpeta e idioma preseleccionados.
+  - En el formulario del módulo: carpeta, idioma y n.º de módulo (opcionales).
+- **API:** se **agregaron** `course_group_id`, `course_group`, `language` y `position`. No se quitó nada.
+- **Pruebas:** `tests/Feature/CourseGroupTest.php`.
+
+**Links multi-idioma de programas** (pedido del usuario, 2026-10-13):
+- **Una URL por idioma**, definida en `config/mera.php → programs.<clave>.languages.<idioma>.slug`:
+  - `/proceso-de-manipulacion-de-alimentos` (es).
+  - `/food-handling-process` (en).
+  - Selector de idioma y `<link rel="alternate" hreflang>`.
+  - **Un idioma sin módulos no se publica** (404, y no aparece en el selector). Hoy el inglés de este programa no tiene módulos: no existe en producción.
+- **Textos traducibles:**
+  - Los fijos de la página (pasos, botones, consejo, avance, evaluación/encuesta, valores) están en `lang/es/program.php` y `lang/en/program.php`.
+  - Los propios del programa (título, descripción, títulos de módulos) van por idioma en la config.
+  - El JS de avance recibe sus textos ya traducidos por `data-i18n-*`.
+- **Módulos por idioma:** `modules` (lista explícita por slug de curso, como hoy en español) **o** `course_group => '<slug-de-carpeta>'`, que toma los módulos de ese idioma de la carpeta y en su orden. **Para publicar el inglés basta con una de las dos.**
+- **Formularios:** `actions[].url` acepta `['es' => …, 'en' => …]`. Si el idioma no tiene URL, usa la del idioma por defecto. **Hoy ambos idiomas usan los formularios en español** (decisión del usuario: preparado, sin separar todavía).
+- **Avance:** la clave de `localStorage` es el slug de cada idioma. La de español no cambió, así que se conserva el avance de quien ya empezó.
+- **Código:** `App\Support\ProgramCatalog`, `ProgramController`, `programs/show.blade.php` y `layouts/program.blade.php`.
+
+**Página pública por carpeta** (sacada de stand by por el usuario, 2026-10-13):
+- **Links:** `cursos.meracorporation.com/<slug>` (español) y **`/<slug>/en`** (inglés), con selector de idioma y `hreflang`. Usa la misma vista y el mismo diseño que `/proceso-de-manipulacion-de-alimentos`, incluido el avance por dispositivo (clave `carpeta:<slug>:<idioma>`).
+- **Nace apagada** (`is_published = false`). Mientras está apagada:
+  - El público recibe **404**.
+  - Los administradores ven una **vista previa** con aviso amarillo y `noindex`.
+  - No se puede publicar una carpeta sin módulos con idioma.
+- **Un idioma sin módulos no se muestra al público** (404) ni aparece en el selector.
+- **El link (slug) no cambia al renombrar** la carpeta (`slugFollowsName() = false`). Se edita a mano en "Editar carpeta", con aviso si la página ya está publicada.
+- **Links reservados** (`CourseGroup::reservedSlugs()`): rutas de la app (login, cursos, dashboard…), carpetas de `public/` (images, css, storage…), los slugs de programas en config, más `en`, `es`, `api` y `admin`. Un nombre como "Login" genera `login-2` solo.
+- **Rutas** `course-pages.show` y `course-pages.show.lang` **al final** de `routes/web.php`, para que cualquier ruta existente se resuelva antes. Efecto aceptado: un `POST` a una ruta de un solo segmento que no existe responde **405** en vez de 404 (p. ej. `POST /register`; sigue siendo imposible registrarse).
+- **Panel**, dentro de cada carpeta:
+  - Recuadro "Página pública" con estado (Publicada/Apagada), botón **Publicar/Apagar** (con confirmación) y, por idioma, el link con **Copiar link** y **Ver/Vista previa**, más un aviso si ese idioma no tiene módulos.
+  - La lista de carpetas muestra "Página publicada/apagada".
+  - "Editar carpeta" incluye: nombre en inglés (título de la página en inglés), link, descripción ES/EN y links de **evaluación** y **encuesta** ES/EN. Solo se aceptan `https`. Si el inglés va vacío, usa el de español.
+- **Migración** `2026_10_13_000001_add_public_page_to_course_groups_table` (aditiva): `name_en`, `description_es/en`, `evaluation_url_es/en`, `survey_url_es/en`, `is_published` y `published_at`.
+- **Código:** `CoursePageController`, `CourseGroup::publicUrl()/titleFor()/descriptionFor()/actionUrl()`, `CourseGroupController::publish()`, `course-groups/_public-page.blade.php` y el botón copiar en `resources/js/modules/course-groups.js`.
+- **Pruebas:** `tests/Feature/CoursePageTest.php`.
+
+**Favicon:** `partials/favicon.blade.php` en los 4 layouts (`app`, `guest`, `public` y `program`) → `public/images/favicon_mera.png`. Es la "M" blanca oficial de meracorporation.com sobre un cuadrado redondeado verde `#024D25`; la original era blanca sobre transparente y no se veía en pestañas claras. Se puede reemplazar por otra con el mismo nombre.
+
+### Despliegue de este cambio (lleva migraciones, `.env` y frontend)
+Incluye: carpetas de curso, páginas públicas, programas multi-idioma, favicon, correcciones de §12, Papelera (F2), link para crear contraseña (U24) y la carpeta del programa de alimentos.
+1. **En local**, después del commit:
+   - `npm run build`.
+   - Generar `storage/deploy/build_<commit>.zip` (§5, "Frontend").
+2. **En el servidor:**
+   1. `mysqldump` con respaldo (lección 5 de §5).
+   2. `git pull origin dev`.
+   3. `php artisan optimize:clear`.
+   4. `php artisan migrate --force`. Son **3 migraciones, todas aditivas**: `course_groups` (con los campos de la página pública), 3 columnas nulas en `courses` (carpeta, idioma, posición) y `deleted_at` + `trash_items` en `courses` (Papelera).
+   5. **`.env`** (respaldo antes, regla 2):
+      - `APP_NAME="Mera Universidad"` (pendiente desde U26: el título y el remitente de los correos salen de aquí).
+      - **Correo (obligatorio para U24):** cuenta **`notificaciones@meracorporation.com`** (definida por el usuario el 2026-10-14). **La contraseña NO va en el repo ni en este archivo** (el repo es público): el usuario la tiene y se escribe solo en el `.env` del servidor. Valores: `MAIL_MAILER=smtp`, `MAIL_HOST` y `MAIL_PORT` según cPanel → Cuentas de correo → "Connect Devices" (normalmente `mail.meracorporation.com`, 465 con `MAIL_ENCRYPTION=ssl`), `MAIL_USERNAME=notificaciones@meracorporation.com`, `MAIL_PASSWORD=<la del usuario, entre comillas si lleva # o .>`, `MAIL_FROM_ADDRESS=notificaciones@meracorporation.com`, `MAIL_FROM_NAME="Mera Universidad"`. Probar con un usuario de prueba antes de avisar a Thania y Pamela. Sin esto, al crear un usuario la cuenta se crea pero el link no llega (el panel lo avisa). Respaldo: `php artisan mera:rotate-password <correo>`.
+      - Opcional: `MERA_INVITATION_HOURS` (vigencia del link; 72 por defecto).
+   6. Instalar el build con el procedimiento seguro: ZIP verificado → `build_nuevo` → intercambio.
+   7. `php artisan config:cache && php artisan route:cache && php artisan view:cache`.
+   8. **Carpeta del programa de alimentos:** `php artisan mera:program-folder proceso-de-manipulacion-de-alimentos --dry-run` (revisar) y luego sin `--dry-run`. Crea la carpeta `manipulacion-de-alimentos` (apagada) y le acomoda en Español los 5 módulos LATAM del programa. Es idempotente y **no cambia la URL** `/proceso-de-manipulacion-de-alimentos` ni el avance guardado.
+   9. **Cuenta jfcruz@outlook.com:** borrarla desde el panel (Usuarios → eliminar), con `mysqldump` antes. Decisión del usuario del 2026-10-13 (en local ya se borró).
+   10. `chmod` (lección 2).
+3. **Verificar:**
+   - `/course-groups` (panel) y `/papelera` (solo super admin).
+   - `/proceso-de-manipulacion-de-alimentos`: los mismos 5 módulos, con sus anclas `#/slide/…`, evaluación y encuesta. `/manipulacion-de-alimentos` redirige a esa URL.
+   - `/food-handling-process`: **404** hasta que la carpeta tenga módulos en Inglés.
+   - Crear una carpeta de prueba: su `/<slug>` da **404** sin sesión y vista previa con sesión de admin; al publicarla se ve sin sesión. Después borrarla (sus módulos no se borran).
+   - Crear un usuario de prueba con un correo propio: debe llegar el link "Crea tu contraseña". Después borrarlo.
+   - `/api/courses`: campos nuevos en `null`. WordPress: 120 cursos.
+
+### Stand by (no implementar)
+Ediciones por año, país o región como versión, código de SuperCompany, botón "Copiar enlace", cambios al catálogo público, acceso de colaboradores (D1), avance propio. Todo está documentado en el análisis previo.
+
+---
+
+### Análisis previo (stand by)
+
+**Estado: respuestas de Tania recibidas (2026-10-13); falta validar el diseño con ella.** Todavía no hay código: no implementar nada hasta tener sus respuestas.
+
+#### Qué se pidió
+Reemplazar las **categorías** por **carpetas de cursos**, porque cada curso tiene varios módulos. Dentro de cada carpeta de curso habrá **subcarpetas por versión** (español e inglés, como mínimo) con sus módulos.
+
+#### Proceso actual del colaborador (recorrido del 2026-10-13)
+Hoy intervienen **dos plataformas**. El colaborador nunca entra a Mera Universidad por su cuenta: llega por un enlace desde SuperCompany.
+
+| Paso | Dónde | Qué pasa |
+|---|---|---|
+| 1. Inicio de sesión | `auth.supercompany.com/auth/login` | Correo y contraseña, "Recordarme", recuperar contraseña, autorregistro ("crea una ahora") y versión en inglés. Al entrar, va a `mera.supercompany.com/lobby` ("MERA World"). |
+| 2. Llegar a los cursos | Menú lateral, **Desarrollo → Entrenamiento** (o la app "Entrenamiento", o "Training Center" en Team). También desde **Agenda → Hacer → "2 cursos por completar"** | Tres vistas: **Tablero** (`/training`: curso destacado, cursos activos con %, insignias, últimas unidades), **Auto-aprendizaje** (`/training/trails`: tarjetas con filtros Cursando, Terminado y Pendiente, duración, modalidad, "avance general de colaboradores" y "mínimo aprobatorio: 80") y **Expediciones** (`/training/expeditions`: historial de unidades con tipo, duración, fecha de inscripción, estatus y fecha de término). |
+| 3. Abrir el curso | `/training/trail/<id>` (p. ej., 11388981 = Protocolo Sismos) | Barra de progreso, "Detalle del curso" (descripción, número de módulos, duración y contacto de soporte: tanias@meracorporation.com), **"Constancia DC3"** (deshabilitada hasta terminar) y menú lateral de **módulos → unidades**. Cada unidad trae tipo, duración, instrucciones y las pestañas Contenido y Comunidad (comentarios). |
+| 4. Tomar el módulo | Botón **"Ir a Curso"** (abre en pestaña nueva) → `cursos.meracorporation.com//storage/cursos/<carpeta-slug>/index.html#/slide/<id>` | Contenido de **isEazy Author** (exportación web; en Sismos M1 son 13 diapositivas). Dentro del módulo, la navegación tiene **candado** ("Siguiente" bloqueado hasta terminar la diapositiva). No reporta nada a SuperCompany. |
+| 5. Registrar el avance | De vuelta en SuperCompany | El colaborador pulsa **"Marcar como completado"** en cada unidad. **El avance es declarativo:** se puede marcar sin haber abierto el contenido. |
+| 6. Cerrar el curso | SuperCompany | **Evaluación final** nativa (una pregunta por pantalla, 10 preguntas en Sismos, obligatoria; mínimo aprobatorio de 80 en algunos cursos), **encuesta de satisfacción**, a veces **firma digital** de un documento (p. ej., "Firma tu Protocolo de Sismos", desde "Mis documentos") y, al final, la **constancia DC3**. |
+
+**Estructura de un curso en SuperCompany:** Curso (*trail*) → Módulos (secciones) → Unidades. Tipos de unidad vistos: **Curso** (enlace a isEazy), **Experiencia** (actividades de recapitulación), **Examen**, **Encuesta**, **Documento** (firma o presentación), **Artículo** (p. ej., "Consulta tu protocolo por estado", "Links de apoyo oficial") y **Webinar**. Ojo: SuperCompany cuenta como "módulos" también la evaluación y la encuesta (Sismos dice "4 módulos", pero de contenido son 2).
+
+**Nomenclatura de cursos que ya usa Capacitación** (21 cursos activos en la cuenta revisada): `TIPO-ÁREA-NNN-MODALIDAD-AÑO[-PAÍS] | Nombre corto`. Ejemplos: `NRM-EMG-003-EL-26 | Protocolo Sismos`, `NRM-HIG-005-EL-26 | Manipulación de Alimentos`, `CMP-LID-006-BL-26 | Liderazgo Positivo 2026`, `NRM-SEG-005-EL-26-MX | Factores Psicosociales`.
+- Tipo (deducido): NRM (normativo), NEG (negocio o cultura), CMP (competencias). Área: SEG, EMG, HIG, LID, CUL, OPE, SUP. Modalidad: EL (*e-learning*), BL (*blended*). Año: 25, 26. País opcional: MX.
+- **Hay ediciones por año del mismo curso** (p. ej., Fundamentos Seguridad 001-EL-25 y 002-EL-26; Protocolo Huracán 001-25 y 002-26). El idioma **no** forma parte del código.
+
+#### Implicaciones para el diseño
+1. **Mera Universidad hoy funciona como hosting de contenido, no como LMS.** El avance, las calificaciones, la evaluación, la encuesta y la DC3 viven en SuperCompany. Rehacerlos aquí duplicaría registros (ya pasa con `/proceso-de-manipulacion-de-alimentos`, que tiene su propio avance, evaluación y encuesta, mientras SuperCompany tiene el curso `NRM-HIG-005-EL-26` con 5 módulos).
+2. **Los enlaces de SuperCompany son un contrato.** Están pegados a mano, apuntan a carpetas por **slug** (`modulo-1-fundamentos-y-prevencion-sismica`), traen doble slash y llevan el `#/slide/<id>` de isEazy. Reorganizar en carpetas **no debe cambiar ninguna URL existente**. Revisar también qué pasa con la carpeta de un curso antiguo cuando se reemplaza su ZIP (carpeta inmutable, §3).
+3. **La "carpeta de curso" debería corresponder 1:1 con el curso de SuperCompany** y usar su código como identificador. Las "versiones" pueden ser de idioma, de región (`-MX`, LATAM) o de año.
+4. **Avance real:** isEazy puede exportar en SCORM. Si SuperCompany aceptara SCORM, el avance sería automático y no declarativo. No es parte de este desarrollo, pero condiciona si vale la pena construir avance propio.
+5. **Acceso:** el contenido se abre sin sesión. Es el tema D1, que sigue delegado: no actuar.
+6. **Crecimiento a otros países:** Tania confirmó (2026-10-13) que **se incorporará Estados Unidos**, además de México y LATAM. País e idioma deben ser **dos listas configurables** desde el panel (no columnas ni código fijo), para que agregar EE. UU., otro país u otro idioma sea un dato y no un desarrollo. Una versión = idioma + país (+ edición/año).
+7. **Lo que NO se construye aquí** mientras SuperCompany sea el LMS: avance, candado de orden entre módulos, evaluación, encuesta, reportes y DC3. Se preguntó solo para confirmarlo (preguntas 1 y 2).
+
+#### Lo que muestran los datos de producción (120 registros al 2026-10-12)
+- Cada registro de `courses` es en realidad un **módulo**. Se agrupan en unos **25 cursos**. Ejemplos:
+  - **Manejo de alimentos:** ES (ids 20, 21, 25, 23, 24), EN (108, 118–121), LATAM (133–137) y "Proceso" (122–125, 131).
+  - **Seguridad y salud en el trabajo:** ES (43–45), EN (98–100).
+  - **Estándares de servicio:** ES (29–33), EN (126–130).
+  - **Seguir los procedimientos:** MX (62–65) y **LATAM** (67–70).
+  - **Despega con MERA** (35–39); **Plaza Premium / socios** (132, 138–142); **Mera Way 2.0 / NetSuite** (2–4, 18, 19, 80).
+- Hay versiones que no cambian de idioma sino de **región (LATAM)**.
+- Hoy solo hay 3 categorías: Código de Ética (2 módulos), Protocolo Sismos (3) e Inteligencia Emocional (0). 115 módulos no tienen categoría (relacionado con D5).
+
+#### Propuesta técnica preliminar (a validar con las respuestas)
+- Estructura: **Curso (carpeta, con código SuperCompany) → Versión (idioma, región y/o año) → Módulos en orden**.
+- Mantener `courses` como tabla de módulos, para no romper la API, el WordPress ni **los enlaces de SuperCompany**. Agregar el orden del módulo y su versión. **URLs existentes intactas**; los módulos nuevos usan carpeta inmutable.
+- En el panel: botón **"Copiar enlace"** por módulo (URL limpia, sin doble slash) para pegarlo en SuperCompany, y vista "¿En qué curso de SuperCompany está este módulo?".
+- Migrar las 3 categorías actuales. La API actual se conserva y se agrega una nueva para cursos (carpetas).
+- Avance, evaluación y encuesta propios: **no**, salvo que la cliente lo pida (pregunta 2). El programa público actual queda como caso aparte.
+- Idioma y país como **catálogos configurables** (EE. UU. confirmado); permisos de administración por país si la pregunta 7 lo pide.
+- Migración de los 120 módulos: **selección múltiple "Mover a curso"** en el panel (decisión del usuario); Capacitación hace el acomodo.
+
+#### Preguntas para la cliente (versión final, 2026-10-13)
+Cuestionario para Tania (Capacitación), con opciones para marcar. Reemplaza las versiones anteriores. Se quitaron a propósito el **orden obligatorio entre módulos** y el **seguimiento del colaborador**: los resuelve MERA World (SuperCompany), no Mera Universidad.
+
+Contexto para ella: hoy los colaboradores toman los cursos en **MERA World**: ahí se inscriben, ven su avance, hacen la evaluación y la encuesta y obtienen su DC3. El botón "Ir a Curso" abre el módulo guardado en **Mera Universidad**, donde cada módulo aparece como un curso suelto (p. ej., "Manejo de alimentos" son 15 elementos). La idea es ordenarlo así: **Curso → Versión → Módulos en orden**, ya preparado para Estados Unidos.
+
+**A. Cómo se usa hoy**
+1. **¿Quién usa Mera Universidad?** ☐ Solo Capacitación (subir módulos y copiar enlaces para MERA World) ☐ También los colaboradores, para buscar cursos directamente. *Si marcan la segunda:* cuando un curso no tiene todas sus versiones, ☐ mostrar solo las que existen ☐ mostrar "Próximamente en inglés".
+2. **Avance, evaluación, encuesta y DC3.** ☐ Siguen solo en MERA World ☐ También los necesitamos en Mera Universidad. ¿La página "Proceso de manipulación de alimentos" (que tiene su propio avance y evaluación) se sigue usando, o ese curso ya se toma en MERA World?
+3. **Enlaces en MERA World.** ¿Quién arma los cursos en MERA World y pega los enlaces? ____ ¿Les ayudaría un botón "Copiar enlace" en cada módulo? ☐ Sí ☐ No. *(Los enlaces que ya están puestos seguirán funcionando.)*
+4. **Avance marcado a mano.** Hoy el colaborador marca "completado" aunque no haya abierto el módulo. ¿Es un problema para auditorías o DC3? ☐ Sí ☐ No. ¿Pueden preguntar a SuperCompany si su plan acepta cursos **SCORM** (registran el avance solos)?
+
+**B. Crecimiento a otros países**
+5. **Países con cursos propios en el próximo año:** ☐ México ☐ LATAM (¿qué países?) ____ ☐ Estados Unidos ☐ Otro: ____
+6. **Idiomas:** en Estados Unidos, ☐ inglés ☐ español ☐ ambos. ¿Algún otro idioma a futuro? ☐ Portugués ☐ Otro: ____
+7. **Estados Unidos en MERA World.** ¿Sus colaboradores usarán el mismo MERA World? ☐ Sí ☐ No. ¿Quién subirá sus cursos? ☐ Capacitación México ☐ Alguien de allá (que solo vea y administre lo suyo)
+8. **Versión por país.** La versión de un país, ¿es el mismo curso traducido o cambia el contenido (normas, procesos, contactos)? ☐ Mismo curso ☐ Cambia ☐ Depende. ¿Llevará el país en el código, como ya pasa con `-MX` (p. ej., `-US`, `-LATAM`)? ☐ Sí ☐ No
+
+**C. Organización de los cursos**
+9. **Un curso = un curso de MERA World**, con su mismo código (p. ej., `NRM-EMG-003-EL-26 | Protocolo Sismos`). ☐ De acuerdo ☐ No. ¿Nos confirman qué significa cada parte del código?
+10. **Versiones.** Vemos tres: **idioma**, **país** y **año** (p. ej., "Fundamentos de Seguridad" 2025 y 2026). ¿Cuáles son versiones del mismo curso y cuáles cursos distintos? ____ Las ediciones de años anteriores: ☐ se archivan ☐ siguen visibles
+11. **Qué más va en la carpeta del curso.** En MERA World un curso también tiene actividades de recapitulación, documentos, artículos y webinars. ☐ Solo los módulos de isEazy ☐ También esos materiales. ¿Las actividades de recapitulación también se hacen en isEazy? ☐ Sí ☐ No
+12. **Agrupar.** ¿Les sirve filtrar por **tipo** (Normativo, Competencias, Negocio) y **área** (Seguridad, Higiene, Liderazgo…) tomándolo del código? ☐ Sí ☐ Prefieren otro agrupador: ____ Las categorías actuales (Código de Ética, Protocolo Sismos, Inteligencia Emocional) pasarían a ser cursos.
+13. **Nombres y mejoras.** ¿"Curso" y "Módulo", o los de MERA World ("Curso", "Unidad")? ¿Qué les cuesta trabajo hoy al subir a Mera Universidad y armar el curso en MERA World? ____
+
+*Para su información (no requiere respuesta):* para los ~120 módulos que ya existen habrá **selección múltiple** para moverlos a un curso de una vez; Capacitación los agrupa como prefiera.
+
+**Prioridad si no hay tiempo para todo:** 1, 2, 5, 7 y 10.
+
+#### Respuestas de Tania (2026-10-13)
+- **Usuarios:** solo Capacitación (sube módulos y copia enlaces). Los colaboradores no navegan Mera Universidad.
+- **Avance/evaluación/encuesta/DC3:** en MERA World para **México**. **LATAM y EE. UU. no tienen MERA World** (sin fecha), así que para ellos se usan **páginas de programa** como `/proceso-de-manipulacion-de-alimentos`. Estas páginas pasan a ser parte del alcance.
+- **Países:** México, LATAM (Ecuador, Panamá, Colombia) y EE. UU. Cursos los sube Capacitación México.
+- **Idiomas:** solo español e inglés. **País:** se busca homologar, pero habrá algunas versiones por país.
+- **Años:** cada curso se edita cada año; las ediciones anteriores **siguen visibles**, sin que se vea "encimado".
+
+#### Diseño propuesto con esas respuestas
+**Curso → Edición (año) → Versión (idioma + país opcional) → Módulos en orden.**
+- La edición vigente se muestra abierta; las anteriores, plegadas en "Ediciones anteriores".
+- País opcional: si una versión no tiene país, aplica a todos ("General").
+- Cada versión puede publicar su **página de programa** (módulos, avance, evaluación y encuesta por Microsoft Forms) para LATAM/EE. UU.; se crea desde el panel, no en `config/mera.php`.
+- URLs existentes intactas; "Copiar enlace" por módulo; migración con selección múltiple.
+- **Identificación:** no hace falta login de colaboradores. El registro oficial es la respuesta de Microsoft Forms (el formulario ya pide identificarse). El avance de la página es solo una guía por dispositivo. Opcional: un enlace por versión (o prellenado) para saber de qué edición, idioma y país es cada respuesta.
+
+#### Siguiente paso
+1. Recibir las respuestas.
+2. Cerrar el diseño con el usuario.
+3. Plan de implementación con migración y respaldo (regla 2), conservando las URLs existentes.
+4. Pruebas.
+5. Build en local (regla 7).
+6. Despliegue por fases.
+
+## 11. Insumos para la futura propuesta de intranet propia (NO redactada todavía)
+
+**Estado:** la propuesta de una intranet propia será un **desarrollo independiente**, y se redactará más adelante, cuando el usuario lo pida. Aquí solo queda el inventario de lo que hoy cubre SuperCompany (MERA World), tomado del recorrido del 2026-10-13 con la vista de un colaborador (sin funciones de administración).
+
+| Módulo | Ruta | Qué hace |
+|---|---|---|
+| Acceso | `auth.supercompany.com` | Login centralizado, recordarme, recuperación, autorregistro, ES/EN |
+| Lobby / Company | `/lobby`, `/lobby/welcome` | Banners y avisos (campañas, encuestas externas, álbumes de fotos), **Políticas** (Libro del Colaborador 2026, política de hostigamiento, protocolo de huracán), **videos** institucionales, propósito, 10 valores, "En reflectores" (cumpleaños, aniversarios y bienvenidas) |
+| Apps | Botón en el lobby | Portal de Empleados, Sitios, Comunidad, Aplausos, Retro 1:1, Planes de Acción, Entrenamiento |
+| Equipo (Team) | `/team`, `/team/g/<id>` | Grupos (Corporativo General, México General), crear grupo; por grupo: **Weekly** (actualización semanal por persona), Muro, Archiveros (archivos) y Planes de Acción |
+| Comunidad | `/community` | Feed de publicaciones, felicitaciones automáticas de cumpleaños y aniversarios, botón Publicar |
+| Sitios | `/spaces` | Micrositios: MERA Media, Protocolos oficiales de dependencias, Políticas y programas de Talento y Cultura, Políticas administrativas (MX), Implementación NetSuite |
+| Aplausos | `/recognitions` | Reconocimientos e insignias por valores, Top 10, nominaciones mensuales |
+| Retro 1:1 | `/one-on-one-meetings` | Sesiones 1:1 de retroalimentación (no se abrió para no crear registros) |
+| Planes de Acción | `/action-plans` | Planes SMART con progreso y estatus, plantillas (p. ej., planes de clima para PTY) |
+| Entrenamiento | `/training…` | LMS: tablero, auto-aprendizaje, expediciones, insignias, DC3 (ver §10) |
+| Agenda | Icono de pendientes | **Hacer** (cumpleaños, aniversarios, encuestas y cursos pendientes), **Cumplir** (metas OKR/KPI con peso: vigentes, próximas, históricas), **Leer** |
+| Perfil | Avatar | Puesto, área, sede y número de empleado; **Mi expediente**; **Mis docs** (contratos y firma digital de documentos); Asistencia; pestañas Pendientes, Equipo y Perfil |
+| Asistente IA | "Super" / "Super Flash" | Chat de IA integrado en todas las páginas |
+
+Puntos a considerar cuando se redacte la propuesta: qué módulos se reemplazan y cuáles se integran, el login único (hoy está en SuperCompany), los datos de RR. HH. (expediente, firma digital, asistencia, DC3), la migración del historial de capacitación y la decisión D1 (acceso a los cursos).
+
+## 12. Auditoría QA / UX / seguridad en navegador (2026-10-13, entorno LOCAL)
+
+Recorrido completo en `http://127.0.0.1:8000` con sesión de Super Admin: login, catálogo, dashboard, cursos (lista y edición), carpetas (lista, detalle y edición), categorías, usuarios, roles, permisos, historial y perfil. Revisado en escritorio (~1200 px) y móvil (375 px). **Sin acciones que modificaran datos** (no se guardó, movió, publicó ni borró nada).
+
+**Cómo trabajar esta sección:**
+- Son hallazgos **nuevos**; los que ya estaban en §4 o §6 solo se referencian.
+- Respetar las reglas de §0 (respaldo, pruebas en sqlite, build en local, commit solo con autorización) y **no tocar lo delegado (D1-D9)**.
+- Prioridad: 🔴 crítico · 🟠 alto · 🟡 medio · 🟢 bajo.
+- Al resolver uno, marcar `[x]` y pasarlo a la tabla de §4 con su estado.
+
+### Ya conocidos (no duplicar)
+- Cursos y panel en el mismo origen → **S5 / D8** (delegado, no actuar).
+- Bootstrap + Tailwind y dos librerías de iconos → **P6 / U9**. Portadas sin miniaturas (450-840 KB cada una) → **P8**.
+- `/_ignition/health-check` responde 200 **en local**: es lo esperado con `APP_DEBUG=true` en local. En producción ya está resuelto (S22, `composer --no-dev`). Solo verificar que allá dé 404.
+
+### Funcionalidad
+- [x] ✅ **F1. Archivos de cursos faltantes no se detectan.**
+  - En local, 23 de 109 módulos dan 404 en "Ver curso" (`storage/cursos/<carpeta>/index.html`), y sus portadas también: la BD viene de producción y esos archivos no se copiaron.
+  - El panel no lo avisa: la lista muestra la portada de respaldo, y "Ver curso" abre el 404 genérico de Laravel en una pestaña nueva.
+  - Propuesta: comando `mera:check-courses` (solo lectura: revisa que existan el `index.html` y la portada de cada curso) y un aviso "Archivos no encontrados" en la lista y en la edición del curso. Correrlo también en producción (relacionado con D4, portadas rotas).
+- [x] ✅ **F2. Papelera sin interfaz.** Al borrar un curso, la confirmación solo dice "¿Eliminar el curso «…»?": no avisa que va a la papelera ni que se purga a los 30 días, y no hay forma de restaurarlo desde el panel (solo por servidor). Propuesta: texto en la confirmación + vista "Papelera" (solo super admin) con "Restaurar" vía `CourseManager`.
+- [x] ✅ **F3. Posición vs. número del título.** En "Example", "Service Standards: MODULE 2" quedó como Módulo 1 y "MODULE 1" como Módulo 2. Al usar "Mover a…", sugerir la posición a partir del número del título y avisar si no coincide.
+- [x] ✅ **F4. Edición de curso sin aviso de cambios sin guardar.** Si se sale con cambios (o con un ZIP elegido), se pierden sin aviso. Agregar `beforeunload` cuando el formulario esté modificado (y desactivarlo al enviar).
+
+### Seguridad
+- [x] ✅ **S23. Sin cabeceras de seguridad.**
+  - Ninguna respuesta trae `X-Frame-Options`/`frame-ancestors` (el login se puede embeber en un iframe: clickjacking), `Referrer-Policy`, `Permissions-Policy` ni `Content-Security-Policy`. `nosniff` solo está en `storage/`.
+  - Propuesta: middleware global `SecurityHeaders` con `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, una `Permissions-Policy` mínima y `Strict-Transport-Security` solo en producción.
+  - CSP: empezar con `Content-Security-Policy-Report-Only`, porque la plantilla usa scripts inline.
+  - **No aplicarlo a `storage/cursos`**: los paquetes de isEazy podrían romperse.
+  - Cubrirlo con pruebas de Feature.
+- [x] ✅ **S24. `X-Powered-By: PHP/x.y.z` expuesto** (local 8.2.12; producción 8.1.34, ver §7). Quitarlo con `Header unset X-Powered-By` en `public/.htaccess` o con `expose_php = Off` en `.user.ini`. Así no se anuncia una versión de PHP fuera de soporte.
+- [x] ✅ **S25. "Eliminar cuenta" en Mi perfil.** Cualquier admin o super admin puede borrar su propia cuenta desde `/profile` (`DELETE /profile`, de Breeze). Verificar que `ProfileController::destroy` respete `UserPolicy` (último super admin). Como las cuentas las crea un admin (S7), lo coherente es **quitar el auto-borrado** y que lo haga otro admin desde Usuarios. Agregar una prueba.
+- [ ] 🟡 (en local listo) **S26. Revisión de accesos.** Hay una cuenta **admin** con un correo de un dominio distinto de `meracorporation.com`, y "Super Admin" (jfcruz@outlook.com) tiene los roles `admin` y `super admin` a la vez. Sugerencia: confirmar con el usuario si esos accesos siguen vigentes, mostrar en Usuarios la "Última conexión" y permitir **desactivar** una cuenta sin borrarla. No modificar cuentas sin instrucción.
+- [x] ✅ **S27. API pública.** `Access-Control-Allow-Origin: *` está bien para lectura pública. Verificar que `per_page` tenga tope (p. ej. 100) y que `/api/courses` tenga `throttle:api` (no se pudo comprobar desde el navegador).
+- [x] ✅ Bien: logout por POST con CSRF; las rutas del panel redirigen a login sin sesión; `/register` da 404; una carpeta sin publicar da 404 sin sesión; la búsqueda escapa HTML; `autocomplete` correcto en el login.
+
+### Rendimiento
+- [x] ✅ **P9. `images/logo_university.svg` pesa 150 KB** y se usa en el header y como portada de respaldo en cada tarjeta y fila. Probablemente trae un bitmap incrustado: exportarlo vectorial / pasarlo por SVGO (objetivo < 15 KB) o usar un PNG/WebP pequeño.
+- [x] ✅ **P10. JS y CSS de la plantilla en todas las páginas del panel:** `jquery-ui.min.js` (248 KB), `jquery.slimscroll`, `waves`, `feather.css` + `font-awesome`, `style.css` (315 KB) y `widget.css`. Inventariar cuáles se usan (jquery-ui parece no usarse) y quitar los demás. Requiere QA visual (va con P6/P7).
+- [x] ✅ **P11. TTFB de ~0.9-1.3 s por página en local** (dashboard, cursos, usuarios…). Medir con `DB::listen` o Debugbar (solo local) cuántas consultas hace y cuánto tarda cada página, y revisar que OPcache esté activo en XAMPP. Si en producción también tarda, perfilar `/courses` (127 KB de HTML con 44 formularios).
+- [x] ✅ **P12. Preloader de la plantilla** (`.loader-bg` de pcoded): cada navegación deja la página atenuada ~1 s aunque ya cargó. Quitarlo o bajarlo a < 200 ms.
+
+### UX/UI
+- [x] ✅ **U11. Usuarios: la columna "Acciones" queda oculta** detrás del scroll horizontal a ~1200 px (la tabla mide 977 px dentro de un contenedor de 851 px). Los botones de editar y eliminar no se ven sin desplazar. Usar `.mera-table-stack` como en Cursos o reducir columnas.
+- [x] ✅ **U12. Roles y permisos confusos.**
+  - El permiso se llama "Super Admin" y lo tiene el rol `admin`; el rol `super admin` aparece "Sin permisos".
+  - El acceso real se decide por **rol** (`role:super admin|admin`), así que editar permisos no cambia nada.
+  - El rol `user` se puede asignar al crear un usuario, pero no da acceso al panel.
+  - Propuesta: ocultar "Permisos" (o explicar que es informativo), quitar `user` del selector o explicarlo, y mostrar nombres legibles ("Super administrador", "Administrador").
+- [x] ✅ **U13. Historial poco legible.**
+  - Muestra "Course #127" en lugar del nombre, y campos técnicos en inglés ("position: 2 → 1").
+  - El filtro solo tiene Todos/Carpetas/Cursos: faltan Categorías y Usuarios, que también se registran, y no permite filtrar por usuario ni por fecha.
+  - En móvil la tabla mide 751 px y obliga a desplazar: pasarla a `.mera-table-stack`.
+  - Traducir los atributos con `lang/es/validation.php → attributes` o con un mapa propio.
+- [x] ✅ **U14. Dashboard desalineado con las carpetas.**
+  - Destaca "104 cursos sin categoría" y el acceso rápido "Nueva categoría", pero la organización ahora es por **carpetas** (105 módulos sin carpeta). Además, "Revisar cursos" lleva a `/courses` sin filtro.
+  - Propuesta: tarjeta "Carpetas", aviso "N módulos sin carpeta" → `/courses?carpeta=sin` y acceso rápido "Nueva carpeta".
+  - Mantener las categorías mientras siga su stand by (§10).
+- [x] ✅ **U15. Terminología mezclada.** El menú y la tabla dicen "Cursos" ("109 cursos"), pero cada registro es un **módulo**, y el formulario de carpeta pide "Nombre del curso". Unificar: carpeta = curso, registro = módulo ("Módulos" en el menú, "Nuevo módulo"). Confirmar con el usuario antes de renombrar, porque cambia lo que Capacitación ya conoce.
+- [x] ✅ **U16. Iconos que se ven como cuadros (□) al cargar:** pasa en la lista de cursos y en móvil (botón de menú, "Copiar link", el globo de "Página pública", etc.). Precargar `fa-solid-900.woff2` y `feather.woff` (`<link rel="preload" as="font" crossorigin>`) y confirmar `aria-hidden` en todos los iconos decorativos.
+- [x] ✅ **U17. Edición de curso con portada rota:** se ve el texto alternativo dentro de un recuadro ("Portada actual de…") en vez de la portada de respaldo que sí usa la lista. Usar `partials/cover` también en la edición.
+- [x] ✅ **U18. Reordenar módulos de uno en uno:** cada ↑/↓ recarga la página completa.
+  - Para carpetas de 5 o más módulos, agregar arrastrar y soltar (SortableJS, guardado por `fetch` a `CourseGroupOrganizer`) y conservar ↑/↓ por accesibilidad.
+  - El icono de "Quitar de la carpeta" (flecha de salida) se confunde con "Cerrar sesión": usar otro icono o texto.
+- [x] ✅ **U19. Móvil (375 px):**
+  - En Cursos, los filtros ocupan toda la primera pantalla antes del primer resultado: hacerlos plegables ("Filtros (1)").
+  - Hay 64 botones de icono de menos de 36 px en Cursos y unos 11 en Carpetas, Usuarios y Categorías: subirlos a 40-44 px.
+  - En el detalle de carpeta, "Copiar link" y "Vista previa" se apilan a lo ancho en cada idioma: ponerlos en una sola fila de dos botones.
+- [x] ✅ **U20. Perfil:**
+  - Las etiquetas no tienen `for`, así que los lectores de pantalla no las asocian a los campos.
+  - El título de la página es `h5`; debe ser `h1`, como en el resto.
+  - Al entrar a Mi perfil, el menú lateral pierde el elemento activo y se pliega "Administración".
+- [x] ✅ **U21. Usuarios con el mismo nombre.** Dos cuentas se llaman "Super Admin" (jfcruz@outlook.com y jesus.castro@…), y el saludo dice "Bienvenido, Super Admin". Pedir nombres reales y marcar la cuenta propia con "(tú)" en la lista. **No cambiar datos sin instrucción.**
+- [x] ✅ **U22. Mayúsculas en botones:** "Guardar Cambios", "Subir Módulo Nuevo Aquí", "Copiar Link", "Vista Previa", "Publicar Página", "Eliminar Cuenta", "Nuevo Usuario". En español solo va mayúscula inicial ("Guardar cambios"). Unificar también "link" vs. "enlace".
+- [x] ✅ **U23. Cursos (lista):**
+  - No se puede ordenar por nombre ni por fecha, y no hay columna "Actualizado".
+  - La columna Categoría se oculta en anchos ≤ 1200 px.
+  - "Español · Módulo 1" se parte en dos líneas: usar `white-space: nowrap` o abreviar ("ES · 1").
+- [x] ✅ **U24. Crear usuario:** no hay botón para mostrar la contraseña ni para generar una segura. A futuro conviene "enviar enlace para crear contraseña" (correo de restablecimiento) en lugar de que el admin la defina y la entregue por otro canal (relacionado con D3).
+- [x] ✅ **U25. Favicon duplicado:** `<link rel="icon">` aparece 3 veces en el `<head>` del panel. Revisar `partials/favicon` y los layouts.
+- [x] ✅ **U26. Login:**
+  - No hay botón para mostrar u ocultar la contraseña.
+  - El enlace "Ver catálogo" mide 14 px de alto y tiene bajo contraste.
+  - El `alt` del logo y el `<title>` salen de `config('app.name')`. En local, `.env` tiene `APP_NAME=Laravel`, por eso se ve "· Laravel" y `alt="Laravel"`. Poner `APP_NAME="Mera Universidad"` en el `.env` local y en `.env.example`, y dejar fijo el `alt` del logo ("MERA University").
+- [x] ✅ **U27. Catálogo público `/cursos`** (prioridad baja: según Tania solo lo usa Capacitación):
+  - Mientras cargan, las tarjetas son bloques grises sin `aspect-ratio`.
+  - Las portadas tienen `alt` vacío. Es correcto si son decorativas, pero entonces el título debe ser el enlace.
+  - En móvil la paginación muestra todos los números.
+
+### Cómo quedó (2026-10-13, local, sin commit)
+- **Resuelto:** F1 (`mera:check-courses` de solo lectura + aviso en lista y edición; el ojo se desactiva), F3 ("Mover a…" ordena por el número del título y la carpeta avisa si no coincide), F4 (`data-warn-unsaved`), S23/S24 (middleware `SecurityHeaders`; CSP en modo *Report-Only*), S25 (sin auto-borrado de cuenta), S27, P9 (logo 150 KB → 15 KB; original en `storage/backups/assets_20261013/`), P12 (sin preloader), U11, U12 (nombres legibles de rol; solo se asignan roles del panel; aviso de que los permisos son informativos), U13, U14, U16 (precarga de fuentes de iconos), U17, U18 (arrastrar y soltar nativo, sin dependencia nueva; ↑/↓ se conservan; icono de quitar = `fa-unlink`), U19 (filtros plegables propios: **no usar `.collapse`**, Tailwind la define como `visibility: collapse`), U20, U22 (`.btn{text-transform:none}`; se unificó "link"), U23 (orden por nombre/actualizado, columna "Actualizado"), U25, U26 (mostrar contraseña, enlace al catálogo, `APP_NAME` local corregido con respaldo del `.env`).
+- **Decisiones del usuario aplicadas (2026-10-13):**
+  - **U15:** en el panel, cada registro es un **módulo** ("Módulos", "Nuevo módulo", "Subir módulo"); la carpeta es el curso. El catálogo público `/cursos` no cambió.
+  - **F2:** pantalla **Papelera** (solo super admin, `/papelera`): borrado suave (`deleted_at`) + `trash_items` con el nombre de cada archivo en la papelera; "Restaurar" devuelve los archivos a su ruta original (el link vuelve a funcionar) y el módulo al final de su carpeta. `mera:purge-course-trash` también borra de la BD lo que lleva más de 30 días. Lo borrado antes de este cambio no aparece (no tiene registro).
+  - **U24:** el admin ya no define contraseñas. Al crear un usuario se le envía un correo "Crea tu contraseña" (broker `invitations`, 72 h); en la lista hay "Enviar link" para reenviarlo. **Requiere correo SMTP en producción** (§10, despliegue).
+  - **S26/U21:** cuenta `jfcruz@outlook.com` borrada en local (con dump); **falta borrarla en producción** al desplegar. La lista ya marca la cuenta propia con "(tú)". El admin con dominio externo sigue pendiente de revisar.
+  - `profile/partials/delete-user-form.blade.php` borrado (respaldo en `storage/backups/code_removed_20261013/`).
+  - **Programa de alimentos → carpeta:** `config('mera.programs…course_group')` = `manipulacion-de-alimentos`. Si la carpeta tiene módulos en un idioma, la página los toma de ahí (orden y links de evaluación/encuesta de "Editar carpeta"); si no, usa la lista de la config como respaldo. **La URL y la clave del avance no cambian**; `/manipulacion-de-alimentos` redirige al programa. `/food-handling-process` se publica solo cuando la carpeta tenga módulos en Inglés. Comando idempotente `mera:program-folder` (en local creó la carpeta vacía: la BD local no tiene los 5 módulos LATAM).
+- **P11 (medido, 2026-10-13):** en el servidor cada página tarda 6-76 ms con 0-9 consultas (sin N+1). En producción, un estático tarda ~100 ms tras la conexión TLS y `/login` ~200 ms: el PHP aporta ~110 ms y el resto es red/TLS. **No hay problema de rendimiento en producción.** La lentitud local viene del entorno: OPcache desactivado en XAMPP (`;zend_extension=opcache` en `C:
+mpp\php\php.ini`), `php artisan serve` atiende una petición a la vez y las portadas que faltan en local pasan por Laravel (404). Las únicas consultas repetidas (3 en Usuarios por la regla del último super admin, ~11 ms en la página del programa) no justifican caché.
+- **P10 (2026-10-13):** el panel ya no carga jQuery UI (248 KB), Waves (css+js), `widget.css` ni `public/js/script.js` de la plantilla (~297 KB menos). De `script.js` solo se usaban el botón de pantalla completa y el ícono del menú: ahora están en `resources/js/modules/panel-template.js` (`data-fullscreen`). Se conservan jQuery, Popper (menú de usuario), Bootstrap, slimScroll (lo usa `pcoded` en el menú lateral), `pcoded` y `vertical-layout`. Verificado con capturas antes/después de 13 pantallas en 1366 y 375 px: 25 de 27 idénticas píxel por píxel; Módulos tiene la misma diferencia que dos corridas sin cambios (portadas que cargan) y el menú móvil solo cambia el suavizado del texto. Menú de usuario, menú móvil y pantalla completa probados. **Quitar más (style.css de 315 KB, unificar Bootstrap/Tailwind) es P6/P7.**
+- **U27 (2026-10-13):** cada tarjeta del catálogo tiene un solo enlace (el título, que cubre la tarjeta y anuncia "se abre en una pestaña nueva"); la portada es decorativa y reserva su espacio 16:9 con fondo de marca mientras carga; foco visible y hover suave (respeta `prefers-reduced-motion`). La paginación en móvil ya mostraba solo "Anterior / Siguiente" (vista Tailwind de Laravel): no se cambió.
+- **Plantilla de correo MERA (2026-10-14):** tema `resources/views/vendor/mail/html/themes/mera.css` (`config('mail.markdown.theme') = 'mera'`): fondo `#F3F8F4`, tarjeta con borde superior `#93C01F` y radio de 18 px, botón pill `#024D25`, Montserrat con respaldo Arial y pie con *Vision · Values · Results*. Logo a color en PNG (`public/images/logo-mera-university-email.png`, generado del original; los correos no muestran SVG) con URL absoluta desde `APP_URL`. Solo se publicaron `html/header`, `html/message` y el tema; lo demás lo toma Laravel. Textos del correo de "olvidé mi contraseña" traducidos en `lang/es.json`. Prueba: `test_emails_use_the_mera_template_in_spanish`.
+- **Nota local:** si existe `public/hot`, las páginas usan el servidor de Vite (`npm run dev`) en lugar de `public/build`. Está en `.gitignore`.
+- **Dato a revisar en "Example" (no se modificó):** en Inglés, MODULE 4 está como Módulo 1 y MODULE 3 como Módulo 2; en Español, MODULE 2 está como Módulo 1. Ahora la carpeta lo marca con "El título dice Módulo N".
+
+### Lo que está bien (no tocar)
+Diseño consistente con la marca, confirmaciones con el nombre del elemento, `aria-label` descriptivos en los botones de icono, skip-link, barra "Mover a…" accesible (`aria-live`), pestañas de idioma con `aria-current`, carpetas sin publicar protegidas y ninguna página se desborda a lo ancho en 375 px (solo el contenido dentro de algunas tablas).
+
+### Orden sugerido de trabajo
+1. Seguridad sin impacto visual: S25, S23 y S24 (con pruebas).
+2. Lo que hoy estorba el uso: U11, F1, U13 y U12.
+3. Coherencia con las carpetas: U14, U15 (confirmar nombres con el usuario) y U18.
+4. Rendimiento y pulido: P9, P12, U16, U17, U19, U20 y el resto de 🟢.
+5. Al final, lo que requiere QA visual amplio (P10, junto con P6/P7).

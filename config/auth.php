@@ -97,6 +97,14 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // U24: link para crear la contraseña de una cuenta nueva (o cambiarla) que envía un admin.
+        'invitations' => [
+            'provider' => 'users',
+            'table' => 'password_reset_tokens',
+            'expire' => (int) env('MERA_INVITATION_HOURS', 72) * 60,
+            'throttle' => 0,
+        ],
     ],
 
     /*

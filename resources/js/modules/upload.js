@@ -85,10 +85,11 @@ function setupForm(form) {
                     const value = Math.round((e.loaded / e.total) * 100);
                     setProgress(value, value < 100
                         ? `Subiendo ${formatBytes(e.loaded)} de ${formatBytes(e.total)}…`
-                        : 'Procesando el curso en el servidor, esto puede tardar unos minutos…');
+                        : 'Procesando el módulo en el servidor, esto puede tardar unos minutos…');
                 },
             });
 
+            form.dataset.saving = '1'; // F4: ya se guardó, no avisar al salir
             window.location.assign(data.redirect);
         } catch (error) {
             showOverlay(false);

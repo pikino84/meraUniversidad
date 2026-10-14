@@ -73,34 +73,68 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Programas: páginas públicas que agrupan varios cursos en un recorrido
+    | Programas: páginas públicas que agrupan varios módulos en un recorrido
     |--------------------------------------------------------------------------
-    | La clave es la URL pública (cursos.meracorporation.com/<clave>).
-    | Cada módulo se resuelve por el SLUG del curso en la BD: si se vuelve a subir el ZIP
-    | (carpeta nueva), el enlace sigue funcionando. "fallback_path" solo se usa si el curso
-    | no existe en la BD (p. ej. en un entorno local sin esos registros).
-    | "start" es el ancla opcional de inicio dentro del curso (Articulate: "#/slide/…").
-    | Para agregar otro programa basta con otra entrada aquí (no requiere código nuevo).
+    | Cada programa puede tener varias versiones de idioma (es / en), cada una con SU PROPIA URL
+    | pública (cursos.meracorporation.com/<slug>) y sus módulos. Un idioma sin módulos NO se
+    | publica (su URL da 404 y no aparece en el selector de idioma).
+    |
+    | Textos fijos de la página (botones, pasos, consejos): lang/<idioma>/program.php.
+    | Textos propios del programa (título, descripción, títulos de módulos): aquí, por idioma.
+    |
+    | Módulos de un idioma, dos formas (la primera que exista gana):
+    |   'modules'      → lista explícita: cada módulo se resuelve por el SLUG del curso en la BD
+    |                    (re-subir un ZIP no rompe el enlace); "fallback_path" solo si el curso no
+    |                    existe en la BD; "start" = ancla opcional de inicio (isEazy: "#/slide/…").
+    |   'course_group' → slug de una carpeta de curso: toma sus módulos de ESE idioma, en orden.
+    |
+    | Evaluación y encuesta: 'url' puede ser un texto (igual para todos los idiomas) o un arreglo
+    | por idioma. Un idioma sin URL propia usa la del idioma por defecto.
     */
     'programs' => [
 
         'proceso-de-manipulacion-de-alimentos' => [
-            'title' => 'Proceso de manipulación de alimentos',
-            'eyebrow' => 'Curso en línea',
-            'lead' => 'Aprende paso a paso cómo cuidar los alimentos que servimos. Hacer las cosas bien es parte de lo que somos.',
-            'description' => 'Curso en línea de MERA: 5 módulos sobre el manejo higiénico de alimentos, con evaluación final.',
-            'modules' => [
-                ['title' => 'Recepción y almacenamiento operativo', 'course_slug' => 'modulo-1-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-1-manejo-higienico-latam', 'start' => '#/slide/saz3GISUgN'],
-                ['title' => 'Proceso en cocina: del congelador a la mesa', 'course_slug' => 'modulo-2-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-2-manejo-higienico-latam', 'start' => '#/slide/WL8kWAa7Y'],
-                ['title' => 'Control químico y verificación de la desinfección', 'course_slug' => 'modulo-3-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-3-manejo-higienico-latam', 'start' => '#/slide/DNs52HQKF'],
-                ['title' => 'Normativa de seguridad, agua y químicos', 'course_slug' => 'modulo-4-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-4-manejo-higienico-latam', 'start' => '#/slide/8BnH6wHF8'],
-                ['title' => 'Exclusión de plagas y manejo integral de residuos', 'course_slug' => 'modulo-5-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-5-manejo-higienico-latam', 'start' => '#/slide/g5SbzQZUF'],
+            'default_language' => 'es',
+
+            'languages' => [
+                'es' => [
+                    'slug' => 'proceso-de-manipulacion-de-alimentos',
+                    'eyebrow' => 'Curso en línea',
+                    'title' => 'Proceso de manipulación de alimentos',
+                    'lead' => 'Aprende paso a paso cómo cuidar los alimentos que servimos. Hacer las cosas bien es parte de lo que somos.',
+                    'description' => 'Curso en línea de MERA: 5 módulos sobre el manejo higiénico de alimentos, con evaluación final.',
+                    // Carpeta de curso que alimenta esta página (la crea `php artisan mera:program-folder`).
+                    // Si la carpeta tiene módulos en español, se usan esos y en su orden; la lista de
+                    // abajo queda como RESPALDO y aporta el título corto y el ancla de inicio por slug.
+                    'course_group' => 'manipulacion-de-alimentos',
+                    'modules' => [
+                        ['title' => 'Recepción y almacenamiento operativo', 'course_slug' => 'modulo-1-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-1-manejo-higienico-latam', 'start' => '#/slide/saz3GISUgN'],
+                        ['title' => 'Proceso en cocina: del congelador a la mesa', 'course_slug' => 'modulo-2-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-2-manejo-higienico-latam', 'start' => '#/slide/WL8kWAa7Y'],
+                        ['title' => 'Control químico y verificación de la desinfección', 'course_slug' => 'modulo-3-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-3-manejo-higienico-latam', 'start' => '#/slide/DNs52HQKF'],
+                        ['title' => 'Normativa de seguridad, agua y químicos', 'course_slug' => 'modulo-4-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-4-manejo-higienico-latam', 'start' => '#/slide/8BnH6wHF8'],
+                        ['title' => 'Exclusión de plagas y manejo integral de residuos', 'course_slug' => 'modulo-5-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-5-manejo-higienico-latam', 'start' => '#/slide/g5SbzQZUF'],
+                    ],
+                ],
+
+                // Versión en inglés: se publica sola en /food-handling-process en cuanto la carpeta
+                // tenga módulos en la pestaña Inglés (mientras tanto da 404).
+                'en' => [
+                    'slug' => 'food-handling-process',
+                    'eyebrow' => 'Online course',
+                    'title' => 'Food handling process',
+                    'lead' => 'Learn step by step how to take care of the food we serve. Doing things right is part of who we are.',
+                    'description' => 'MERA online course: 5 modules on hygienic food handling, with a final assessment.',
+                    'course_group' => 'manipulacion-de-alimentos',
+                    'modules' => [],
+                ],
             ],
+
             'actions' => [
-                ['type' => 'evaluation', 'title' => 'Evaluación', 'text' => 'Muestra lo que aprendiste. Contesta con calma.', 'button' => 'Hacer evaluación', 'url' => 'https://forms.cloud.microsoft/r/3e12BETYuE?origin=lprLink'],
-                ['type' => 'survey', 'title' => 'Encuesta', 'text' => 'Cuéntanos qué te pareció el curso. Tu opinión nos ayuda a mejorar.', 'button' => 'Contestar encuesta', 'url' => 'https://forms.cloud.microsoft/r/6qpNWit2U3?origin=lprLink'],
+                // RESPALDO: si la carpeta tiene links de evaluación/encuesta ("Editar carpeta"), mandan esos.
+                // Por ahora ambos idiomas usan los mismos formularios.
+                ['type' => 'evaluation', 'url' => ['es' => 'https://forms.cloud.microsoft/r/3e12BETYuE?origin=lprLink', 'en' => null]],
+                ['type' => 'survey', 'url' => ['es' => 'https://forms.cloud.microsoft/r/6qpNWit2U3?origin=lprLink', 'en' => null]],
             ],
-            'values' => ['Pasión', 'Integridad', 'Excelencia', 'Respeto'],
         ],
 
     ],

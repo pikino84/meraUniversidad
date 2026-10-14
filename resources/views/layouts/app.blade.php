@@ -11,17 +11,19 @@
 
     <title>@yield('title', 'Panel') · {{ config('app.name') }}</title>
 
-    <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
+    @include('partials.favicon')
 
     @include('partials.brand-fonts')
 
-    <!-- Plantilla (Bootstrap 5) -->
+    {{-- Plantilla (Bootstrap 5). P10: sin waves, widget.css, jQuery UI ni script.js (ver resources/js/modules/panel-template.js) --}}
     <link rel="stylesheet" href="{{ asset('bower_components/bootstrap/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('pages/waves/css/waves.min.css') }}" media="all">
+    {{-- U16: precarga de las fuentes de iconos para que no se vean como cuadros (□) al cargar.
+         La URL de feather lleva el mismo ?t= que su CSS para que el navegador reutilice la descarga. --}}
+    <link rel="preload" href="{{ asset('fonts/fa-solid-900.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('icon/feather/fonts/feather.woff') }}?t=1501841394106" as="font" type="font/woff" crossorigin>
     <link rel="stylesheet" href="{{ asset('icon/feather/css/feather.css') }}">
     <link rel="stylesheet" href="{{ asset('css/font-awesome-n.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/widget.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 
     <!-- Estilos y JS propios (Vite) -->
@@ -32,11 +34,7 @@
 <body class="font-sans antialiased">
     <a href="#main-content" class="visually-hidden-focusable">Saltar al contenido</a>
 
-    <!-- [ Pre-loader ] start -->
-    <div class="loader-bg">
-        <div class="loader-bar"></div>
-    </div>
-    <!-- [ Pre-loader ] end -->
+    {{-- P12: se quitó el preloader de la plantilla (.loader-bg): atenuaba cada página ~1 s aunque ya hubiera cargado. --}}
 
     <div id="pcoded" class="pcoded">
         <div class="pcoded-overlay-box"></div>
@@ -56,14 +54,11 @@
     @include('partials.flash')
 
     <script src="{{ asset('bower_components/jquery/js/jquery.min.js') }}"></script>
-    <script src="{{ asset('bower_components/jquery-ui/js/jquery-ui.min.js') }}"></script>
     <script src="{{ asset('bower_components/popper.js/js/popper.min.js') }}"></script>
     <script src="{{ asset('bower_components/bootstrap/js/bootstrap.min.js') }}"></script>
-    <script src="{{ asset('pages/waves/js/waves.min.js') }}"></script>
     <script src="{{ asset('bower_components/jquery-slimscroll/js/jquery.slimscroll.js') }}"></script>
     <script src="{{ asset('js/pcoded.min.js') }}"></script>
     <script src="{{ asset('js/vertical/vertical-layout.min.js') }}"></script>
-    <script src="{{ asset('js/script.min.js') }}"></script>
     @stack('scripts')
 </body>
 

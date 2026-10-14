@@ -8,7 +8,7 @@
         <meta name="color-scheme" content="light">
 
         <title>{{ $title ?? 'Acceso' }} · {{ config('app.name') }}</title>
-        <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
+        @include('partials.favicon')
 
         @include('partials.brand-fonts')
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -26,7 +26,7 @@
             <main class="mera-auth-panel">
                 <div class="mera-auth-card">
                     <a href="{{ url('/') }}">
-                        <img class="mera-auth-logo" src="{{ asset('images/logo_university.svg') }}" alt="{{ config('app.name') }}">
+                        <img class="mera-auth-logo" src="{{ asset('images/logo_university.svg') }}" alt="MERA University">
                     </a>
                     {{ $slot }}
                 </div>

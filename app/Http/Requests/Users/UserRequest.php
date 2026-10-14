@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UserRequest extends FormRequest
 {
@@ -31,11 +30,18 @@ class UserRequest extends FormRequest
                 'required', 'string', 'lowercase', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($target?->id),
             ],
-            // En edición es opcional: vacío = conservar la actual.
-            'password' => [$target ? 'nullable' : 'required', 'string', Password::min(8)->letters()->numbers()],
+            // U24: sin contraseña; la persona la crea con el link que le llega por correo.
             'role' => [
                 'required', 'string', 'exists:roles,name',
                 function ($attribute, $value, $fail) use ($target) {
+                    // U12: solo roles que dan acceso al panel (o el que ya tenía el usuario).
+                    $current = $target?->getRoleNames()->all() ?? [];
+                    if (! in_array($value, array_merge(User::PANEL_ROLES, $current), true)) {
+                        $fail('Ese rol no da acceso al panel. Elige Administrador o Super administrador.');
+
+                        return;
+                    }
+
                     $response = Gate::inspect('assignRole', [User::class, (string) $value, $target]);
 
                     if ($response->denied()) {
@@ -51,7 +57,6 @@ class UserRequest extends FormRequest
         return [
             'name' => 'nombre',
             'email' => 'correo electrónico',
-            'password' => 'contraseña',
             'role' => 'rol',
         ];
     }

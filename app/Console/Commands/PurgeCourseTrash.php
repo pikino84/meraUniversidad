@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Course;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 /**
  * Elimina definitivamente lo que lleva más de N días en la papelera de cursos y
- * las extracciones temporales abandonadas (subidas interrumpidas).
+ * las extracciones temporales abandonadas (subidas interrumpidas). También borra de la BD los
+ * módulos que llevan más de N días en la Papelera (F2).
  */
 class PurgeCourseTrash extends Command
 {
@@ -23,7 +25,15 @@ class PurgeCourseTrash extends Command
         $purged = $this->purge(config('mera.courses.trash_root'), now()->subDays($days)->getTimestamp(), $dryRun);
         $purged += $this->purge(config('mera.courses.temp_root'), now()->subDay()->getTimestamp(), $dryRun);
 
-        $this->info(($dryRun ? 'Se eliminarían ' : 'Eliminados ')."{$purged} elementos.");
+        // F2: los módulos de la Papelera con más de N días se borran definitivamente de la BD.
+        $expired = Course::onlyTrashed()->where('deleted_at', '<', now()->subDays($days));
+        $rows = (clone $expired)->count();
+
+        if (! $dryRun) {
+            $expired->get()->each->forceDelete();
+        }
+
+        $this->info(($dryRun ? 'Se eliminarían ' : 'Eliminados ')."{$purged} elementos y {$rows} módulos de la papelera.");
 
         return self::SUCCESS;
     }

@@ -8,13 +8,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Course extends Model
 {
-    use HasFactory, HasUniqueSlug, LogsActivity;
+    // SoftDeletes: el módulo borrado queda en la Papelera (F2) hasta que se purga.
+    use HasFactory, HasUniqueSlug, LogsActivity, SoftDeletes;
 
     public const API_CACHE_KEY = 'api.courses';
 
@@ -25,6 +27,15 @@ class Course extends Model
         'cover_image',
         'path',
         'category_id',
+        'course_group_id',
+        'language',
+        'position',
+    ];
+
+    protected $casts = [
+        'course_group_id' => 'integer',
+        'position' => 'integer',
+        'trash_items' => 'array',
     ];
 
     protected static function booted(): void
@@ -36,6 +47,7 @@ class Course extends Model
 
         static::saved($flush);
         static::deleted($flush);
+        static::restored($flush);
     }
 
     protected function slugFallback(): string
@@ -47,7 +59,7 @@ class Course extends Model
     {
         return LogOptions::defaults()
             ->useLogName('cursos')
-            ->logOnly(['name', 'slug', 'description', 'category_id', 'cover_image', 'path'])
+            ->logOnly(['name', 'slug', 'description', 'category_id', 'course_group_id', 'language', 'position', 'cover_image', 'path'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -58,6 +70,31 @@ class Course extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Carpeta de curso (módulo → curso, CLAUDE.md §10)
+     */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(CourseGroup::class, 'course_group_id');
+    }
+
+    /**
+     * Número de módulo escrito en el título ("MODULE 2", "Módulo 3"), o null si no lo trae.
+     * Sirve para avisar cuando no coincide con la posición en la carpeta (CLAUDE.md §12, F3).
+     */
+    public function titleModuleNumber(): ?int
+    {
+        return preg_match('/\b(?:m[oó]dulo|module)\s*(\d{1,3})\b/iu', (string) $this->name, $m) ? (int) $m[1] : null;
+    }
+
+    /**
+     * Módulos en el orden de su carpeta: posición y, como desempate, nombre.
+     */
+    public function scopeOrdered(Builder $query): Builder
+    {
+        return $query->orderByRaw('position is null')->orderBy('position')->orderBy('name');
     }
 
     /**

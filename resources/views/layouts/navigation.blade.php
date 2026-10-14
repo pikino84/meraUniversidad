@@ -5,13 +5,16 @@
     // [ruta, patrón activo, icono, texto, visible]
     $items = [
         ['dashboard', 'dashboard', 'fas fa-tachometer-alt', 'Dashboard', $isPanelUser],
-        ['courses.index', 'courses.*', 'fas fa-book', 'Cursos', $isPanelUser],
+        ['courses.index', 'courses.*', 'fas fa-book', 'Módulos', $isPanelUser],
+        ['course-groups.index', 'course-groups.*', 'fas fa-folder', 'Carpetas de curso', $isPanelUser],
         ['categories.index', 'categories.*', 'fas fa-tags', 'Categorías', $isPanelUser],
         ['users.index', 'users.*', 'fas fa-users', 'Usuarios', $isPanelUser],
         ['roles.index', 'roles.*', 'fas fa-id-badge', 'Roles', $isSuperAdmin],
         ['permissions.index', 'permissions.*', 'fas fa-key', 'Permisos', $isSuperAdmin],
         ['activity.logs.index', 'activity.logs.*', 'fas fa-history', 'Historial', $isSuperAdmin],
-        ['profile.edit', 'profile.*', 'fas fa-user', 'Mi perfil', ! $isPanelUser],
+        ['trash.index', 'trash.*', 'fas fa-trash-alt', 'Papelera', $isSuperAdmin],
+        // U20: visible para todos, así el menú conserva el elemento activo al entrar a Mi perfil.
+        ['profile.edit', 'profile.*', 'fas fa-user', 'Mi perfil', true],
     ];
 
     $items = array_filter($items, fn ($item) => $item[4]);

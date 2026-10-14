@@ -26,7 +26,7 @@
 
         <div class="mera-form-group">
 
-            <label>
+            <label for="name">
                 {{ __('Nombre') }}
             </label>
 
@@ -48,7 +48,7 @@
 
         <div class="mera-form-group">
 
-            <label>
+            <label for="email">
                 {{ __('Correo electrónico') }}
             </label>
 
@@ -71,7 +71,7 @@
 
                 <p class="mb-2">
 
-                    <i class="fa fa-exclamation-triangle"></i>
+                    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
 
                     {{ __('Tu correo electrónico aún no ha sido verificado.') }}
 
@@ -82,7 +82,7 @@
                     form="send-verification"
                     class="btn btn-sm mera-btn-save">
 
-                    <i class="fa fa-envelope"></i>
+                    <i class="fa fa-envelope" aria-hidden="true"></i>
 
                     {{ __('Enviar correo de verificación nuevamente') }}
 
@@ -93,9 +93,9 @@
 
                 <p class="text-success mt-2 mb-0">
 
-                    <i class="fa fa-check-circle"></i>
+                    <i class="fa fa-check-circle" aria-hidden="true"></i>
 
-                    {{ __('Se ha enviado un nuevo enlace de verificación a tu correo.') }}
+                    {{ __('Se ha enviado un nuevo link de verificación a tu correo.') }}
 
                 </p>
 
@@ -116,7 +116,7 @@
 
             <button type="submit" class="btn mera-btn-save">
 
-                <i class="fa fa-save"></i>
+                <i class="fa fa-save" aria-hidden="true"></i>
 
                 Guardar cambios
 
@@ -128,7 +128,7 @@
 
             <span class="text-success ml-3">
 
-                <i class="fa fa-check-circle"></i>
+                <i class="fa fa-check-circle" aria-hidden="true"></i>
 
                 {{ __('Guardado correctamente.') }}
 

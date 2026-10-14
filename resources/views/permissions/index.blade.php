@@ -9,6 +9,8 @@
     'action' => ['url' => route('permissions.create'), 'label' => 'Nuevo permiso'],
 ])
 
+@include('partials.roles-notice')
+
 <div class="card mera-table-card">
     <div class="card-block table-border-style">
         <div class="table-responsive">

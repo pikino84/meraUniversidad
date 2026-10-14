@@ -17,7 +17,15 @@
 
         <div>
             <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="current-password" />
+            {{-- U26: botón para mostrar u ocultar la contraseña. --}}
+            <div class="relative mt-1" x-data="{ show: false }">
+                <x-text-input id="password" class="block w-full pe-12" type="password" x-bind:type="show ? 'text' : 'password'" name="password" required autocomplete="current-password" />
+                <button type="button" class="mera-password-toggle" x-on:click="show = !show"
+                    x-bind:aria-label="show ? 'Ocultar contraseña' : 'Mostrar contraseña'" x-bind:aria-pressed="show.toString()"
+                    aria-label="Mostrar contraseña" aria-pressed="false" aria-controls="password">
+                    <span x-text="show ? 'Ocultar' : 'Mostrar'">Mostrar</span>
+                </button>
+            </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
@@ -39,7 +47,7 @@
         </x-primary-button>
     </form>
 
-    <p class="mt-8 text-center text-xs text-gray-400">
-        ¿Buscas los cursos? <a href="{{ route('catalog.index') }}" class="text-mera-secondary hover:underline">Ver catálogo</a>
+    <p class="mt-8 text-center text-sm text-gray-600">
+        ¿Buscas los cursos? <a href="{{ route('catalog.index') }}" class="mera-auth-link">Ver catálogo</a>
     </p>
 </x-guest-layout>

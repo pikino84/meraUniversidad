@@ -32,35 +32,26 @@
 
         <div class="col-md-6">
             <div class="form-group mera-form-group mb-3">
-                <label for="user-password">
-                    {{ $editing ? 'Nueva contraseña' : 'Contraseña' }}
-                    @if ($editing)
-                    <small class="text-muted">(opcional)</small>
-                    @else
-                    <span class="text-danger" aria-hidden="true">*</span>
-                    @endif
-                </label>
-                <input id="user-password" type="password" name="password" autocomplete="new-password"
-                    class="form-control mera-input @error('password') is-invalid @enderror"
-                    @unless ($editing) required @endunless
-                    aria-describedby="user-password-help">
-                <small id="user-password-help" class="form-text text-muted">
-                    Mínimo 8 caracteres, con letras y números.
-                    @if ($editing) Déjala vacía para conservar la actual. @endif
-                </small>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="form-group mera-form-group mb-3">
                 <label for="user-role">Rol <span class="text-danger" aria-hidden="true">*</span></label>
                 <select id="user-role" name="role" required class="form-control form-select mera-input @error('role') is-invalid @enderror">
                     <option value="" disabled @selected(! $currentRole)>Selecciona un rol</option>
                     @foreach ($roles as $role)
-                    <option value="{{ $role->name }}" @selected($currentRole === $role->name)>{{ $role->name }}</option>
+                    <option value="{{ $role->name }}" @selected($currentRole === $role->name)>{{ \App\Models\User::roleLabel($role->name) }}</option>
                     @endforeach
                 </select>
             </div>
+        </div>
+    </div>
+
+    {{-- U24: el admin no define contraseñas; la persona la crea con un link por correo. --}}
+    <div class="alert alert-info d-flex gap-2 align-items-start" role="note">
+        <i class="fas fa-envelope mt-1" aria-hidden="true"></i>
+        <div>
+            @if ($editing)
+            La contraseña no se cambia aquí. Para que la persona elija una nueva, usa <strong>Enviar link</strong> en la lista de usuarios: le llegará un correo válido por {{ (int) round(config('auth.passwords.invitations.expire') / 60) }} horas.
+            @else
+            Al guardar, enviaremos a este correo un link para que la persona <strong>cree su contraseña</strong> (válido por {{ (int) round(config('auth.passwords.invitations.expire') / 60) }} horas). Nadie más la conoce.
+            @endif
         </div>
     </div>
 

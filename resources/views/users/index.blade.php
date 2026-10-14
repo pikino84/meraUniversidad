@@ -54,7 +54,7 @@
                         <td data-label="Correo"><span class="user-email">{{ $user->email }}</span></td>
                         <td data-label="Rol">
                             @forelse ($user->roles as $role)
-                            <span class="mera-badge">{{ $role->name }}</span>
+                            <span class="mera-badge">{{ \App\Models\User::roleLabel($role->name) }}</span>
                             @empty
                             <span class="text-muted">Sin rol</span>
                             @endforelse
@@ -65,6 +65,16 @@
                                 title="Editar" aria-label="Editar usuario {{ $user->name }}">
                                 <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                             </a>
+                            <form method="POST" action="{{ route('users.invite', $user) }}" class="d-inline"
+                                data-confirm="¿Enviar a {{ $user->email }} un link para cambiar su contraseña?"
+                                data-confirm-detail="Su contraseña actual sigue funcionando hasta que use el link."
+                                data-confirm-button="Enviar link">
+                                @csrf
+                                <button type="submit" class="mera-action-btn mera-add-btn" title="Enviar link de contraseña"
+                                    aria-label="Enviar a {{ $user->name }} un link para cambiar su contraseña">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                                </button>
+                            </form>
                             @endcan
                             @can('delete', $user)
                             @include('partials.delete-button', [

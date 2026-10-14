@@ -36,17 +36,27 @@
 @else
 <div class="mera-catalog-grid">
     @foreach ($courses as $course)
+    {{-- U27: un solo enlace por tarjeta (el título, que cubre toda la tarjeta); la portada es
+         decorativa (alt vacío) y su espacio queda reservado (16:9) mientras carga. --}}
     <article class="mera-catalog-card">
-        @include('partials.cover')
+        @include('partials.cover', ['width' => 640, 'height' => 360])
         <div class="mera-catalog-card-body">
             @if ($course->category_id && isset($categoryPaths[$course->category_id]))
             <span class="mera-badge align-self-start">{{ $categoryPaths[$course->category_id] }}</span>
             @endif
-            <h2>{{ $course->name }}</h2>
+            <h2>
+                @if ($course->content_url)
+                <a href="{{ $course->content_url }}" target="_blank" rel="noopener" class="mera-catalog-link">
+                    {{ $course->name }}<span class="visually-hidden"> (se abre en una pestaña nueva)</span>
+                </a>
+                @else
+                {{ $course->name }}
+                @endif
+            </h2>
             <p>{{ \Illuminate\Support\Str::limit($course->description, 140) }}</p>
-            <a href="{{ $course->content_url }}" target="_blank" rel="noopener" class="btn mera-btn-primary btn-sm align-self-start">
-                Abrir curso <span class="visually-hidden">{{ $course->name }} (nueva pestaña)</span>
-            </a>
+            @if ($course->content_url)
+            <span class="btn mera-btn-primary btn-sm align-self-start" aria-hidden="true">Abrir curso</span>
+            @endif
         </div>
     </article>
     @endforeach

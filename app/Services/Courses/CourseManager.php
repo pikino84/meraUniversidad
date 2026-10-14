@@ -115,6 +115,10 @@ class CourseManager
         return $course;
     }
 
+    /**
+     * Manda el módulo a la Papelera (F2): borrado suave en BD y archivos a la papelera,
+     * anotando con qué nombre quedó cada uno para poder restaurarlo.
+     */
     public function delete(Course $course): void
     {
         $paths = [$course->path];
@@ -125,7 +129,62 @@ class CourseManager
 
         DB::transaction(fn () => $course->delete());
 
-        $this->retire($paths);
+        $items = [];
+
+        foreach (array_filter($paths) as $path) {
+            try {
+                if ($name = $this->storage->trash($path)) {
+                    $items[] = ['from' => $path, 'name' => $name];
+                }
+            } catch (Throwable $e) {
+                Log::warning("No se pudo mandar a la papelera [{$path}]: {$e->getMessage()}");
+            }
+        }
+
+        $course->forceFill(['trash_items' => $items])->saveQuietly();
+    }
+
+    /**
+     * Saca un módulo de la Papelera: devuelve sus archivos a la ruta original (que nunca
+     * cambia, así que su link vuelve a funcionar) y quita el borrado suave.
+     *
+     * @throws CoursePackageException si sus archivos ya se purgaron o la ruta está ocupada.
+     */
+    public function restore(Course $course): Course
+    {
+        $items = $course->trash_items ?? [];
+
+        foreach ($items as $item) {
+            if (! $this->storage->inTrash($item['name'])) {
+                throw new CoursePackageException('Sus archivos ya no están en la papelera (se purgan a los '.config('mera.courses.trash_retention_days').' días).');
+            }
+        }
+
+        $restored = [];
+
+        try {
+            foreach ($items as $item) {
+                $this->storage->restoreFromTrash($item['name'], $item['from']);
+                $restored[] = $item;
+            }
+        } catch (Throwable $e) {
+            // Lo que ya se movió regresa a la papelera (con nombre nuevo): el módulo queda como estaba.
+            $names = collect($restored)->mapWithKeys(fn ($item) => [$item['name'] => $this->storage->trash($item['from'])]);
+            $course->forceFill(['trash_items' => array_map(
+                fn ($item) => isset($names[$item['name']]) ? ['from' => $item['from'], 'name' => $names[$item['name']]] : $item,
+                $items,
+            )])->saveQuietly();
+            Log::error('No se pudo restaurar el módulo', ['course_id' => $course->id, 'exception' => $e]);
+
+            throw new CoursePackageException('No se pudieron devolver sus archivos a su lugar. Revisa el log del servidor.');
+        }
+
+        DB::transaction(function () use ($course) {
+            $course->restore();
+            $course->forceFill(['trash_items' => null])->saveQuietly();
+        });
+
+        return $course;
     }
 
     /**

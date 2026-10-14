@@ -21,7 +21,7 @@
 
         <div class="mera-form-group">
 
-            <label>
+            <label for="update_password_current_password">
                 {{ __('Contraseña actual') }}
             </label>
 
@@ -41,7 +41,7 @@
 
         <div class="mera-form-group">
 
-            <label>
+            <label for="update_password_password">
                 {{ __('Nueva contraseña') }}
             </label>
 
@@ -61,7 +61,7 @@
 
         <div class="mera-form-group">
 
-            <label>
+            <label for="update_password_password_confirmation">
                 {{ __('Confirmar contraseña') }}
             </label>
 
@@ -83,7 +83,7 @@
 
             <button type="submit" class="btn mera-btn-save">
 
-                <i class="fa fa-save"></i>
+                <i class="fa fa-save" aria-hidden="true"></i>
 
                 Actualizar contraseña
 
@@ -94,7 +94,7 @@
 
             <span class="text-success ml-3">
 
-                <i class="fa fa-check-circle"></i>
+                <i class="fa fa-check-circle" aria-hidden="true"></i>
 
                 Contraseña actualizada correctamente.
 

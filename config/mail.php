@@ -114,7 +114,7 @@ return [
     */
 
     'markdown' => [
-        'theme' => 'default',
+        'theme' => 'mera', // resources/views/vendor/mail/html/themes/mera.css (línea de marca)
 
         'paths' => [
             resource_path('views/vendor/mail'),

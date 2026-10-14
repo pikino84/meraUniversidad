@@ -161,22 +161,24 @@ HTACCESS;
 
     /**
      * En vez de borrar definitivamente, manda el curso a la papelera (se purga con
-     * `php artisan mera:purge-course-trash`).
+     * `php artisan mera:purge-course-trash`). Devuelve el nombre dentro de la papelera
+     * (para poder restaurarlo) o null si no había nada que mover.
      */
-    public function trash(?string $relativePath): void
+    public function trash(?string $relativePath): ?string
     {
         if (! $relativePath) {
-            return;
+            return null;
         }
 
         $absolute = $this->resolve($relativePath);
 
         if (! File::exists($absolute)) {
-            return;
+            return null;
         }
 
-        $trashRoot = rtrim(config('mera.courses.trash_root'), '/\\');
-        $target = $trashRoot.DIRECTORY_SEPARATOR.now()->format('Ymd_His').'_'.Str::random(4).'_'.basename($absolute);
+        $trashRoot = $this->trashRoot();
+        $name = now()->format('Ymd_His').'_'.Str::random(4).'_'.basename($absolute);
+        $target = $trashRoot.DIRECTORY_SEPARATOR.$name;
 
         File::ensureDirectoryExists($trashRoot, 0755);
 
@@ -184,7 +186,57 @@ HTACCESS;
             $this->moveDirectory($absolute, $target);
         } else {
             File::move($absolute, $target);
+            // rename conserva la fecha original del archivo: sin esto, la purga podría
+            // borrarlo en la siguiente corrida aunque se acabe de mandar a la papelera.
+            touch($target);
         }
+
+        return $name;
+    }
+
+    /**
+     * ¿Sigue en la papelera? (la purga borra lo que lleva más de N días).
+     */
+    public function inTrash(string $trashName): bool
+    {
+        return $this->isSafeTrashName($trashName) && File::exists($this->trashRoot().DIRECTORY_SEPARATOR.$trashName);
+    }
+
+    /**
+     * Devuelve un elemento de la papelera a su ruta original (F2). Falla si ya no está en la
+     * papelera o si la ruta original quedó ocupada, para nunca sobrescribir otro curso.
+     */
+    public function restoreFromTrash(string $trashName, string $relativePath): void
+    {
+        if (! $this->inTrash($trashName)) {
+            throw new RuntimeException("[{$trashName}] ya no está en la papelera.");
+        }
+
+        $source = $this->trashRoot().DIRECTORY_SEPARATOR.$trashName;
+        $target = $this->resolve($relativePath);
+
+        if (File::exists($target)) {
+            throw new RuntimeException("La ruta original [{$relativePath}] ya está ocupada.");
+        }
+
+        File::ensureDirectoryExists(dirname($target), 0755);
+
+        if (File::isDirectory($source)) {
+            $this->moveDirectory($source, $target);
+        } else {
+            File::move($source, $target);
+        }
+    }
+
+    private function trashRoot(): string
+    {
+        return rtrim(config('mera.courses.trash_root'), '/\\');
+    }
+
+    /** Solo nombres simples generados por trash() (sin rutas ni ".."). */
+    private function isSafeTrashName(string $name): bool
+    {
+        return $name !== '' && $name === basename($name) && ! str_contains($name, '..');
     }
 
     public function deleteQuietly(?string $relativePath): void
@@ -200,6 +252,33 @@ HTACCESS;
         }
 
         File::isDirectory($absolute) ? File::deleteDirectory($absolute) : File::delete($absolute);
+    }
+
+    /**
+     * Revisión de SOLO LECTURA de los archivos de un curso (CLAUDE.md §12, F1).
+     *
+     * @return array{content:bool,cover:bool} true = ese archivo FALTA
+     */
+    public function missingFiles(?string $path, ?string $cover): array
+    {
+        $exists = function (?string $relative): bool {
+            if (! $relative) {
+                return false;
+            }
+
+            try {
+                return File::exists($this->resolve($relative));
+            } catch (RuntimeException) {
+                return false;
+            }
+        };
+
+        $entry = $path ? rtrim($path, '/').'/'.config('mera.courses.entry_file') : null;
+
+        return [
+            'content' => ! $exists($entry),
+            'cover' => ! $exists($cover),
+        ];
     }
 
     /**

@@ -21,6 +21,31 @@ class User extends Authenticatable
     /** Roles con acceso al panel. */
     public const PANEL_ROLES = [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN];
 
+    /** Nombres legibles de los roles del sistema (U12). Otros roles se muestran tal cual. */
+    public const ROLE_LABELS = [
+        self::ROLE_SUPER_ADMIN => 'Super administrador',
+        self::ROLE_ADMIN => 'Administrador',
+    ];
+
+    public static function roleLabel(?string $role): string
+    {
+        return self::ROLE_LABELS[$role] ?? (string) $role;
+    }
+
+    /** Rol principal legible (el de mayor nivel si tiene varios). */
+    public function primaryRoleLabel(): string
+    {
+        $roles = $this->getRoleNames();
+
+        foreach (self::PANEL_ROLES as $role) {
+            if ($roles->contains($role)) {
+                return self::roleLabel($role);
+            }
+        }
+
+        return self::roleLabel($roles->first()) ?: 'Usuario';
+    }
+
     protected $fillable = ['name', 'last_name', 'email', 'phone', 'password'];
 
     protected $hidden = ['password', 'remember_token'];

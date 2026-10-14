@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="@yield('description', 'Catálogo de cursos de ' . config('app.name'))">
     <title>@yield('title', 'Cursos') · {{ config('app.name') }}</title>
-    <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
+    @include('partials.favicon')
 
     @include('partials.brand-fonts')
     <link rel="stylesheet" href="{{ asset('bower_components/bootstrap/css/bootstrap.min.css') }}">

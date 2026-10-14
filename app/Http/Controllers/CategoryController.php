@@ -76,7 +76,7 @@ class CategoryController extends Controller
         Cache::forget(Course::API_CACHE_KEY);
 
         $detail = $impact['subcategories'] || $impact['courses']
-            ? " Se eliminaron {$impact['subcategories']} subcategorías y {$impact['courses']} cursos quedaron sin categoría."
+            ? " Se eliminaron {$impact['subcategories']} subcategorías y {$impact['courses']} módulos quedaron sin categoría."
             : '';
 
         return redirect()

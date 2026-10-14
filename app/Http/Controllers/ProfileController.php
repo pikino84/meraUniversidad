@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -38,29 +36,6 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
-
-        $user = $request->user();
-
-        if ($user->isSuperAdmin() && User::superAdminCount() <= 1) {
-            return Redirect::route('profile.edit')
-                ->with('error', 'Eres el último Super Admin: asigna el rol a otra persona antes de eliminar tu cuenta.');
-        }
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
-    }
+    // S25 (2026-10-13): se quitó "Eliminar cuenta" (DELETE /profile). Las cuentas las crea y las
+    // da de baja un administrador desde Usuarios, con las reglas de UserPolicy.
 }

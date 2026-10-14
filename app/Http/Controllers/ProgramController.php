@@ -2,46 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
+use App\Support\ProgramCatalog;
 use Illuminate\View\View;
 
 /**
- * Páginas públicas de programas (recorridos de varios cursos), definidos en config('mera.programs').
- * Acceso público, igual que el catálogo /cursos.
+ * Páginas públicas de programa multi-idioma (config('mera.programs')).
+ * Cada idioma tiene su propia URL; el acceso es público, igual que /cursos.
  */
 class ProgramController extends Controller
 {
     public function show(string $program): View
     {
-        $config = config("mera.programs.{$program}");
+        $resolved = ProgramCatalog::resolve($program);
 
-        abort_unless(is_array($config), 404);
+        abort_unless($resolved !== null, 404);
 
-        // Una sola consulta para todos los módulos.
-        $courses = Course::query()
-            ->whereIn('slug', array_column($config['modules'], 'course_slug'))
-            ->get(['id', 'name', 'slug', 'path'])
-            ->keyBy('slug');
-
-        $modules = array_map(function (array $module, int $index) use ($courses) {
-            $course = $courses->get($module['course_slug'] ?? '');
-            $baseUrl = $course?->content_url
-                ?? (! empty($module['fallback_path'])
-                    ? Course::publicUrl(rtrim($module['fallback_path'], '/').'/'.config('mera.courses.entry_file'))
-                    : null);
-
-            return [
-                'number' => $index + 1,
-                'key' => $module['course_slug'] ?? 'modulo-'.($index + 1),
-                'title' => $module['title'],
-                'url' => $baseUrl ? $baseUrl.($module['start'] ?? '') : null,
-            ];
-        }, $config['modules'], array_keys($config['modules']));
+        // Textos de la página (lang/<idioma>/program.php) en el idioma de esta URL.
+        app()->setLocale($resolved['language']);
 
         return view('programs.show', [
-            'slug' => $program,
-            'program' => $config,
-            'modules' => $modules,
+            'storageKey' => $resolved['page']['slug'],
+            'language' => $resolved['language'],
+            'page' => $resolved['page'],
+            'modules' => $resolved['modules'],
+            'actions' => $resolved['actions'],
+            'alternates' => $resolved['alternates'],
         ]);
     }
 }

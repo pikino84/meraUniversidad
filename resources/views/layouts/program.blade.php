@@ -12,19 +12,21 @@
     {{-- Vista previa al compartir por WhatsApp/Teams/correo --}}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MERA University">
+    <meta property="og:locale" content="{{ app()->getLocale() === 'en' ? 'en_US' : 'es_MX' }}">
     <meta property="og:title" content="@yield('title')">
     <meta property="og:description" content="@yield('description')">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:image" content="{{ url('images/logo.png') }}">
     <link rel="canonical" href="{{ url()->current() }}">
+    @stack('head')
 
-    <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
+    @include('partials.favicon')
     @include('partials.brand-fonts')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="mera-prog-body">
-    <a href="#contenido" class="mera-prog-skip">Saltar al contenido</a>
+    <a href="#contenido" class="mera-prog-skip">{{ __('program.skip') }}</a>
     @yield('content')
 </body>
 

@@ -9,6 +9,8 @@
     'action' => ['url' => route('roles.create'), 'label' => 'Nuevo rol'],
 ])
 
+@include('partials.roles-notice')
+
 <div class="card mera-table-card">
     <div class="card-block table-border-style">
         <div class="table-responsive">
@@ -27,7 +29,10 @@
                     <tr>
                         <td data-label="Rol">
                             <div class="user-name">
-                                {{ $role->name }}
+                                {{ \App\Models\User::roleLabel($role->name) }}
+                                @if ($role->name !== \App\Models\User::roleLabel($role->name))
+                                <code class="small">{{ $role->name }}</code>
+                                @endif
                                 @if ($isSystem)
                                 <small class="text-muted" title="Rol del sistema: no se puede renombrar ni eliminar">
                                     <i class="fa fa-lock" aria-hidden="true"></i> sistema

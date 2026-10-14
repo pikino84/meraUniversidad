@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Course;
+use App\Models\CourseGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -79,10 +80,11 @@ class CourseController extends Controller
 
         return Cache::remember(Course::API_CACHE_KEY, now()->addMinutes($minutes), function () {
             $paths = Category::pathMap();
+            $groups = CourseGroup::pluck('name', 'id');
 
             return Course::query()
                 ->orderBy('id') // mismo orden que el Course::all() original
-                ->get(['id', 'name', 'slug', 'description', 'cover_image', 'path', 'category_id', 'created_at', 'updated_at'])
+                ->get(['id', 'name', 'slug', 'description', 'cover_image', 'path', 'category_id', 'course_group_id', 'language', 'position', 'created_at', 'updated_at'])
                 ->map(fn (Course $course) => [
                     'id' => $course->id,
                     'name' => $course->name,
@@ -90,6 +92,11 @@ class CourseController extends Controller
                     'description' => $course->description,
                     'category_id' => $course->category_id,
                     'category' => $course->category_id ? ($paths[$course->category_id] ?? null) : null,
+                    // Carpeta de curso (CLAUDE.md §10): campos AGREGADOS, no reemplazan a los anteriores.
+                    'course_group_id' => $course->course_group_id,
+                    'course_group' => $course->course_group_id ? ($groups[$course->course_group_id] ?? null) : null,
+                    'language' => $course->language,
+                    'position' => $course->position,
                     // Formato original (relativo, sin "/" inicial)
                     'cover_image' => $course->cover_image ? Course::publicPath($course->cover_image) : null,
                     'url' => $course->path ? Course::publicPath(rtrim($course->path, '/').'/'.config('mera.courses.entry_file')) : null,

@@ -1,6 +1,6 @@
 @php
     $authUser = Auth::user();
-    $roleLabel = $authUser->getRoleNames()->first() ?? 'Usuario';
+    $roleLabel = $authUser->primaryRoleLabel();
 @endphp
 <!-- [ Header ] start -->
 <nav class="navbar header-navbar pcoded-header" aria-label="Barra superior">
@@ -27,7 +27,7 @@
         <div class="navbar-container container-fluid">
             <ul class="nav-left">
                 <li>
-                    <a href="#!" onclick="toggleFullScreen()" class="waves-effect waves-light" aria-label="Pantalla completa">
+                    <a href="#!" data-fullscreen class="waves-effect waves-light" role="button" aria-label="Pantalla completa">
                         <i class="full-screen feather icon-maximize" aria-hidden="true"></i>
                     </a>
                 </li>

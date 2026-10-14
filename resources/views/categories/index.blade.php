@@ -5,7 +5,7 @@
 @section('content')
 @include('partials.page-header', [
     'title' => 'Categorías',
-    'subtitle' => 'Organiza los cursos mediante categorías y subcategorías',
+    'subtitle' => 'Organiza los módulos mediante categorías y subcategorías',
     'action' => ['url' => route('categories.create'), 'label' => 'Nueva categoría'],
 ])
 

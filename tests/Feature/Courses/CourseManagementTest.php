@@ -182,7 +182,7 @@ class CourseManagementTest extends TestCase
 
         $this->actingAs($this->admin)->delete(route('courses.destroy', $course))->assertSessionHas('success');
 
-        $this->assertModelMissing($course);
+        $this->assertSoftDeleted($course); // F2: queda en la Papelera, restaurable
         $this->assertDirectoryDoesNotExist($this->coursesRoot().'/'.basename($course->path));
         $this->assertCount(2, array_merge(File::directories($this->sandbox.'/trash'), File::files($this->sandbox.'/trash')));
     }

@@ -19,13 +19,15 @@ class RegistrationTest extends TestCase
 
     public function test_users_cannot_self_register(): void
     {
-        $this->post('/register', [
+        $response = $this->post('/register', [
             'name' => 'Intruso',
             'email' => 'intruso@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-        ])->assertNotFound();
+        ]);
 
+        // 404 o 405 (existe la ruta pública GET /<carpeta>): en ningún caso se registra nadie.
+        $this->assertContains($response->status(), [404, 405]);
         $this->assertDatabaseMissing('users', ['email' => 'intruso@example.com']);
     }
 }

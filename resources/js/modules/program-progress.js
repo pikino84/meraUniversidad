@@ -38,6 +38,9 @@ export function initProgramProgress() {
     const items = [...root.querySelectorAll('[data-module]')];
     const known = new Set(items.map((li) => li.dataset.module));
     const total = items.length;
+    // Textos traducidos que imprime la vista (lang/<idioma>/program.php).
+    const countTemplate = root.dataset.i18nCount || '{done} / {total}';
+    const seenSuffix = root.dataset.i18nSeen || '';
 
     const box = root.querySelector('[data-progress-box]');
     const count = root.querySelector('[data-progress-count]');
@@ -65,14 +68,14 @@ export function initProgramProgress() {
             if (link) {
                 const base = link.dataset.label || link.getAttribute('aria-label') || '';
                 link.dataset.label = base;
-                link.setAttribute('aria-label', done ? `${base}. Ya lo viste.` : base);
+                link.setAttribute('aria-label', done && seenSuffix ? `${base}. ${seenSuffix}` : base);
             }
         });
 
         const n = seen.size;
         if (box) box.hidden = false;
         if (hint) hint.hidden = false;
-        if (count) count.textContent = `${n} de ${total} ${total === 1 ? 'módulo' : 'módulos'}`;
+        if (count) count.textContent = countTemplate.replace('{done}', String(n)).replace('{total}', String(total));
         if (bar) bar.setAttribute('aria-valuenow', String(n));
         if (fill) fill.style.width = `${total ? (n / total) * 100 : 0}%`;
         if (ready) ready.hidden = n < total;
