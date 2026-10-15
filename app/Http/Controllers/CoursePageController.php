@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Página pública de una carpeta de curso: /<slug> (español) y /<slug>/en (inglés).
+ * Página pública de una carpeta de curso: /<slug> (español) y /en/<slug> (inglés).
  *
  * - Apagada hasta que se publique: el público recibe 404; los administradores ven una
  *   VISTA PREVIA con aviso (para revisarla antes de publicar).
@@ -20,6 +20,18 @@ use Illuminate\View\View;
  */
 class CoursePageController extends Controller
 {
+    /** /en/<slug>: el idioma va primero en la URL (pedido del usuario 2026-10-15). */
+    public function showLanguage(Request $request, string $language, CourseGroup $courseGroup): View|RedirectResponse
+    {
+        return $this->show($request, $courseGroup, $language);
+    }
+
+    /** /<slug>/en (formato anterior): 301 al nuevo, para no romper links ya compartidos. */
+    public function legacyLanguage(CourseGroup $courseGroup, string $language): RedirectResponse
+    {
+        return redirect()->to($courseGroup->publicUrl($language), 301);
+    }
+
     public function show(Request $request, CourseGroup $courseGroup, string $language = 'es'): View|RedirectResponse
     {
         abort_unless(array_key_exists($language, CourseGroup::LANGUAGES), 404);

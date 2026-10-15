@@ -15,6 +15,8 @@ class Kernel extends ConsoleKernel
         // Requiere el cron de Laravel en el servidor: * * * * * php artisan schedule:run
         $schedule->command('mera:purge-course-trash')->dailyAt('03:00')->withoutOverlapping();
         $schedule->command('activitylog:clean')->weekly();
+        // Excel de reportes abandonados (datos personales): ver PurgeReportUploads.
+        $schedule->command('mera:purge-report-uploads')->hourly()->withoutOverlapping();
     }
 
     /**

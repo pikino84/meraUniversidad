@@ -107,7 +107,11 @@
             @foreach ($groups as $group)
             <option value="{{ $group->id }}" @selected((string) request('mover_a') === (string) $group->id)>{{ $group->name }}</option>
             @endforeach
+            <option value="{{ \App\Http\Controllers\CourseGroupController::NEW_GROUP }}" @selected(old('course_group_id') === \App\Http\Controllers\CourseGroupController::NEW_GROUP)>+ Nueva carpeta…</option>
         </select>
+        <label class="visually-hidden" for="bulk-new-group">Nombre de la carpeta nueva</label>
+        <input id="bulk-new-group" type="text" name="new_group_name" maxlength="150" value="{{ old('new_group_name') }}"
+            class="form-control mera-input mera-bulk-new" placeholder="Nombre de la carpeta nueva" data-bulk-new hidden>
         <label class="visually-hidden" for="bulk-language">Idioma</label>
         <select id="bulk-language" name="language" class="form-control form-select mera-input" data-bulk-language>
             @foreach (\App\Models\CourseGroup::LANGUAGES as $code => $label)

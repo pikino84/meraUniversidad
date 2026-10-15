@@ -189,6 +189,20 @@ return [
 
         // Encuesta que usan las carpetas si no se indica otra (config/report_surveys.php).
         'default_survey' => 'higiene',
+
+        // Umbrales del tablero (INSTRUCTIVO_REPORTES.md §6.5): los mismos de la plantilla de
+        // referencia. Un solo lugar para el JS (report-dashboard.js) y los textos de la vista.
+        // "Reprobar" = menos de 80 NO es configurable: las franjas b80/b70/b60/b50 se calculan con
+        // ese corte en CourseReportBuilder y son parte del contrato de datos (§7).
+        'dashboard' => [
+            'podium_min_people' => 20,       // podio y ranking: localidades con al menos N asignados
+            'ranking_low_from' => 13,        // del lugar N en adelante: "aún sin cumplimiento"
+            'failing_group_min' => 20,       // "dónde reprueban más": grupos con al menos N evaluados
+            'position_min_graded' => 15,     // puestos con al menos N evaluados
+            'ok_below' => 0.35,              // va bien: menos de este % sacó menos de 80
+            'needs_support_from' => 0.45,    // necesita apoyo: este % o más
+            'satisfaction_min_answers' => 30, // satisfacción por localidad: al menos N respuestas
+        ],
     ],
 
 ];

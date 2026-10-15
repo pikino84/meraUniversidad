@@ -65,7 +65,8 @@ routes/web.php
   /<slug-por-idioma>     → ProgramController (público). Programas multi-idioma de config('mera.programs'):
                            /proceso-de-manipulacion-de-alimentos (es) · /food-handling-process (en, sin módulos aún)
   panel                  → course-groups (carpetas de curso, publish), courses.bulk-move / move / ungroup
-  /<slug-carpeta>[/en]   → CoursePageController (público si está publicada; vista previa para admins). AL FINAL del archivo
+  /<slug-carpeta> y /en/<slug-carpeta> → CoursePageController (público si está publicada; vista previa para
+                           admins). AL FINAL del archivo. /<slug>/en (formato anterior) → 301 a /en/<slug>
   auth:                  /profile (cualquier usuario autenticado)
   role super admin|admin → dashboard, users, categories, courses
   role super admin       → roles, permissions, activity-logs
@@ -95,10 +96,22 @@ config/mera.php          límites, extensiones permitidas, rutas, URL base de cu
 app/Http/Middleware/SecurityHeaders  Cabeceras de seguridad globales (CSP en Report-Only; HSTS solo en producción)
 app/Http/Controllers/TrashController Papelera de módulos (solo super admin): borrado suave + restaurar archivos
 app/Services/Users/AccountInvitations Link por correo para crear/cambiar contraseña (broker "invitations", 72 h)
-app/Console/Commands      mera:check-courses (archivos faltantes, solo lectura) · mera:program-folder (carpeta de un programa) · mera:detach-categories (quita categorías, con respaldo)
+app/Console/Commands      mera:check-courses (archivos faltantes, solo lectura) · mera:program-folder (carpeta de un programa) · mera:detach-categories (quita categorías, con respaldo) · mera:report-verify (compara un reporte con el esperado, solo lectura) · mera:purge-report-uploads (Excel abandonados, cada hora)
 resources/js/modules/    flash.js (mensajes por JSON), confirm.js (data-confirm), upload.js (progreso),
                          sortable-modules.js (arrastrar módulos), unsaved.js (aviso de cambios sin guardar)
 resources/views/partials page-header, flash, form-errors, delete-button, user-menu, cover (respaldo de portada), brand-fonts
+app/Services/Reports/    Reportes de curso por carpeta (docs/reportes/INSTRUCTIVO_REPORTES.md):
+  ReportWorkbookReader   Lee la hoja 1 de un .xlsx en streaming (openspout 4.25) y valida encabezados
+  PersonnelDirectory     No. de empleado → localidad/área/puesto (reglas en config/mera.php → reports)
+  SurveyAnswerClassifier Texto libre → temas (palabras clave de config/report_surveys.php)
+  CourseReportBuilder    Arma cubo / inicio_mes / encuesta / catalogo (solo agregados) + avisos y totales
+  CourseReportManager    Crear / recalcular / compartir / clasificar. Excel en storage/app/tmp/report-uploads
+                         (privado) y borrados SIEMPRE (finally + mera:purge-report-uploads cada hora)
+app/Http/Controllers/CourseReportController  course-groups/{carpeta}/reportes/… (admin y super admin),
+                         /descargar (HTML autocontenido) y reportes/compartido/{token} (público, noindex)
+resources/js/report-dashboard.js + resources/css/report.css  Tablero (d3 7.9.0). Entradas PROPIAS de Vite,
+                         sin código compartido con app.js: "Descargar HTML" las incrusta tal cual
+config/report_surveys.php  Encuesta por curso (preguntas favorables, catálogo de temas, clasificación previa)
 docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/cursos-university (tema Divi-child), README con
                          instrucciones de sustitución, respaldo de la plantilla anterior y alternativa en JS
 ```
@@ -275,6 +288,41 @@ cd .. && php artisan view:cache
 **Si algo falla:** `mv "$(ls -td ~/backups_cursos/build_* | head -1)" ~/cursos.meracorporation.com/public/build` devuelve el build anterior.
 Si en el servidor quedó un `node_modules` de un `npm ci` por error, se puede borrar (`rm -rf node_modules`): no lo usa nada y ocupa disco.
 
+### Despliegue de reportes de curso (rama `qa` → `dev`; PENDIENTE, requiere autorización)
+Lleva **dependencia nueva de Composer, 1 migración aditiva, un archivo privado que se sube a mano y frontend**. Antes: leer las lecciones de arriba (sobre todo 1, 2, 4, 5 y 7).
+
+**En local**
+1. Con autorización (regla 1): pasar `qa` → `dev` (merge o fast-forward) y `git push origin dev`.
+2. `npm run build` y generar `storage/deploy/build_<commit>.zip` (procedimiento "Frontend", arriba). El manifest debe tener **4 entradas**: `app.css`, `app.js`, `report.css` y `report-dashboard.js`.
+3. Tener a la mano `storage/app/reportes/codigos/higiene.csv` (clasificación previa de comentarios de Higiene). **Trae números de empleado: nunca a git ni por correo**; se sube con el Administrador de archivos de cPanel.
+
+**En el servidor**
+```bash
+cd ~/cursos.meracorporation.com && umask 022 && TS=$(date +%Y%m%d_%H%M)
+git rev-parse HEAD > ~/backups_cursos/commit_anterior_$TS.txt
+cp .env ~/backups_cursos/env_$TS
+# mysqldump con --defaults-extra-file (lección 5) → ~/backups_cursos/bd_$TS.sql; verificar que no esté vacío
+php -m | grep -iE '^(zip|xmlreader)$'                     # openspout necesita las dos: deben salir ambas
+git pull origin dev
+~/bin/composer install --no-dev --optimize-autoloader     # instala openspout/openspout 4.25 (compatible con PHP 8.1)
+php artisan optimize:clear                                # lección 4: hay config nueva (mera.reports)
+php artisan migrate --force                               # 1 migración aditiva: course_reports
+php artisan mera:harden-storage
+```
+- **Clasificación previa:** `mkdir -p storage/app/reportes/codigos && chmod 700 storage/app/reportes storage/app/reportes/codigos`, subir el CSV a `storage/app/reportes/codigos/higiene.csv` con cPanel y `chmod 600` a ese archivo. Está fuera de `public/` (no se sirve por web). Sin él los reportes funcionan, pero todos los comentarios quedan "por clasificar".
+- **Build:** instalar `build_<commit>.zip` con el procedimiento seguro (extraer en `build_nuevo`, revisar que el manifest tenga las 4 entradas, intercambiar, borrar el ZIP, `chmod`).
+- `php artisan config:cache && php artisan route:cache && php artisan view:cache`, y el `chmod` de la lección 2.
+- **Tarea programada nueva:** `php artisan schedule:list` debe mostrar `mera:purge-report-uploads` (cada hora). Usa el cron que ya existe: **no tocar el crontab**.
+- Límites: cada Excel hasta 30 MB (`MERA_REPORTS_MAX_UPLOAD_KB`); `.user.ini` ya permite 512M y 300 s.
+
+**Verificar**
+- `/course-groups/<carpeta>`: sección "Reportes". Crear un corte de prueba con los Excel reales: muestra el loader "Procesando los Excel…", los totales y el tablero, sin errores en la consola. `ls storage/app/tmp/report-uploads` debe quedar **vacío**.
+- "Descargar HTML" baja un solo archivo que abre sin servidor (gráficas y filtros). "Compartir sin sesión": el link abre sin sesión con `X-Robots-Tag: noindex`; al desactivarlo da 404.
+- `/en/<carpeta>` responde y `/<carpeta>/en` redirige con 301. Módulos → "Mover a…" → "+ Nueva carpeta…" crea la carpeta y mueve.
+- Borrar el corte de prueba si no se va a usar.
+
+**Reversa:** `git checkout $(cat ~/backups_cursos/commit_anterior_<TS>.txt)`, `~/bin/composer install --no-dev`, devolver el build anterior y `php artisan optimize:clear`. La tabla `course_reports` puede quedarse (es aditiva) o quitarse con `php artisan migrate:rollback --step=1` (con dump antes).
+
 ### Verificación (lo que se comprobó el 2026-10-12)
 - `/login`, `/cursos`, `/api/courses` y los assets de `build/` → 200. La API devuelve paginación (`meta.total` = 120), rutas sin `/` inicial y URLs absolutas.
 - PHP de prueba en `pages/` y en `storage/cursos/` → **403**. Los PHP de demo → 404 (movidos). `info.php` y `/register` → 404.
@@ -294,7 +342,7 @@ Si en el servidor quedó un `node_modules` de un `npm ci` por error, se puede bo
 - Verificado en navegador con servidor lento simulado: triple clic → **1 sola solicitud**; "Enviar link" muestra el loader; las búsquedas no.
 
 ### Para el correo que se va a redactar (pendiente)
-- **Reportes de curso (en desarrollo en `qa`, `docs/reportes/INSTRUCTIVO_REPORTES.md`):** al terminar, explicar el flujo (subir los 3 Excel por corte, actualizar un corte, link para compartir) y **preguntar por la conexión por API** con la plataforma de capacitación (MERA World/SuperCompany): si existe, con qué credenciales y quién la autoriza. Con API ya no habría que exportar ni subir los Excel en cada corte; mientras tanto se trabaja con los archivos.
+- **Reportes de curso (terminados en `qa`, falta desplegar; `docs/reportes/INSTRUCTIVO_REPORTES.md`):** preguntar también qué significa **"Del lugar 13 en adelante: aún sin cumplimiento"** en el ranking (viene fijo de la plantilla; hoy es `config('mera.reports.dashboard.ranking_low_from')`): ¿es una meta fija o debería depender de un % de avance? Además: al terminar, explicar el flujo (subir los 3 Excel por corte, actualizar un corte, link para compartir) y **preguntar por la conexión por API** con la plataforma de capacitación (MERA World/SuperCompany): si existe, con qué credenciales y quién la autoriza. Con API ya no habría que exportar ni subir los Excel en cada corte; mientras tanto se trabaja con los archivos.
 - **Categorías:** avisar que **se ocultaron** del panel y del catálogo `/cursos` (2026-10-14) y que los 5 módulos que tenían una quedaron **sin categoría**, libres para acomodarse solo en carpetas. Preguntar: **¿quieren esta funcionalidad?** Y si sí, **¿cómo funcionaría?** (p. ej. temas como Seguridad, Higiene o Liderazgo para agrupar **carpetas de curso**, tomados del código de MERA World: `NRM-HIG-…` → tipo Normativo, área Higiene). Se reactivan sin tocar código con `MERA_CATEGORIES_ENABLED=true` + `config:cache` (las 3 categorías siguen guardadas y el respaldo JSON permite devolver las asignaciones).
 
 ### Delegado a otras áreas (comunicado por correo el 2026-10-12): NO actuar sin instrucción explícita del usuario
@@ -432,6 +480,8 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 | 2026-10-14 | Nueva rama de trabajo **`qa`**, creada desde `dev` (`be873ba`). Renombrar `dev` no fue posible (el usuario no es dueño del repo). Flujo: trabajo en `qa`, producción en `dev` (§5). |
 | 2026-10-14 | En `qa`: loader y bloqueo de botones al enviar formularios (`submit-guard.js`). **Reportes de curso, pasos 1-3 de `docs/reportes/INSTRUCTIVO_REPORTES.md` §11:** decisiones de §10 resueltas (acceso admin y super admin, palabras clave + corrección, todos los cortes, link para compartir, actualizar cortes, seeder por curso, API para el correo), `openspout` 4.25.0 con `platform.php` 8.1.34, lector y armado del reporte. **Coincide exactamente con el script de referencia** con los Excel reales (`mera:report-verify`). 132 pruebas en verde. Sin commit. |
 | 2026-10-14 | En `qa`: **reportes de curso, paso 4** (`docs/reportes/INSTRUCTIVO_REPORTES.md` §11): tabla `course_reports` (migración aditiva, aplicada en local con respaldo), cortes por carpeta (crear, actualizar o recalcular, eliminar), link para compartir sin sesión y clasificación manual de comentarios. Corregido: los Excel quedaban en la carpeta temporal si el archivo traía mal una columna (handle abierto de openspout en Windows). Barra superior en móvil: se ocultó el bloque de usuario de escritorio, que flotaba debajo de la barra en ≤ 992 px (lo provocaba una regla de `e501ebd`, ya en producción), y el menú de usuario móvil ya no se corta a 375 px. 142 pruebas en verde; QA visual en 1366 y 375 px. |
+| 2026-10-15 | `94b58d8` subido a `qa` (paso 4, autorizado). En `qa`, sin commit: **reportes paso 5** (tablero con d3 7.9.0, filtros, "Descargar HTML" autocontenido; ver `docs/reportes/INSTRUCTIVO_REPORTES.md` §11). **Módulos:** "Mover a…" ahora ofrece **"+ Nueva carpeta…"** (crea la carpeta y mueve en un solo paso, sin perder el filtro; nombre repetido avisado en el navegador) y el botón "Cancelar" de esa barra ya se lee (texto blanco; la regla general lo dejaba verde sobre verde). 146 pruebas en verde; QA en 1366 y 375 px con usuario temporal (respaldos de la BD antes; datos de prueba borrados). |
+| 2026-10-15 | Ajustes pedidos por el usuario (en `qa`): página en inglés de la carpeta en **`/en/<slug>`** (antes `/<slug>/en`, que ahora redirige con 301); hover de la tabla de Módulos sin `scale` (provocaba una barra horizontal intermitente); fecha de corte opcional (vacía = hoy en México); botón "Seleccionar archivo" legible en hover (Bootstrap lo pintaba gris); logo blanco en "Descargar HTML" (`images/logo-mera-university-blanco.png`). Revisión del código de la plantilla: umbrales en `config('mera.reports.dashboard')` (mismos valores), redibujo solo si cambia el ancho, filtros en la URL, tablas que caben en 375 px y `mera:purge-report-uploads` cada hora para Excel abandonados. **Reportes paso 6:** §3 y guía de despliegue en §5. 149 pruebas en verde; QA en navegador con usuario temporal (respaldo antes; datos de prueba borrados). Commit y push a `qa` autorizados por el usuario. |
 
 ## 10. Carpetas de cursos: ALCANCE APROBADO (2026-10-13)
 

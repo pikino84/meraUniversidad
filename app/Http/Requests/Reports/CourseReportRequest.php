@@ -33,13 +33,24 @@ class CourseReportRequest extends FormRequest
             : $this->user()->can('create', CourseReport::class);
     }
 
+    /**
+     * Fecha de corte vacía = hoy (en la zona horaria de México). Se sugiere sola con la fecha del
+     * nombre del Excel (report-form.js); esto cubre el caso en que el nombre no la trae.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (blank($this->input('cut_date'))) {
+            $this->merge(['cut_date' => now(config('mera.display_timezone'))->toDateString()]);
+        }
+    }
+
     public function rules(): array
     {
         $creating = $this->isMethod('post');
         $maxKb = (int) config('mera.reports.max_upload_kb');
         $rules = [
             'title' => ['required', 'string', 'max:150'],
-            'cut_date' => ['required', 'date', 'before_or_equal:today'],
+            'cut_date' => ['required', 'date', 'before_or_equal:'.now(config('mera.display_timezone'))->toDateString()],
         ];
 
         if ($creating) {

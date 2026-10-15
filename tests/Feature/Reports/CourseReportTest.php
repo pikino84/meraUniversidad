@@ -260,6 +260,68 @@ class CourseReportTest extends TestCase
         $this->assertSame(1, array_sum(array_map(fn ($c) => preg_match('/^(m\d+|v\d+|v_todo)$/', $c) ? $row[$c] : 0, $columns)));
     }
 
+    public function test_the_report_page_mounts_the_dashboard_with_its_data(): void
+    {
+        $report = $this->makeReport();
+
+        $this->actingAs($this->admin)->get(route('course-groups.reports.show', [$this->group, $report]))
+            ->assertOk()
+            ->assertSee('data-course-report', false)
+            ->assertSee('id="report-data"', false)
+            ->assertSee('Ranking de localidades')
+            ->assertSee('Descargar HTML');
+    }
+
+    public function test_download_html_is_a_standalone_file_with_only_aggregates(): void
+    {
+        $report = $this->makeReport();
+
+        $response = $this->actingAs($this->admin)->get(route('course-groups.reports.download', [$this->group, $report]));
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
+            ->assertHeader('Content-Disposition', 'attachment; filename="reporte-higiene-en-cocina-2026-10-13.html"');
+        $html = $response->getContent();
+        $this->assertStringContainsString('<!doctype html>', $html);
+        $this->assertStringContainsString('id="report-data"', $html);
+        $this->assertStringContainsString('Corte al 13/10/2026', $html);
+        $this->assertStringNotContainsString('/build/assets/', $html); // nada por fuera: todo incrustado
+        $this->assertStringNotContainsString('"A"', $html);            // ni nombres de personas
+
+        $this->actingAs($this->userWithRole('user'))
+            ->get(route('course-groups.reports.download', [$this->group, $report]))
+            ->assertForbidden();
+    }
+
+    public function test_an_empty_cut_date_uses_today_in_mexico_city(): void
+    {
+        $this->travelTo(now('America/Mexico_City')->setTime(23, 30)); // ya es "mañana" en UTC
+
+        $this->actingAs($this->admin)
+            ->post(route('course-groups.reports.store', $this->group), $this->payload(['cut_date' => '']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            now(config('mera.display_timezone'))->toDateString(),
+            CourseReport::firstOrFail()->cut_date->toDateString(),
+        );
+    }
+
+    public function test_abandoned_uploads_are_purged_but_recent_ones_are_kept(): void
+    {
+        $old = $this->tempRoot.DIRECTORY_SEPARATOR.'abandonada';
+        $recent = $this->tempRoot.DIRECTORY_SEPARATOR.'en-curso';
+        File::ensureDirectoryExists($old);
+        File::ensureDirectoryExists($recent);
+        File::put($old.DIRECTORY_SEPARATOR.'personal.xlsx', 'x');
+        touch($old, now()->subHours(2)->getTimestamp());
+
+        $this->artisan('mera:purge-report-uploads')->assertSuccessful();
+
+        $this->assertDirectoryDoesNotExist($old);
+        $this->assertDirectoryExists($recent);
+    }
+
     public function test_deleting_a_cut_keeps_the_others_and_the_folder(): void
     {
         $report = $this->makeReport();

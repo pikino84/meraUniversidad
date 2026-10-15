@@ -4,25 +4,15 @@
 
 @section('title', $report->title)
 
+@push($shared ? 'head' : 'styles')
 @if ($shared)
-@push('head')
 <meta name="robots" content="noindex, nofollow">
-@endpush
 @endif
+@vite(['resources/css/report.css', 'resources/js/report-dashboard.js'])
+@endpush
 
 @section('content')
-@php
-    $tz = config('mera.display_timezone');
-    $s = $report->summary ?? [];
-    $pct = fn ($v) => $v === null ? '—' : number_format(round($v)).' %';
-    $kpis = [
-        ['Asignados', number_format($s['asignados'] ?? 0), null, 'fas fa-users'],
-        ['Completaron', number_format($s['completados'] ?? 0), $pct($s['pct_completado'] ?? null).' de los asignados', 'fas fa-check-circle'],
-        ['Todavía no empiezan', number_format($s['sin_iniciar'] ?? 0), null, 'fas fa-hourglass-start'],
-        ['Calificación promedio', isset($s['calif_promedio']) ? number_format($s['calif_promedio'], 1) : '—', $pct($s['pct_80'] ?? null).' sacó 80 o más', 'fas fa-star'],
-        ['Satisfacción', $pct($s['satisfaccion'] ?? null), number_format($s['respuestas'] ?? 0).' respuestas', 'fas fa-smile'],
-    ];
-@endphp
+@php $tz = config('mera.display_timezone'); @endphp
 
 @include('partials.page-header', [
     'title' => $report->title,
@@ -33,6 +23,9 @@
 <div class="mera-report-actions mb-3">
     <a href="{{ route('course-groups.show', $group) }}" class="btn mera-btn-cancel btn-sm"><i class="fas fa-arrow-left" aria-hidden="true"></i> {{ $group->name }}</a>
     <a href="{{ route('course-groups.reports.edit', [$group, $report]) }}" class="btn mera-btn-cancel btn-sm"><i class="fas fa-pencil-alt" aria-hidden="true"></i> Actualizar corte</a>
+    <a href="{{ route('course-groups.reports.download', [$group, $report]) }}" class="btn mera-btn-cancel btn-sm" data-no-loader>
+        <i class="fas fa-download" aria-hidden="true"></i> Descargar HTML
+    </a>
     @if ($report->pendingCount())
     <a href="{{ route('course-groups.reports.pending', [$group, $report]) }}" class="btn mera-btn-primary btn-sm">
         <i class="fas fa-tags" aria-hidden="true"></i> Pendientes de clasificar ({{ $report->pendingCount() }})
@@ -46,18 +39,6 @@
     </form>
 </div>
 @endunless
-
-{{-- Totales del corte (el tablero del paso 5 los recalcula con filtros) --}}
-<div class="mera-report-kpis">
-    @foreach ($kpis as [$label, $value, $note, $icon])
-    <div class="mera-report-kpi">
-        <i class="{{ $icon }}" aria-hidden="true"></i>
-        <span class="mera-report-kpi-label">{{ $label }}</span>
-        <strong>{{ $value }}</strong>
-        @if ($note)<small>{{ $note }}</small>@endif
-    </div>
-    @endforeach
-</div>
 
 @if ($report->warnings && ! $shared)
 <div class="alert alert-warning mt-3" role="status">
@@ -74,13 +55,9 @@
 @include('reports._share', ['group' => $group, 'report' => $report])
 @endunless
 
-{{-- Tablero (gráficas y filtros): resources/js/modules/course-report.js lo monta aquí. --}}
-<section class="mera-report mt-4" data-course-report aria-label="Tablero del reporte">
-    <p class="text-muted small mb-0" data-report-placeholder>Cargando el tablero…</p>
-</section>
-
-{{-- Datos para el tablero. Nunca {{ }} dentro de <script>: JSON con escapes (CLAUDE.md §3). --}}
-<script type="application/json" id="report-data">@json($report->data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)</script>
+<div class="mt-4">
+@include('reports._dashboard', ['report' => $report])
+</div>
 
 <p class="small text-muted mt-4">
     Actualizado el {{ $report->updated_at->timezone($tz)->format('d/m/Y H:i') }}.

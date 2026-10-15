@@ -72,6 +72,8 @@ function initBulkMove() {
     const all = document.querySelectorAll('[data-bulk-all]');
     const group = form.querySelector('[data-bulk-group]');
     const language = form.querySelector('[data-bulk-language]');
+    const newName = form.querySelector('[data-bulk-new]');
+    const creating = () => group.value === 'new';
     // Hay dos vistas (tabla y tarjetas móviles) con el mismo id de curso: se sincronizan por valor.
     const boxes = () => [...document.querySelectorAll('[data-bulk-item]')];
     const selectedIds = () => [...new Set(boxes().filter((b) => b.checked).map((b) => b.value))];
@@ -85,7 +87,24 @@ function initBulkMove() {
             a.indeterminate = ids.length > 0 && !a.checked;
         });
         language.disabled = group.value === '';
+
+        // "+ Nueva carpeta…": pide el nombre; se crea al mover (sin salir de la lista filtrada).
+        if (newName) {
+            const wasHidden = newName.hidden;
+            newName.hidden = !creating();
+            newName.required = creating();
+            newName.disabled = !creating();
+            if (wasHidden && creating() && !bar.hidden) newName.focus();
+        }
     };
+
+    // Si el nombre ya existe en la lista, se avisa aquí (un error del servidor haría perder la selección).
+    const existing = () => [...group.options].filter((o) => o.value && o.value !== 'new').map((o) => o.text.trim().toLowerCase());
+    newName?.addEventListener('input', () => {
+        newName.setCustomValidity(existing().includes(newName.value.trim().toLowerCase())
+            ? 'Ya existe una carpeta con ese nombre: elígela en la lista.'
+            : '');
+    });
 
     document.addEventListener('change', (event) => {
         const target = event.target;

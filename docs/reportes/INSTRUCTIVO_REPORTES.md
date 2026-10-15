@@ -284,8 +284,12 @@ punto (`dash.data(id)`) y el resto de la lógica no cambia.
   - La fecha de corte se sugiere sola con la fecha `AAAA-MM-DD` del nombre del archivo (`report-form.js`); el loader dice "Procesando los Excel…" (`data-loader-message`).
   - Los Excel se borran también cuando el procesamiento falla: openspout deja abierta la hoja si la lectura se corta y Windows no puede borrar un archivo abierto; se libera con `gc_collect_cycles()` antes de borrar, y si aun así no se puede se registra un aviso en el log.
   - Pruebas: `tests/Feature/Reports/CourseReportTest.php` (10). QA visual en 1366 y 375 px con Excel sintéticos y un usuario QA temporal (respaldo de la BD antes; usuario, cortes y archivos borrados al terminar).
-- ⏳ Paso 5: tablero con gráficas y filtros (`course-report.js`, d3) en lugar de "Cargando el tablero…", y "Descargar HTML".
-- ⏳ Paso 6: CLAUDE.md §3/§5 (despliegue: `composer install` por openspout, migración y subir `higiene.csv` a mano).
+- ✅ **Paso 5:** tablero con gráficas y filtros. `d3@7.9.0` fijo en `package.json` (solo las funciones que se usan: 82 KB). Entradas propias de Vite, `resources/js/report-dashboard.js` y `resources/css/report.css` (clases `.lx-*` acotadas a `.mera-report`), sin código compartido con `app.js`, para que **"Descargar HTML"** (`course-groups/{carpeta}/reportes/{corte}/descargar`) las incruste tal cual en un archivo autocontenido (~170 KB, con el logo incrustado; sin internet, Arial en lugar de Montserrat). Marcado compartido en `reports/_dashboard.blade.php` (panel, link compartido y descarga).
+  - Cambios respecto de la plantilla: datos `{columns, rows}` adaptados en un solo punto, meses en español, ranking usable con teclado (Enter/Espacio), los totales de arriba siguen los filtros, sin modo oscuro automático y tablas de ranking y puestos que caben en 375 px. **Umbrales sin cambios** (§6.5).
+  - QA en navegador con 900 personas sintéticas (1366 y 375 px, archivo descargado abierto sin servidor): sin errores de JS ni desbordes.
+- ✅ **Ajustes (2026-10-15):** umbrales del tablero en `config('mera.reports.dashboard')` (mismos valores de §6.5; "reprobar < 80" queda fijo porque es el corte de `b80`), redibujo solo al cambiar el ancho, filtros en la URL (`#localidad=…&area=…`), fecha de corte vacía = hoy (México), logo blanco en la descarga y `mera:purge-report-uploads` (cada hora) para Excel que queden si PHP se corta a la mitad.
+- ✅ **Paso 6:** CLAUDE.md §3 (arquitectura) y §5 ("Despliegue de reportes de curso"). **Pendiente:** autorización para pasar `qa` → `dev` y desplegar.
+- ❓ **Para el correo:** el ranking marca "Del lugar 13 en adelante: aún sin cumplimiento" (dato fijo de la plantilla). Confirmar si es una meta fija o si debe calcularse con un % de avance.
 
 1. Leer este documento, `CLAUDE.md` y el script de referencia. Responder §10 con el usuario.
 2. Instalar la librería de Excel (versión compatible con PHP 8.1) y escribir el lector con pruebas.

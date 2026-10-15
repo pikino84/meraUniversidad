@@ -74,6 +74,42 @@ class CourseGroupTest extends TestCase
         ])->assertSessionHasErrors('language');
     }
 
+    public function test_bulk_move_can_create_the_folder_in_the_same_step(): void
+    {
+        [$a, $b] = [Course::factory()->create(), Course::factory()->create()];
+
+        $this->actingAs($this->admin)
+            ->from(route('courses.index', ['search' => 'higiene']))
+            ->post(route('courses.bulk-move'), [
+                'course_ids' => [$a->id, $b->id],
+                'course_group_id' => 'new',
+                'new_group_name' => '  Higiene en cocina ',
+                'language' => 'es',
+            ])
+            ->assertRedirect(route('courses.index', ['search' => 'higiene'])) // se queda en la lista filtrada
+            ->assertSessionHas('success', fn ($m) => str_contains($m, 'Carpeta «Higiene en cocina» creada') && str_contains($m, '2 módulos movidos'));
+
+        $group = CourseGroup::where('name', 'Higiene en cocina')->firstOrFail();
+        $this->assertFalse($group->is_published); // nace apagada, como al crearla desde Carpetas
+        $this->assertSame([$group->id, $group->id], [$a->fresh()->course_group_id, $b->fresh()->course_group_id]);
+        $this->assertSame(['es', 'es'], [$a->fresh()->language, $b->fresh()->language]);
+    }
+
+    public function test_bulk_move_rejects_an_empty_or_repeated_new_folder_name(): void
+    {
+        CourseGroup::factory()->create(['name' => 'Higiene']);
+        $course = Course::factory()->create();
+        $post = fn (string $name) => $this->actingAs($this->admin)->post(route('courses.bulk-move'), [
+            'course_ids' => [$course->id], 'course_group_id' => 'new', 'new_group_name' => $name, 'language' => 'es',
+        ]);
+
+        $post('')->assertSessionHasErrors('new_group_name');
+        $post('Higiene')->assertSessionHasErrors('new_group_name');
+
+        $this->assertSame(1, CourseGroup::count());
+        $this->assertNull($course->fresh()->course_group_id);
+    }
+
     public function test_modules_can_be_reordered_and_positions_stay_compact(): void
     {
         $group = CourseGroup::factory()->create();

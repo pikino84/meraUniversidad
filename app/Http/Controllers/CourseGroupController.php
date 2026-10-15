@@ -8,6 +8,7 @@ use App\Services\Courses\CourseGroupOrganizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -17,6 +18,9 @@ use Illuminate\View\View;
  */
 class CourseGroupController extends Controller
 {
+    /** Valor del selector "Mover a…" para crear una carpeta nueva al mover. */
+    public const NEW_GROUP = 'new';
+
     public function __construct(private readonly CourseGroupOrganizer $organizer) {}
 
     public function index(): View
@@ -140,27 +144,44 @@ class CourseGroupController extends Controller
      */
     public function bulkMove(Request $request): RedirectResponse
     {
+        // "+ Nueva carpeta…" (course_group_id = new): se crea la carpeta y se mueven los módulos en
+        // un solo paso, sin salir de la lista filtrada (pedido del usuario 2026-10-15).
+        $creating = $request->input('course_group_id') === self::NEW_GROUP;
+
         $data = $request->validate([
             'course_ids' => ['required', 'array', 'min:1', 'max:500'],
             'course_ids.*' => ['integer', 'exists:courses,id'],
-            'course_group_id' => ['nullable', 'integer', 'exists:course_groups,id'],
+            'course_group_id' => $creating ? ['required'] : ['nullable', 'integer', 'exists:course_groups,id'],
+            'new_group_name' => $creating
+                ? ['required', 'string', 'max:150', Rule::unique('course_groups', 'name')]
+                : ['nullable'],
             'language' => ['nullable', 'required_with:course_group_id', Rule::in(array_keys(CourseGroup::LANGUAGES))],
         ], [
             'course_ids.required' => 'Selecciona al menos un módulo.',
             'language.required_with' => 'Elige el idioma (Español o Inglés).',
+            'new_group_name.required' => 'Escribe el nombre de la carpeta nueva.',
+            'new_group_name.unique' => 'Ya existe una carpeta con ese nombre: elígela en la lista.',
         ], [
             'course_group_id' => 'carpeta',
+            'new_group_name' => 'nombre de la carpeta',
             'language' => 'idioma',
         ]);
 
-        $groupId = $data['course_group_id'] ?? null;
-        $moved = $this->organizer->moveModules($data['course_ids'], $groupId, $groupId ? $data['language'] : null);
+        $group = null;
+        $moved = DB::transaction(function () use ($creating, $data, &$group) {
+            $group = $creating
+                ? CourseGroup::create(['name' => trim($data['new_group_name'])])
+                : (isset($data['course_group_id']) ? CourseGroup::find($data['course_group_id']) : null);
 
-        $destination = $groupId
-            ? '«'.CourseGroup::find($groupId)->name.'» · '.CourseGroup::languageLabel($data['language'])
+            return $this->organizer->moveModules($data['course_ids'], $group?->id, $group ? $data['language'] : null);
+        });
+
+        $destination = $group
+            ? '«'.$group->name.'» · '.CourseGroup::languageLabel($data['language'])
             : '«Sin carpeta»';
+        $message = "{$moved} ".($moved === 1 ? 'módulo movido' : 'módulos movidos')." a {$destination}.";
 
-        return back()->with('success', "{$moved} ".($moved === 1 ? 'módulo movido' : 'módulos movidos')." a {$destination}.");
+        return back()->with('success', $creating ? "Carpeta «{$group->name}» creada. {$message}" : $message);
     }
 
     /**

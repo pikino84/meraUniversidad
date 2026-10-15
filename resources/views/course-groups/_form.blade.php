@@ -43,7 +43,7 @@
                         value="{{ old('slug', $group->slug ?? '') }}" placeholder="manipulacion-de-alimentos">
                 </div>
                 <small id="group-slug-help" class="form-text text-muted">
-                    Solo minúsculas, números y guiones. La versión en inglés es el mismo link con <code>/en</code> al final.
+                    Solo minúsculas, números y guiones. La versión en inglés lleva <code>/en/</code> antes del link (p. ej. <code>/en/higiene</code>).
                     @if ($editing && $group->is_published)
                     <strong class="text-danger d-block mt-1">
                         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>

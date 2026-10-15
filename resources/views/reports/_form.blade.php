@@ -29,11 +29,11 @@
         </div>
         <div class="col-md-4">
             <div class="form-group mera-form-group mb-0">
-                <label for="report-cut-date">Fecha de corte <span class="text-danger" aria-hidden="true">*</span></label>
-                <input id="report-cut-date" type="date" name="cut_date" required max="{{ now(config('mera.display_timezone'))->toDateString() }}"
+                <label for="report-cut-date">Fecha de corte</label>
+                <input id="report-cut-date" type="date" name="cut_date" aria-describedby="report-cut-date-hint" max="{{ now(config('mera.display_timezone'))->toDateString() }}"
                     class="form-control mera-input @error('cut_date') is-invalid @enderror"
                     value="{{ old('cut_date', isset($report) ? $report->cut_date->toDateString() : '') }}" data-cut-date>
-                <small class="form-text text-muted">Se sugiere sola con la fecha del nombre del archivo.</small>
+                <small id="report-cut-date-hint" class="form-text text-muted">Se llena sola con la fecha del nombre del archivo. Si la dejas vacía, se usa la de hoy.</small>
             </div>
         </div>
 

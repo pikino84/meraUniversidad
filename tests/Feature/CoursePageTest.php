@@ -10,7 +10,7 @@ use Tests\Concerns\InteractsWithCourseStorage;
 use Tests\TestCase;
 
 /**
- * Página pública de cada carpeta: /<slug> (es) y /<slug>/en, apagada hasta publicarla.
+ * Página pública de cada carpeta: /<slug> (es) y /en/<slug>, apagada hasta publicarla.
  */
 class CoursePageTest extends TestCase
 {
@@ -75,15 +75,15 @@ class CoursePageTest extends TestCase
         $this->assertNotNull($this->group->fresh()->published_at);
     }
 
-    public function test_english_uses_en_suffix_its_own_modules_and_falls_back_to_spanish_forms(): void
+    public function test_english_uses_en_prefix_its_own_modules_and_falls_back_to_spanish_forms(): void
     {
         $this->group->forceFill(['is_published' => true])->save();
 
-        $this->get('/higiene-en-cocina/en')->assertNotFound(); // sin módulos en inglés
+        $this->get('/en/higiene-en-cocina')->assertNotFound(); // sin módulos en inglés
 
         Course::factory()->create(['name' => 'Module 1 · Receiving', 'path' => 'cursos/receiving-en', 'course_group_id' => $this->group->id, 'language' => 'en', 'position' => 1]);
 
-        $this->get('/higiene-en-cocina/en')
+        $this->get('/en/higiene-en-cocina')
             ->assertOk()
             ->assertSee('<html lang="en">', false)
             ->assertSee('Kitchen hygiene')
@@ -96,8 +96,16 @@ class CoursePageTest extends TestCase
 
         $this->group->update(['name' => 'Higiene en cocina', 'evaluation_url_en' => 'https://forms.cloud.microsoft/r/EVAL-EN']);
 
-        $this->get('/higiene-en-cocina/en')->assertSee('https://forms.cloud.microsoft/r/EVAL-EN', false);
+        $this->get('/en/higiene-en-cocina')->assertSee('https://forms.cloud.microsoft/r/EVAL-EN', false);
         $this->get('/higiene-en-cocina')->assertSee('hreflang="en"', false);
+    }
+
+    public function test_old_english_links_redirect_to_the_new_format(): void
+    {
+        $this->group->update(['is_published' => true]);
+
+        $this->get('/higiene-en-cocina/en')->assertStatus(301)->assertRedirect('/en/higiene-en-cocina');
+        $this->assertStringEndsWith('/en/higiene-en-cocina', $this->group->publicUrl('en'));
     }
 
     public function test_cannot_publish_a_folder_without_modules(): void

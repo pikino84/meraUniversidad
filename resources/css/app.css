@@ -897,15 +897,22 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     border-color: #edf2ef;
 }
 
-/* Hover */
+/* Hover: solo color y una línea de acento a la izquierda. Sin transform: el scale(1.005) de antes
+   agrandaba la fila, la tabla se desbordaba y aparecía/desaparecía la barra horizontal (parpadeo). */
 .mera-table tbody tr {
-    transition: .25s ease;
+    transition: background-color .2s ease, box-shadow .2s ease;
 }
 
 .mera-table tbody tr:hover {
     background:
         rgba(129, 207, 244, .12) !important;
-    transform: scale(1.005);
+    box-shadow: inset 3px 0 0 #93C01F;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mera-table tbody tr {
+        transition: none;
+    }
 }
 
 /* Nombre */
@@ -1978,6 +1985,25 @@ textarea.mera-input {
     cursor: pointer;
 }
 
+/* Bootstrap 5 pinta el botón gris en hover/activo con un selector más específico
+   (.form-control:hover:not(:disabled):not([readonly])::file-selector-button) y el texto blanco de
+   arriba quedaba sobre gris. Mismo peso + la clase de marca para ganarle en todos los estados. */
+.mera-form-group input[type="file"].form-control:not(:disabled):not([readonly])::file-selector-button {
+    background: #024D25;
+    color: #fff;
+}
+
+.mera-form-group input[type="file"].form-control:hover:not(:disabled):not([readonly])::file-selector-button,
+.mera-form-group input[type="file"].form-control:focus-visible::file-selector-button {
+    background: #55882B;
+    color: #fff;
+}
+
+.mera-form-group input[type="file"].form-control:disabled::file-selector-button {
+    background: #8a9a90;
+    color: #fff;
+}
+
 /* Portada ausente: placeholder de marca en lugar del icono de imagen rota */
 .mera-cover-fallback {
     object-fit: contain !important;
@@ -2636,10 +2662,28 @@ textarea.mera-input {
     min-width: 0;
 }
 
-.mera-bulk-bar .mera-btn-cancel {
-    border-color: rgba(255, 255, 255, .6);
+/* Sobre la barra verde: contorno blanco. El !important le gana al color verde de la regla general
+   de .mera-btn-cancel (auditoría 2026-10-14), que dejaba el texto verde sobre fondo verde. */
+.mera-bulk-bar .btn.mera-btn-cancel {
+    border-color: rgba(255, 255, 255, .75);
     background: transparent;
-    color: #fff;
+    color: #fff !important;
+}
+
+.mera-bulk-bar .btn.mera-btn-cancel:hover,
+.mera-bulk-bar .btn.mera-btn-cancel:focus-visible {
+    border-color: #fff;
+    background: rgba(255, 255, 255, .14);
+    color: #fff !important;
+}
+
+/* "+ Nueva carpeta…": nombre de la carpeta a crear al mover */
+.mera-bulk-bar .mera-bulk-new {
+    flex: 1 1 220px;
+}
+
+.mera-bulk-bar .mera-bulk-new[hidden] {
+    display: none;
 }
 
 @media (min-width: 992px) {
@@ -3980,47 +4024,6 @@ nav[role="navigation"] .inline-flex.shadow-sm {
 
 .mera-report-actions form {
     margin: 0;
-}
-
-.mera-report-kpis {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 12px;
-}
-
-.mera-report-kpi {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 16px 18px;
-    background: #fff;
-    border-radius: 16px;
-    border-top: 4px solid #93C01F;
-    box-shadow: 0 6px 18px rgba(2, 77, 37, .08);
-}
-
-.mera-report-kpi > i {
-    color: #55882B;
-    font-size: 18px;
-    margin-bottom: 4px;
-}
-
-.mera-report-kpi-label {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    color: #5b6b62;
-}
-
-.mera-report-kpi strong {
-    font-size: 26px;
-    line-height: 1.15;
-    color: #024D25;
-}
-
-.mera-report-kpi small {
-    color: #5b6b62;
 }
 
 .mera-pending-q {

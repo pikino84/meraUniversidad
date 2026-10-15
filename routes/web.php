@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
             Route::post('/', [CourseReportController::class, 'store'])->middleware('throttle:10,1')->name('store');
             Route::get('{report}', [CourseReportController::class, 'show'])->name('show');
             Route::get('{report}/editar', [CourseReportController::class, 'edit'])->name('edit');
+            Route::get('{report}/descargar', [CourseReportController::class, 'download'])->name('download');
             Route::put('{report}', [CourseReportController::class, 'update'])->middleware('throttle:10,1')->name('update');
             Route::delete('{report}', [CourseReportController::class, 'destroy'])->name('destroy');
             Route::patch('{report}/compartir', [CourseReportController::class, 'share'])->name('share');
@@ -96,12 +97,16 @@ Route::get('reportes/compartido/{token}', [CourseReportController::class, 'share
 
 require __DIR__.'/auth.php';
 
-// Página pública de cada carpeta de curso (CLAUDE.md §10): /<slug> (español) y /<slug>/en (inglés).
+// Página pública de cada carpeta de curso (CLAUDE.md §10): /<slug> (español) y /en/<slug> (inglés).
 // SIEMPRE al final: cualquier ruta existente (login, cursos, dashboard…) se resuelve antes. Los
-// slugs reservados no se pueden asignar a una carpeta (CourseGroup::reservedSlugs()).
+// slugs reservados no se pueden asignar a una carpeta (CourseGroup::reservedSlugs(), incluye "en").
+Route::get('/{language}/{courseGroup}', [CoursePageController::class, 'showLanguage'])
+    ->where(['language' => 'en', 'courseGroup' => CourseGroup::SLUG_PATTERN])
+    ->name('course-pages.show.lang');
 Route::get('/{courseGroup}', [CoursePageController::class, 'show'])
     ->where('courseGroup', CourseGroup::SLUG_PATTERN)
     ->name('course-pages.show');
-Route::get('/{courseGroup}/{language}', [CoursePageController::class, 'show'])
+// Formato anterior /<slug>/en (hasta 2026-10-15): redirección permanente al nuevo.
+Route::get('/{courseGroup}/{language}', [CoursePageController::class, 'legacyLanguage'])
     ->where(['courseGroup' => CourseGroup::SLUG_PATTERN, 'language' => 'en'])
-    ->name('course-pages.show.lang');
+    ->name('course-pages.legacy-lang');

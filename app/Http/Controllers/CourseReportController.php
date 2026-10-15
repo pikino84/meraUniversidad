@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -95,6 +97,30 @@ class CourseReportController extends Controller
         $report->delete();
 
         return redirect()->route('course-groups.show', $courseGroup)->with('success', "Corte «{$report->title}» eliminado.");
+    }
+
+    /**
+     * "Descargar HTML": el tablero en un solo archivo autocontenido (estilos, d3 y datos
+     * incrustados) para compartir por correo. Solo agregados, igual que la vista del panel.
+     */
+    public function download(CourseGroup $courseGroup, CourseReport $report): Response
+    {
+        Gate::authorize('view', $report);
+
+        $html = view('reports.standalone', [
+            'group' => $courseGroup,
+            'report' => $report,
+            'css' => Vite::content('resources/css/report.css'),
+            'js' => Vite::content('resources/js/report-dashboard.js'),
+        ])->render();
+
+        $name = Str::slug($courseGroup->name.' '.$report->cut_date->toDateString()) ?: 'reporte';
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"reporte-{$name}.html\"",
+            'X-Robots-Tag' => 'noindex, nofollow',
+        ]);
     }
 
     /** Activar / regenerar / desactivar el link para compartir sin sesión. */
