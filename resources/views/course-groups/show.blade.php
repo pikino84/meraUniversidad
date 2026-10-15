@@ -123,5 +123,7 @@
 </p>
 @endif
 
+@include('course-groups._reports')
+
 <p class="mt-3"><a href="{{ route('course-groups.index') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Todas las carpetas</a></p>
 @endsection

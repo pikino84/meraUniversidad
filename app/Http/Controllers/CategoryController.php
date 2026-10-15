@@ -16,7 +16,12 @@ class CategoryController extends Controller
     public function __construct()
     {
         // Categorías ocultas (config mera.categories_enabled): la sección responde 404 en el panel.
-        abort_unless(config('mera.categories_enabled'), 404);
+        // Como middleware (no en el constructor) para no romper `php artisan route:list`.
+        $this->middleware(function ($request, $next) {
+            abort_unless(config('mera.categories_enabled'), 404);
+
+            return $next($request);
+        });
     }
 
     /**

@@ -9,6 +9,8 @@
  *  - subidas con barra propia (data-upload-form, ver upload.js);
  *  - formularios con data-no-loader o target distinto de _self (p. ej. descargas).
  *
+ * data-loader-message="…" cambia el texto del loader para ese formulario.
+ *
  * confirm.js llama a lockForm() después de confirmar, porque form.submit() no dispara "submit".
  */
 export function initSubmitGuard() {
@@ -42,6 +44,13 @@ export function lockForm(form) {
             button.dataset.locked = '1';
         });
     }, 0);
+
+    // Mensaje propio del formulario (data-loader-message), p. ej. "Procesando los Excel…".
+    const msg = document.querySelector('.mera-loader__msg');
+    if (msg) {
+        msg.dataset.default ??= msg.textContent;
+        msg.textContent = form.dataset.loaderMessage || msg.dataset.default;
+    }
 
     // Si el servidor responde muy rápido, el loader ni se alcanza a ver (evita parpadeos).
     form.dataset.loaderTimer = String(setTimeout(() => document.documentElement.classList.add('mera-busy'), 150));

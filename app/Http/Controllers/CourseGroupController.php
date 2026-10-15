@@ -63,6 +63,9 @@ class CourseGroupController extends Controller
             'modules' => $modules->where('language', $language)->values(),
             'counts' => collect(CourseGroup::LANGUAGES)->map(fn ($label, $code) => $modules->where('language', $code)->count()),
             'withoutLanguage' => $modules->whereNull('language')->values(),
+            // Reportes de curso (docs/reportes/INSTRUCTIVO_REPORTES.md): todos los cortes, el más reciente primero.
+            'reports' => $courseGroup->reports()->latest('cut_date')->latest('id')
+                ->get(['id', 'course_group_id', 'title', 'cut_date', 'summary', 'share_token', 'updated_at']),
         ]);
     }
 

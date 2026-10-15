@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseGroupController;
 use App\Http\Controllers\CoursePageController;
+use App\Http\Controllers\CourseReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -59,6 +60,19 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
         Route::patch('course-groups/{courseGroup}/move', [CourseGroupController::class, 'move'])->name('course-groups.move');
         Route::patch('course-groups/{courseGroup}/reorder', [CourseGroupController::class, 'reorder'])->name('course-groups.reorder');
         Route::patch('course-groups/{courseGroup}/publish', [CourseGroupController::class, 'publish'])->name('course-groups.publish');
+
+        // Reportes de curso por carpeta (docs/reportes/INSTRUCTIVO_REPORTES.md): super admin y admin.
+        Route::prefix('course-groups/{courseGroup}/reportes')->name('course-groups.reports.')->scopeBindings()->group(function () {
+            Route::get('nuevo', [CourseReportController::class, 'create'])->name('create');
+            Route::post('/', [CourseReportController::class, 'store'])->middleware('throttle:10,1')->name('store');
+            Route::get('{report}', [CourseReportController::class, 'show'])->name('show');
+            Route::get('{report}/editar', [CourseReportController::class, 'edit'])->name('edit');
+            Route::put('{report}', [CourseReportController::class, 'update'])->middleware('throttle:10,1')->name('update');
+            Route::delete('{report}', [CourseReportController::class, 'destroy'])->name('destroy');
+            Route::patch('{report}/compartir', [CourseReportController::class, 'share'])->name('share');
+            Route::get('{report}/pendientes', [CourseReportController::class, 'pending'])->name('pending');
+            Route::patch('{report}/pendientes', [CourseReportController::class, 'classify'])->name('classify');
+        });
         Route::post('courses/bulk-move', [CourseGroupController::class, 'bulkMove'])->name('courses.bulk-move');
         Route::patch('courses/{course}/move', [CourseGroupController::class, 'moveModule'])->name('courses.move');
         Route::delete('courses/{course}/group', [CourseGroupController::class, 'removeModule'])->name('courses.ungroup');
@@ -73,6 +87,12 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
         });
     });
 });
+
+// Reporte compartido sin sesión (link con token; solo agregados, noindex). Antes de la ruta comodín.
+Route::get('reportes/compartido/{token}', [CourseReportController::class, 'shared'])
+    ->where('token', '[A-Za-z0-9]{48}')
+    ->middleware('throttle:30,1')
+    ->name('reports.shared');
 
 require __DIR__.'/auth.php';
 

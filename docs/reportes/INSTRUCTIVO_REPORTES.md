@@ -279,7 +279,13 @@ punto (`dash.data(id)`) y el resto de la lógica no cambia.
   - Reglas generales en `config/mera.php → reports`; encuesta de Higiene (preguntas favorables, catálogo con palabras clave y archivo de clasificación previa) en `config/report_surveys.php`.
   - **Satisfacción** = % de personas con las **8** respuestas favorables (así la calcula el JS de la plantilla, `k-rec`).
   - La clasificación previa de Higiene se copió a `storage/app/reportes/codigos/higiene.csv` (privado; trae números de empleado). **En producción hay que subirla a mano** a esa misma ruta.
-- ⏳ Paso 4 en adelante: migración, controlador, vistas, actualización de cortes, link para compartir, JS/CSS.
+- ✅ **Paso 4:** migración aditiva `2026_10_14_000000_create_course_reports_table` (`course_reports`: título, fecha de corte, encuesta, `data`/`summary`/`warnings`/`pending` en JSON, `share_token`, autor). `CourseReport` + `CourseReportPolicy` (super admin y admin) + `CourseReportManager` (crear, recalcular, compartir y clasificar) + `CourseReportRequest` + `CourseReportController`. Rutas en `course-groups/{carpeta}/reportes/…` (con `scopeBindings`: un corte de otra carpeta da 404) y `reportes/compartido/{token}` (público, `noindex`, `Referrer-Policy: no-referrer`, throttle).
+  - Vistas: sección **Reportes** en el detalle de la carpeta, nuevo corte, actualizar corte (título y fecha, o los 3 Excel para recalcular), vista del corte con KPI y avisos, **Compartir sin sesión** (activar, regenerar o desactivar) y **Pendientes de clasificar** (temas propuestos por palabras clave, corrección con casillas, 25 por página).
+  - La fecha de corte se sugiere sola con la fecha `AAAA-MM-DD` del nombre del archivo (`report-form.js`); el loader dice "Procesando los Excel…" (`data-loader-message`).
+  - Los Excel se borran también cuando el procesamiento falla: openspout deja abierta la hoja si la lectura se corta y Windows no puede borrar un archivo abierto; se libera con `gc_collect_cycles()` antes de borrar, y si aun así no se puede se registra un aviso en el log.
+  - Pruebas: `tests/Feature/Reports/CourseReportTest.php` (10). QA visual en 1366 y 375 px con Excel sintéticos y un usuario QA temporal (respaldo de la BD antes; usuario, cortes y archivos borrados al terminar).
+- ⏳ Paso 5: tablero con gráficas y filtros (`course-report.js`, d3) en lugar de "Cargando el tablero…", y "Descargar HTML".
+- ⏳ Paso 6: CLAUDE.md §3/§5 (despliegue: `composer install` por openspout, migración y subir `higiene.csv` a mano).
 
 1. Leer este documento, `CLAUDE.md` y el script de referencia. Responder §10 con el usuario.
 2. Instalar la librería de Excel (versión compatible con PHP 8.1) y escribir el lector con pruebas.

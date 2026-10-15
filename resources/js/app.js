@@ -12,6 +12,7 @@ import { initCourseGroups } from './modules/course-groups';
 import { initSortableModules } from './modules/sortable-modules';
 import { initShowPasswords, initUnsavedWarning } from './modules/unsaved';
 import { initPanelTemplate } from './modules/panel-template';
+import { initReportForm } from './modules/report-form';
 
 window.Alpine = Alpine;
 window.swal = swal; // usado por vistas antiguas y por los módulos
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initShowPasswords();
     initFiltersToggle();
     initPanelTemplate();
+    initReportForm();
     initMobileMenu();
 });
 

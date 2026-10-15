@@ -121,6 +121,12 @@ class CourseGroup extends Model
         return $this->hasMany(Course::class, 'course_group_id');
     }
 
+    /** Cortes del reporte de avance, evaluación y satisfacción (docs/reportes/INSTRUCTIVO_REPORTES.md). */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(CourseReport::class, 'course_group_id');
+    }
+
     public static function languageLabel(?string $code): string
     {
         return self::LANGUAGES[$code] ?? 'Sin idioma';

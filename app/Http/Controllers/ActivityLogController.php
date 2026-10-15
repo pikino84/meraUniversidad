@@ -24,6 +24,7 @@ class ActivityLogController extends Controller
         'carpetas' => 'Carpetas de curso',
         'categorias' => 'Categorías',
         'usuarios' => 'Usuarios',
+        'reportes' => 'Reportes de curso',
     ];
 
     /** Tipo de registro → nombre en singular. */
@@ -32,6 +33,7 @@ class ActivityLogController extends Controller
         CourseGroup::class => 'Carpeta',
         Category::class => 'Categoría',
         User::class => 'Usuario',
+        \App\Models\CourseReport::class => 'Reporte',
     ];
 
     /** Campo técnico → etiqueta en español. */
@@ -57,6 +59,9 @@ class ActivityLogController extends Controller
         'evaluation_url_en' => 'Evaluación (inglés)',
         'survey_url_es' => 'Encuesta (español)',
         'survey_url_en' => 'Encuesta (inglés)',
+        'title' => 'Título',
+        'cut_date' => 'Fecha de corte',
+        'shared_at' => 'Link para compartir',
     ];
 
     public function index(Request $request): View

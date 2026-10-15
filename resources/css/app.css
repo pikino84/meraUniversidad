@@ -1350,7 +1350,8 @@ body .pcoded[pcoded-device-type="tablet"][vertical-nav-type="expanded"] .pcoded-
         right: -25px;
         visibility: visible;
         overflow: visible;
-        width: 24rem;
+        /* 24rem (384 px) no cabía en 375 px y se cortaba a la izquierda. */
+        width: min(16rem, calc(100vw - 32px));
         padding: 15px 0;
         -webkit-transform: translateY(20px);
         transform: translateY(20px);
@@ -3927,5 +3928,172 @@ nav[role="navigation"] .inline-flex.shadow-sm {
         padding-right: 10px;
         font-size: 13px;
         white-space: nowrap;
+    }
+}
+
+/* En ≤ 992 px el menú de usuario es el de .mobile-user (junto al logo). La regla
+   ".nav-right { display: flex }" de arriba anulaba el ocultamiento de la plantilla y el bloque
+   de escritorio quedaba flotando debajo de la barra. */
+@media only screen and (max-width: 992px) {
+    .header-navbar .navbar-wrapper .navbar-container .nav-right {
+        display: none;
+    }
+}
+
+/* =========================================================
+   REPORTES DE CURSO (docs/reportes/INSTRUCTIVO_REPORTES.md)
+   ========================================================= */
+.mera-btn-danger {
+    background: #fff;
+    color: #b42318 !important;
+    border: 1px solid #f1b5ad;
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-weight: 600;
+}
+
+.mera-btn-danger:hover,
+.mera-btn-danger:focus-visible {
+    background: #b42318;
+    border-color: #b42318;
+    color: #fff !important;
+}
+
+.mera-report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.mera-report-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    min-height: 40px;
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.mera-report-actions form {
+    margin: 0;
+}
+
+.mera-report-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.mera-report-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 18px;
+    background: #fff;
+    border-radius: 16px;
+    border-top: 4px solid #93C01F;
+    box-shadow: 0 6px 18px rgba(2, 77, 37, .08);
+}
+
+.mera-report-kpi > i {
+    color: #55882B;
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+
+.mera-report-kpi-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #5b6b62;
+}
+
+.mera-report-kpi strong {
+    font-size: 26px;
+    line-height: 1.15;
+    color: #024D25;
+}
+
+.mera-report-kpi small {
+    color: #5b6b62;
+}
+
+.mera-pending-q {
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #55882B;
+}
+
+.mera-pending-a {
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    background: #F3F8F4;
+    border-left: 3px solid #93C01F;
+    border-radius: 8px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.mera-pending-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.mera-tag-check {
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+}
+
+.mera-tag-check input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.mera-tag-check span {
+    display: inline-block;
+    min-height: 34px;
+    padding: 6px 12px;
+    border: 1px solid #c9d8cd;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    color: #33433a;
+    transition: background-color .15s, border-color .15s, color .15s;
+}
+
+.mera-tag-check input:checked + span {
+    background: #024D25;
+    border-color: #024D25;
+    color: #fff;
+}
+
+.mera-tag-check input:checked + span::before {
+    content: "✓ ";
+}
+
+.mera-tag-check input:focus-visible + span {
+    outline: 3px solid #81CFF4;
+    outline-offset: 2px;
+}
+
+.mera-pending-item legend {
+    float: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mera-tag-check span {
+        transition: none;
     }
 }
