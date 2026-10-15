@@ -57,6 +57,14 @@ class SecurityHeaders
             }
         }
 
+        // Fuera de producción (QA en university.meracorporation.com, APP_ENV=staging; y local) nada se
+        // indexa: QA es una copia del sitio real y sus links de módulos dan 404. Se usa la cabecera y
+        // no robots.txt: con "Disallow" Google no leería el noindex y podría listar las URLs igual.
+        // Si la respuesta ya trae un noindex propio (p. ej. un reporte compartido), se respeta.
+        if (! app()->isProduction() && ! str_contains((string) $response->headers->get('X-Robots-Tag'), 'noindex')) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        }
+
         return $response;
     }
 }

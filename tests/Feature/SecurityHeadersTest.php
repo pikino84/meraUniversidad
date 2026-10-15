@@ -35,6 +35,21 @@ class SecurityHeadersTest extends TestCase
         ];
     }
 
+    /** @dataProvider pages */
+    public function test_nothing_is_indexed_outside_production(string $uri, int $status): void
+    {
+        $this->app['env'] = 'staging'; // QA: university.meracorporation.com
+
+        $this->get($uri)->assertStatus($status)->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+
+    public function test_production_pages_stay_indexable(): void
+    {
+        $this->app['env'] = 'production';
+
+        $this->get('/cursos')->assertOk()->assertHeaderMissing('X-Robots-Tag');
+    }
+
     public function test_hsts_only_in_production_over_https(): void
     {
         $this->get('/login')->assertHeaderMissing('Strict-Transport-Security');
