@@ -183,6 +183,33 @@ return [
         'english_market' => 'US',
     ],
 
+    /*
+    | Seguimiento anual por persona (docs/reportes/INSTRUCTIVO_REPORTE_PERSONAS.md).
+    */
+    'progress' => [
+        // Cortes que se conservan (los más recientes).
+        'keep_reports' => (int) env('MERA_PROGRESS_KEEP_REPORTS', 6),
+
+        // Solo cuentan para el seguimiento los cursos de este año en adelante (Capacitación, 2026-10-19:
+        // los de 2025 "son del año pasado, no los vamos a tomar en cuenta"). Al cargar el catálogo, los
+        // anteriores se crean con "No cuenta"; se puede cambiar por curso en el panel.
+        'tracking_from_year' => (int) env('MERA_PROGRESS_FROM_YEAR', 2026),
+
+        // Calificación mínima para aprobar (cada curso del catálogo puede tener la suya).
+        'passing_grade' => 80,
+
+        // Valores al CREAR un curso del catálogo (respuestas de Capacitación, 2026-10-19). Después se
+        // editan en el panel y la importación no los cambia.
+        'catalog_defaults' => [
+            'NEG-OPE-007-EL-26-MX' => ['passing_grade' => 90],    // Corresponsal Cambiario
+            'NEG-CUL-004-EL-26' => ['has_evaluation' => false],   // Inducción a la Empresa
+        ],
+
+        // Excel del catálogo: tamaño máximo (KB) y filas donde se buscan los encabezados.
+        'catalog_max_upload_kb' => 5120,
+        'catalog_header_scan' => 10,
+    ],
+
     'reports' => [
         // Tamaño máximo de CADA uno de los 3 Excel (KB).
         'max_upload_kb' => (int) env('MERA_REPORTS_MAX_UPLOAD_KB', 30720),

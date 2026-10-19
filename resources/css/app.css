@@ -4576,3 +4576,34 @@ a.mera-version-card:focus-visible {
         gap: 6px;
     }
 }
+
+/* Catálogo de cursos (panel, INSTRUCTIVO_REPORTE_PERSONAS.md §6) */
+.mera-catalog-upload > summary {
+    cursor: pointer;
+    list-style: none;
+    color: #024D25;
+}
+
+.mera-catalog-upload > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mera-catalog-filters {
+    display: grid;
+    grid-template-columns: 160px 200px minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
+@media (max-width: 767.98px) {
+    .mera-catalog-filters {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mera-catalog-filters input[type="search"] {
+        grid-column: 1 / -1;
+    }
+
+    .mera-catalog-filters .btn {
+        grid-column: 1 / -1;
+    }
+}

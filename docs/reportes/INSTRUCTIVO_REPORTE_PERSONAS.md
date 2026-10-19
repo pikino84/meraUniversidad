@@ -7,7 +7,7 @@
 > `INSTRUCTIVO_REPORTES.md` §4–§7 y este documento completo.
 
 Creado: 2026-10-15 (revisado el mismo día con la referencia de Capacitación). §10 respondido el 2026-10-19
-(queda abierto: exportaciones de encuestas de otros cursos y el código de Coaching Ejecutivo 2025). Estado: **por implementar**
+(queda abierto: exportaciones de encuestas de otros cursos). Estado: **por implementar**
 (rama `qa`, verificar en `university.meracorporation.com`).
 
 ---
@@ -228,7 +228,8 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
 8. **Retención:** ¿cuántos cortes guardar? (propuesta: 6)
 
 ### Respuestas del usuario (2026-10-19)
-1. **Cursos del año:** lista **editable** en el panel; arranca con **los 37 cursos de 2026** (incluye
+1. **Cursos del año:** **solo 2026 en adelante** (`mera.progress.tracking_from_year`; lo de 2025 queda en el
+   catálogo con "No cuenta"). Lista **editable** en el panel; arranca con **los 37 cursos de 2026** (incluye
    `NRM-SEG-007-EL-26-MX` y `NEG-TEC-005-BL-26`, que la referencia quitaba). Las cifras de aceptación de §9
    pasan a ser las de "Todos los cursos de 2026 (37)".
 2. **Completado y aprobado (Capacitación, 2026-10-19):** son dos cifras distintas.
@@ -241,10 +242,11 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
    - Curso **sin evaluación** (solo Inducción a la Empresa) → realizado y aprobado con el 100 %.
    - **Calificación:** la plataforma ya exporta **la más alta** cuando se repite la evaluación: se usa tal cual.
    - Estados por persona y curso: **aprobado · reprobado · en curso · sin iniciar**.
-3. **Equivalencias:** Capacitación va a **corregir los códigos en la plataforma** para que coincidan con el
-   catálogo (se les envió la lista de `docs/reportes/equivalencias_codigos.csv` el 2026-10-19; Coaching
-   Ejecutivo 2025, `NEG-LID-004-BL-25`, sin código en el catálogo: pendiente). Aun así, el catálogo acepta
-   alias por curso (editables en el panel) para los cortes con códigos anteriores y para cambios futuros.
+3. **Equivalencias:** Capacitación (2026-10-19): las diferencias de 2025 "son del año pasado, no las vamos a
+   tomar en cuenta, solo las del 2026". Solo hay que corregir en la plataforma los **5 códigos de 2026**
+   (`NEG-TEC-005-BL-26`, `NEG-SRV-004-BL-26-MX`, `NEG-LID-001-BL-26`, `NEG-LID-003-BL-26`, `NEG-LID-006-BL-26`);
+   Coaching Ejecutivo 2025 ya no está pendiente. Los alias cargados se conservan (no estorban) y el catálogo
+   acepta códigos alternos por curso para cambios futuros.
 4. **Acceso:** admin y super admin. Las localidades solo reciben el link sin nombres (§7.2.7).
 5. **Bajas:** se sube también el **reporte de personal** y se excluye a quien ya no aparece, con aviso del
    número excluido (como el reporte por curso).
@@ -265,3 +267,22 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
    JS/CSS compartido con el reporte por curso.
 7. Encuesta por curso dentro del corte. Links por localidad y "Descargar HTML" (solo agregados).
 8. Pruebas, QA en navegador, build local y documentación en `CLAUDE.md` (§3, §5, bitácora), con permiso.
+
+## 12. Avance (rama `qa`)
+- ✅ **Paso 2 — Catálogo de cursos (2026-10-19):**
+  - Migración aditiva `2026_10_20_000000_create_course_catalog_table` (`course_catalog`, modelo `CatalogCourse`):
+    datos del Excel + lo que se ajusta en el panel (`passing_grade`, `has_evaluation`, `in_tracking`, `aliases`).
+  - `CourseCatalogImporter`: lee el Excel con `ReportWorkbookReader` (nuevo parámetro `headerScan`: los
+    encabezados del catálogo están en la fila 3), arma el código con Ruta/Sub/#/Mod/Año/País (la columna
+    "Nomenclatura" es fórmula), salta secciones y filas incompletas, crea o actualiza por código **sin pisar lo
+    del panel ni borrar**, y aplica `config('mera.progress.catalog_defaults')` al crear (Corresponsal Cambiario
+    90; Inducción a la Empresa sin evaluación). Equivalencias desde el CSV (`importAliases`).
+  - Comando `mera:catalog-import <xlsx> [--aliases=<csv>] [--dry-run]`. Con el catálogo v12 real: **72 cursos**
+    (50 de 2026), 0 filas sin leer, 14 códigos alternos; idempotente. Solo cuentan para el seguimiento los de
+    2026 en adelante: los 22 de 2025 quedan con "No cuenta" (`tracking_from_year`).
+  - Pantalla **Catálogo de cursos** (`/catalogo-cursos`, rutas `course-catalog.*`, super admin): cargar el Excel, filtrar por año/ruta,
+    buscar (también por código de la plataforma) y ajustar mínima, evaluación, si cuenta y códigos alternos.
+  - `CatalogCourse::resolve()` (código o alterno), `codeFromName()`, `done()` (realizado) y `passes()` (aprobado).
+  - Pruebas: `tests/Feature/Reports/CourseCatalogTest.php` (Excel sintético con la misma estructura).
+- ⏳ Paso 3: extraer `OrgMapper` sin cambiar cifras del reporte por curso.
+

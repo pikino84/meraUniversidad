@@ -42,7 +42,7 @@
                             @endunless
                         </td>
                         <td data-label="Código"><code class="mera-code-badge">{{ $market->code }}</code></td>
-                        <td data-label="Link"><code class="mera-code-badge">/{{ $market->slug }}/…</code></td>
+                        <td data-label="Link"><code class="mera-code-badge">…/{{ $market->slug }}</code></td>
                         <td data-label="Página en">{{ $market->language === 'en' ? 'Inglés' : 'Español' }}@if ($market->hreflang) <small class="text-muted">({{ $market->hreflang }})</small>@endif</td>
                         <td data-label="Usada en">{{ $market->versions_count }} {{ $market->versions_count === 1 ? 'versión' : 'versiones' }}</td>
                         <td data-label="Acciones" class="text-center text-nowrap mera-col-actions">

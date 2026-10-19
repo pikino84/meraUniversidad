@@ -36,7 +36,7 @@
                         class="form-control mera-input" value="{{ old('slug', $market->slug ?? '') }}" placeholder="panama">
                 </div>
                 <small class="form-text text-muted">
-                    Va antes del link de cada curso: <code>/{{ old('slug', $market->slug ?? 'panama') }}/introduccion-a-la-higiene</code>.
+                    Va al final del link de cada curso: <code>/introduccion-a-la-higiene/2026/{{ old('slug', $market->slug ?? 'panama') }}</code>.
                     @if ($editing && $market->versions()->where('is_published', true)->exists())
                     <strong class="text-danger d-block mt-1">
                         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>

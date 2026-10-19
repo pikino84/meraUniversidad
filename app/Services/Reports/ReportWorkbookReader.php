@@ -25,11 +25,13 @@ class ReportWorkbookReader
      * @param  string  $label  nombre del archivo para los mensajes ("reporte de personal")
      * @param  array<string, array{0:string, 1?:bool}>  $columns  clave => [texto del encabezado, ¿exacto?]
      *                                                            exacto=false busca el texto como fragmento
+     * @param  int  $headerScan  filas en las que se buscan los encabezados (el catálogo de cursos trae
+     *                           títulos arriba); con 1, los encabezados deben estar en la primera fila
      * @return Generator<int, array<string, mixed>> filas con las claves pedidas
      *
      * @throws ReportFormatException
      */
-    public function rows(string $path, string $label, array $columns): Generator
+    public function rows(string $path, string $label, array $columns, int $headerScan = 1): Generator
     {
         $options = new Options;
         $options->SHOULD_FORMAT_DATES = false;
@@ -46,12 +48,17 @@ class ReportWorkbookReader
         try {
             foreach ($reader->getSheetIterator() as $sheet) {
                 $indexes = null;
+                $scanned = 0;
 
                 foreach ($sheet->getRowIterator() as $row) {
                     $values = $row->toArray();
 
                     if ($indexes === null) {
-                        $indexes = $this->locate(array_map(fn ($h) => self::clean($h), $values), $columns, $label);
+                        $headers = array_map(fn ($h) => self::clean($h), $values);
+                        // Última fila permitida: si faltan columnas, el error dice cuál.
+                        $indexes = ++$scanned >= $headerScan
+                            ? $this->locate($headers, $columns, $label)
+                            : $this->tryLocate($headers, $columns);
 
                         continue;
                     }
@@ -97,6 +104,19 @@ class ReportWorkbookReader
     public static function normalize(string $text): string
     {
         return Str::lower(Str::ascii($text));
+    }
+
+    /**
+     * @param  list<string>  $headers
+     * @return array<string,int>|null null si a esta fila le falta alguna columna
+     */
+    private function tryLocate(array $headers, array $columns): ?array
+    {
+        try {
+            return $this->locate($headers, $columns, '');
+        } catch (ReportFormatException) {
+            return null;
+        }
     }
 
     /**

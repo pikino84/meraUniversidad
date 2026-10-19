@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CatalogCourseController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseGroupController;
@@ -99,6 +100,11 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
             // Versiones por país (México, Latam, EUA…): catálogo editable (INSTRUCTIVO_VERSIONES.md §4).
             Route::resource('versiones', MarketController::class)->except('show')->parameters(['versiones' => 'market'])->names('markets');
             Route::patch('versiones/{market}/move', [MarketController::class, 'move'])->name('markets.move');
+            // Catálogo de cursos de Capacitación (INSTRUCTIVO_REPORTE_PERSONAS.md §6): carga desde Excel y ajustes.
+            Route::get('catalogo-cursos', [CatalogCourseController::class, 'index'])->name('course-catalog.index');
+            Route::post('catalogo-cursos/cargar', [CatalogCourseController::class, 'import'])->middleware('throttle:10,1')->name('course-catalog.import');
+            Route::get('catalogo-cursos/{course}/editar', [CatalogCourseController::class, 'edit'])->name('course-catalog.edit');
+            Route::put('catalogo-cursos/{course}', [CatalogCourseController::class, 'update'])->name('course-catalog.update');
             // Papelera de módulos (F2): restaurar lo borrado mientras no se purgue.
             Route::get('papelera', [TrashController::class, 'index'])->name('trash.index');
             Route::post('papelera/{course}/restaurar', [TrashController::class, 'restore'])->withTrashed()->name('trash.restore');
