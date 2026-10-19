@@ -1,0 +1,16 @@
+codigo_plataforma,titulo_en_plataforma,codigo_catalogo_v12,titulo_corto_catalogo,confianza,nota
+NEG-TEC-001-BL-25,NetSuite Sesiones Piloto,NEG-OPE-008-BL-25,NetSuite Prueba Piloto,alta,
+NEG-TEC-002-EL-25,MERA Way 2.0 NetSuite,NEG-OPE-009-EL-25,NetSuite Mera Way 2.0,alta,
+NEG-TEC-003-BL-25,MERA Way 2.0 Embajadores,NEG-OPE-010-BL-25,NetSuite Embajadores,alta,
+NEG-TEC-004-BL-25,Mera Way 2.0 NetSuite Cancún,NEG-OPE-011-BL-25,NetSuite Cancún,alta,
+NEG-TEC-005-BL-26,Mera Way 2.0 NetSuite Administrativo,NEG-OPE-012-BL-26,Procesos Admin NetSuite,alta,
+NEG-SRV-002-BL-25,Bar Bacardi,NEG-OPE-013-BL-25,Tecnología Bar Bacardi,alta,
+NEG-SRV-003-BL-25,Estrategias Servicio TecMilenio,NEG-OPE-014-BL-25,Servicio al Cliente TecMilenio,alta,
+NEG-SRV-004-BL-26-MX,Uso adecuado de las cafeteras,NEG-OPE-015-BL-26-MX,Cafeteras Ictze,alta,
+NEG-OPE-004-BL-25,Actas Administrativas,CMP-LID-001-BL-25,Actas Admin RRHH,alta,
+NEG-CUL-006-EL-25,Evaluación Competencias,CMP-LID-002-EL-25,Evaluación Competencias 2025,alta,
+NEG-LID-001-BL-26,Metodología SMART,CMP-LID-004-BL-26,Metodología SMART,alta,
+NEG-LID-002-BL-25,Liderazgo Positivo,CMP-LID-005-BL-25,Liderazgo Positivo 2025,alta,
+NEG-LID-003-BL-26,Liderazgo Positivo,CMP-LID-006-BL-26,Liderazgo Positivo 2026,alta,
+NEG-LID-006-BL-26,Gestión de Personal,CMP-LID-007-BL-26,Gestión de Personal,alta,
+NEG-LID-004-BL-25,Coaching Ejecutivo,,,sin equivalente,El catálogo v12 solo tiene CMP-GER-005-BL-26 (2026) y la plataforma ya lo usa aparte; falta la versión 2025 en el catálogo
