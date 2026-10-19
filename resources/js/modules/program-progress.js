@@ -35,6 +35,13 @@ export function initProgramProgress() {
     if (!root || !store) return;
 
     const key = PREFIX + root.dataset.programProgress;
+
+    // Avance guardado antes de las versiones por país (carpeta:<slug>:es/en): se copia una vez a la
+    // clave nueva para no perderlo (INSTRUCTIVO_VERSIONES.md §5.2).
+    const legacy = root.dataset.progressLegacy ? PREFIX + root.dataset.progressLegacy : null;
+    if (legacy && store.getItem(key) === null && store.getItem(legacy) !== null) {
+        try { store.setItem(key, store.getItem(legacy)); } catch { /* sin espacio: se ignora */ }
+    }
     const items = [...root.querySelectorAll('[data-module]')];
     const known = new Set(items.map((li) => li.dataset.module));
     const total = items.length;

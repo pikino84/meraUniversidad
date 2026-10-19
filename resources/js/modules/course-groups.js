@@ -1,6 +1,6 @@
 /**
  * Carpetas de curso en el panel:
- *  - Formulario de módulo: idioma y posición solo se habilitan si hay carpeta.
+ *  - Formulario de módulo: año, versión y posición solo se habilitan si hay carpeta.
  *  - Listado de cursos: selección múltiple → barra "Mover a…".
  */
 export function initCourseGroups() {
@@ -71,7 +71,7 @@ function initBulkMove() {
     const count = form.querySelector('[data-bulk-count]');
     const all = document.querySelectorAll('[data-bulk-all]');
     const group = form.querySelector('[data-bulk-group]');
-    const language = form.querySelector('[data-bulk-language]');
+    const dependents = form.querySelectorAll('[data-bulk-dependent]'); // año y versión
     const newName = form.querySelector('[data-bulk-new]');
     const creating = () => group.value === 'new';
     // Hay dos vistas (tabla y tarjetas móviles) con el mismo id de curso: se sincronizan por valor.
@@ -86,7 +86,7 @@ function initBulkMove() {
             a.checked = ids.length > 0 && ids.length === new Set(boxes().map((b) => b.value)).size;
             a.indeterminate = ids.length > 0 && !a.checked;
         });
-        language.disabled = group.value === '';
+        dependents.forEach((field) => { field.disabled = group.value === ''; });
 
         // "+ Nueva carpeta…": pide el nombre; se crea al mover (sin salir de la lista filtrada).
         if (newName) {
@@ -137,4 +137,22 @@ function initBulkMove() {
     });
 
     render();
+}
+
+/**
+ * "+ Año" en la carpeta: si se copia la estructura de otro año, no se eligen versiones.
+ */
+export function initNewYearForm() {
+    document.querySelectorAll('[data-copy-from]').forEach((select) => {
+        const choices = select.form?.querySelector('[data-market-choices]');
+        if (!choices) return;
+
+        const sync = () => {
+            choices.hidden = select.value !== '';
+            choices.querySelectorAll('input').forEach((input) => { input.disabled = select.value !== ''; });
+        };
+
+        select.addEventListener('change', sync);
+        sync();
+    });
 }

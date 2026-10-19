@@ -6,6 +6,7 @@ use App\Http\Requests\Courses\CourseRequest;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseGroup;
+use App\Models\Market;
 use App\Services\Courses\CourseGroupOrganizer;
 use App\Services\Courses\CourseManager;
 use App\Services\Courses\CoursePackageException;
@@ -27,7 +28,7 @@ class CourseController extends Controller
     public function index(Request $request, CourseStorage $storage): View
     {
         $courses = Course::query()
-            ->with(['category:id,name,parent_id', 'group:id,name,slug'])
+            ->with(['category:id,name,parent_id', 'group:id,name,slug', 'version.market'])
             ->search($request->input('search'))
             ->when(config('mera.categories_enabled'), fn ($q) => $q->inCategoryTree($request->input('category_id')))
             ->when($request->input('carpeta') === 'sin', fn ($q) => $q->whereNull('course_group_id'))
@@ -50,6 +51,7 @@ class CourseController extends Controller
             'filtering' => $request->filled('search') || $request->filled('carpeta')
                 || (config('mera.categories_enabled') && $request->filled('category_id')),
             'groups' => CourseGroup::orderBy('position')->orderBy('name')->get(['id', 'name']),
+            'markets' => Market::cached()->where('is_active', true)->values(),
             // F1: archivos faltantes (solo lectura) de los cursos de esta página.
             'missing' => $courses->getCollection()->mapWithKeys(fn (Course $c) => [$c->id => $storage->missingFiles($c->path, $c->cover_image)])->all(),
         ]);
@@ -60,6 +62,7 @@ class CourseController extends Controller
         return view('courses.create', [
             'categories' => Category::tree(),
             'groups' => CourseGroup::orderBy('position')->orderBy('name')->get(['id', 'name']),
+            'markets' => Market::cached()->where('is_active', true)->values(),
             'maxUploadBytes' => $storage->effectiveMaxUploadBytes(),
         ]);
     }
@@ -80,6 +83,7 @@ class CourseController extends Controller
             'missing' => $storage->missingFiles($course->path, $course->cover_image),
             'categories' => Category::tree(),
             'groups' => CourseGroup::orderBy('position')->orderBy('name')->get(['id', 'name']),
+            'markets' => Market::cached()->where('is_active', true)->values(),
             'maxUploadBytes' => $storage->effectiveMaxUploadBytes(),
         ]);
     }
@@ -98,7 +102,7 @@ class CourseController extends Controller
     {
         try {
             $this->courses->delete($course);
-            $this->organizer->normalize($course->course_group_id, $course->language); // sin huecos en su carpeta
+            $this->organizer->normalize($course->course_group_version_id); // sin huecos en su versión
         } catch (Throwable $e) {
             Log::error('Error al eliminar curso', ['course_id' => $course->id, 'exception' => $e]);
 
@@ -109,12 +113,17 @@ class CourseController extends Controller
     }
 
     /**
-     * Ubica el módulo en su carpeta de curso, idioma y posición (CLAUDE.md §10).
+     * Ubica el módulo en su carpeta de curso, año, versión y posición (CLAUDE.md §10 y
+     * docs/carpetas/INSTRUCTIVO_VERSIONES.md). La versión se crea si no existe.
      */
     private function place(CourseRequest $request, Course $course): Course
     {
         $p = $request->placement();
-        $this->organizer->assign($course, $p['group'], $p['language'], $p['position']);
+        $version = $p['group']
+            ? $this->organizer->version(CourseGroup::findOrFail($p['group']), $p['year'], Market::findOrFail($p['market']))
+            : null;
+
+        $this->organizer->assign($course, $version, $p['position']);
 
         return $course;
     }

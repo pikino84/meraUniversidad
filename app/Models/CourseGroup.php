@@ -14,8 +14,8 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
- * Carpeta de curso: agrupa módulos (registros de `courses`) por idioma y en orden, y puede
- * publicar su página pública: /<slug> (español) y /en/<slug> (inglés). Nace apagada.
+ * Carpeta de curso: agrupa módulos (registros de `courses`) por año y versión por país
+ * (docs/carpetas/INSTRUCTIVO_VERSIONES.md). Cada versión tiene su página pública, que nace apagada.
  */
 class CourseGroup extends Model
 {
@@ -100,7 +100,8 @@ class CourseGroup extends Model
             $reserved[] = strtolower(pathinfo($entry, PATHINFO_FILENAME));
         }
 
-        return array_values(array_unique(array_merge($reserved, ProgramCatalog::slugs())));
+        // Slugs de versiones (mexico, latam, eua…): son el primer segmento de /<versión>/<carpeta>.
+        return array_values(array_unique(array_merge($reserved, ProgramCatalog::slugs(), Market::slugs())));
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -121,6 +122,12 @@ class CourseGroup extends Model
         return $this->hasMany(Course::class, 'course_group_id');
     }
 
+    /** Versiones (año + país) de este curso (docs/carpetas/INSTRUCTIVO_VERSIONES.md). */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(CourseGroupVersion::class, 'course_group_id');
+    }
+
     /** Cortes del reporte de avance, evaluación y satisfacción (docs/reportes/INSTRUCTIVO_REPORTES.md). */
     public function reports(): HasMany
     {
@@ -134,12 +141,15 @@ class CourseGroup extends Model
 
     /* ==================== Página pública ==================== */
 
-    /** URL pública de un idioma: /<slug> (es) o /en/<slug>. */
+    /**
+     * Link corto de la carpeta: /<carpeta> (o /en/<carpeta>), que redirige a la versión más reciente.
+     * El link que se comparte es el de cada versión: CourseGroupVersion::publicUrl().
+     */
     public function publicUrl(string $language = 'es'): string
     {
-        return $language === 'es'
-            ? route('course-pages.show', $this)
-            : route('course-pages.show.lang', ['language' => $language, 'courseGroup' => $this]);
+        return $language === 'en'
+            ? route('course-pages.legacy-en', ['group' => $this->slug])
+            : route('course-pages.show', $this);
     }
 
     public function titleFor(string $language): string

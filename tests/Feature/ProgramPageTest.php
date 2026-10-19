@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Course;
 use App\Models\CourseGroup;
+use App\Models\Market;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,9 +64,12 @@ class ProgramPageTest extends TestCase
     public function test_english_version_uses_its_own_url_texts_and_modules_from_the_folder(): void
     {
         $group = CourseGroup::factory()->create(['name' => 'Manipulación de alimentos']);
-        Course::factory()->create(['name' => 'Module 2: Kitchen', 'slug' => 'kitchen-en', 'path' => 'cursos/kitchen-en', 'course_group_id' => $group->id, 'language' => 'en', 'position' => 2]);
-        Course::factory()->create(['name' => 'Module 1: Receiving', 'slug' => 'receiving-en', 'path' => 'cursos/receiving-en', 'course_group_id' => $group->id, 'language' => 'en', 'position' => 1]);
-        Course::factory()->create(['name' => 'Módulo en español', 'course_group_id' => $group->id, 'language' => 'es', 'position' => 1]);
+        $us = $group->versions()->create(['year' => 2026, 'market_id' => Market::where('code', 'US')->value('id')]);
+        $latam = $group->versions()->create(['year' => 2026, 'market_id' => Market::where('code', 'LATAM')->value('id')]);
+        $in = fn ($version) => ['course_group_id' => $group->id, 'course_group_version_id' => $version->id, 'language' => $version->language()];
+        Course::factory()->create(['name' => 'Module 2: Kitchen', 'slug' => 'kitchen-en', 'path' => 'cursos/kitchen-en', 'position' => 2] + $in($us));
+        Course::factory()->create(['name' => 'Module 1: Receiving', 'slug' => 'receiving-en', 'path' => 'cursos/receiving-en', 'position' => 1] + $in($us));
+        Course::factory()->create(['name' => 'Módulo en español', 'position' => 1] + $in($latam));
 
         config(['mera.programs.proceso-de-manipulacion-de-alimentos.languages.en.course_group' => $group->slug]);
 
@@ -105,6 +109,7 @@ class ProgramPageTest extends TestCase
         $this->assertSame('https://forms.cloud.microsoft/r/3e12BETYuE?origin=lprLink', $group->evaluation_url_es);
         $this->assertSame([1, 2], [$m1->fresh()->position, $m2->fresh()->position]);
         $this->assertSame('es', $m1->fresh()->language);
+        $this->assertSame('LATAM', $m1->fresh()->version->market->code); // versión de la config del programa
         $this->assertSame($other->id, $m3->fresh()->course_group_id);
 
         // Misma URL, misma clave de avance, mismos títulos cortos y anclas de inicio.
@@ -133,9 +138,11 @@ class ProgramPageTest extends TestCase
 
     public function test_folder_forms_override_the_configured_ones(): void
     {
-        CourseGroup::factory()->create([
-            'name' => 'Manipulación de alimentos', 'slug' => 'manipulacion-de-alimentos',
-            'evaluation_url_es' => 'https://forms.cloud.microsoft/r/NUEVA-EVAL',
+        // Los links de la versión que usa el programa (Latam, config) mandan sobre los de la config.
+        $group = CourseGroup::factory()->create(['name' => 'Manipulación de alimentos', 'slug' => 'manipulacion-de-alimentos']);
+        $group->versions()->create([
+            'year' => 2026, 'market_id' => Market::where('code', 'LATAM')->value('id'),
+            'evaluation_url' => 'https://forms.cloud.microsoft/r/NUEVA-EVAL',
         ]);
 
         $this->get(self::URL)->assertOk()

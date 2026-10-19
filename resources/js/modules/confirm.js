@@ -29,7 +29,8 @@ export function initConfirmForms() {
             title: form.dataset.confirm,
             content: buildContent(form, danger),
             icon: danger ? 'warning' : 'info',
-            className: danger ? 'mera-swal mera-swal-danger' : 'mera-swal',
+            // SweetAlert 2.1.2 acepta UNA sola clase (classList.add): con espacios, ningún modal se abre.
+            className: danger ? 'mera-swal-danger' : 'mera-swal-info',
             buttons: {
                 cancel: { text: 'Cancelar', value: false, visible: true, className: 'mera-swal-cancel', closeModal: true },
                 confirm: {

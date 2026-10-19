@@ -112,10 +112,14 @@
         <label class="visually-hidden" for="bulk-new-group">Nombre de la carpeta nueva</label>
         <input id="bulk-new-group" type="text" name="new_group_name" maxlength="150" value="{{ old('new_group_name') }}"
             class="form-control mera-input mera-bulk-new" placeholder="Nombre de la carpeta nueva" data-bulk-new hidden>
-        <label class="visually-hidden" for="bulk-language">Idioma</label>
-        <select id="bulk-language" name="language" class="form-control form-select mera-input" data-bulk-language>
-            @foreach (\App\Models\CourseGroup::LANGUAGES as $code => $label)
-            <option value="{{ $code }}" @selected(request('idioma', 'es') === $code)>{{ $label }}</option>
+        <label class="visually-hidden" for="bulk-year">Año</label>
+        <input id="bulk-year" type="number" name="year" min="2020" max="2100" inputmode="numeric" required
+            class="form-control mera-input mera-bulk-year" value="{{ request('anio', now(config('mera.display_timezone'))->year) }}"
+            title="Año" data-bulk-dependent>
+        <label class="visually-hidden" for="bulk-market">Versión</label>
+        <select id="bulk-market" name="market_id" class="form-control form-select mera-input" title="Versión" data-bulk-dependent>
+            @foreach ($markets as $market)
+            <option value="{{ $market->id }}" @selected((string) request('version', \App\Models\Market::defaultMarket()?->id) === (string) $market->id)>{{ $market->label() }}</option>
             @endforeach
         </select>
         <button type="submit" class="btn mera-btn-primary"><i class="fas fa-folder-open" aria-hidden="true"></i> Mover</button>
@@ -134,7 +138,7 @@
                         </th>
                         <th scope="col" class="d-none d-xxl-table-cell">Portada</th>
                         <th scope="col" class="mera-col-name">Nombre</th>
-                        <th scope="col" class="mera-nowrap">Carpeta · Idioma</th>
+                        <th scope="col" class="mera-nowrap">Carpeta · Año · Versión</th>
                         @if (config('mera.categories_enabled'))
                         <th scope="col" class="d-none d-xl-table-cell">Categoría</th>
                         @endif

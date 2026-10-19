@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Courses;
 
-use App\Models\CourseGroup;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,9 +24,11 @@ class CourseRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-            // Carpeta de curso (CLAUDE.md §10): opcional; si hay carpeta, el idioma es obligatorio.
+            // Carpeta de curso (CLAUDE.md §10): opcional; si hay carpeta, año y versión son obligatorios
+            // (docs/carpetas/INSTRUCTIVO_VERSIONES.md). La versión se crea si no existe.
             'course_group_id' => ['nullable', 'integer', 'exists:course_groups,id'],
-            'language' => ['nullable', 'required_with:course_group_id', Rule::in(array_keys(CourseGroup::LANGUAGES))],
+            'year' => ['nullable', 'required_with:course_group_id', 'integer', 'between:2020,2100'],
+            'market_id' => ['nullable', 'required_with:course_group_id', 'integer', Rule::exists('markets', 'id')->where('is_active', true)],
             'position' => ['nullable', 'integer', 'min:1', 'max:999'],
             // "image" acepta SVG (riesgo XSS); por eso se limita a mimes concretos.
             'cover_image' => [
@@ -52,7 +53,8 @@ class CourseRequest extends FormRequest
             'description' => 'descripción',
             'category_id' => 'categoría',
             'course_group_id' => 'carpeta de curso',
-            'language' => 'idioma',
+            'year' => 'año',
+            'market_id' => 'versión',
             'position' => 'posición',
             'cover_image' => 'imagen de portada',
             'zip_file' => 'archivo ZIP',
@@ -81,14 +83,15 @@ class CourseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'language.required_with' => 'Elige el idioma del módulo (Español o Inglés).',
+            'year.required_with' => 'Escribe el año del módulo en la carpeta.',
+            'market_id.required_with' => 'Elige la versión del módulo (México, Latam, EUA…).',
         ];
     }
 
     /**
-     * Ubicación del módulo en su carpeta de curso.
+     * Ubicación del módulo: carpeta + año + versión y posición (sin carpeta → "Sin carpeta").
      *
-     * @return array{group:?int,language:?string,position:?int}
+     * @return array{group:?int,year:?int,market:?int,position:?int}
      */
     public function placement(): array
     {
@@ -96,7 +99,8 @@ class CourseRequest extends FormRequest
 
         return [
             'group' => $group,
-            'language' => $group ? $this->input('language') : null,
+            'year' => $group ? (int) $this->input('year') : null,
+            'market' => $group ? (int) $this->input('market_id') : null,
             'position' => $group && $this->filled('position') ? (int) $this->input('position') : null,
         ];
     }

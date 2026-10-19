@@ -37,6 +37,21 @@
             </div>
         </div>
 
+        @if ($versions->isNotEmpty())
+        <div class="col-md-6">
+            <div class="form-group mera-form-group mb-0">
+                <label for="report-version">Versión <span class="text-danger" aria-hidden="true">*</span></label>
+                <select id="report-version" name="course_group_version_id" required
+                    class="form-control form-select mera-input @error('course_group_version_id') is-invalid @enderror">
+                    @foreach ($versions as $v)
+                    <option value="{{ $v->id }}" @selected((string) old('course_group_version_id', $report->course_group_version_id ?? request('version', $versions->first()->id)) === (string) $v->id)>{{ $v->label() }}@if ($v->catalog_code) · {{ $v->catalog_code }}@endif</option>
+                    @endforeach
+                </select>
+                <small class="form-text text-muted">Año y país de los Excel que vas a subir.</small>
+            </div>
+        </div>
+        @endif
+
         @unless ($editing)
         @if (count($surveys) > 1)
         <div class="col-md-6">
@@ -93,7 +108,7 @@
         <button type="submit" class="btn mera-btn-save">
             <i class="fas fa-save" aria-hidden="true"></i> {{ $submitLabel }}
         </button>
-        <a href="{{ $editing ? route('course-groups.reports.show', [$group, $report]) : route('course-groups.show', $group) }}" class="btn mera-btn-cancel">
+        <a href="{{ $editing ? route('course-groups.reports.show', [$group, $report]) : (request('version') ? route('course-groups.versions.show', [$group, request('version'), 'seccion' => 'reportes']) : route('course-groups.show', $group)) }}" class="btn mera-btn-cancel">
             <i class="fas fa-times" aria-hidden="true"></i> Cancelar
         </a>
     </div>

@@ -3,7 +3,9 @@
 namespace Tests\Feature\Reports;
 
 use App\Models\CourseGroup;
+use App\Models\CourseGroupVersion;
 use App\Models\CourseReport;
+use App\Models\Market;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -28,6 +30,8 @@ class CourseReportTest extends TestCase
 
     private string $tempRoot;
 
+    private CourseGroupVersion $version;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -41,6 +45,7 @@ class CourseReportTest extends TestCase
 
         $this->admin = $this->userWithRole(User::ROLE_ADMIN);
         $this->group = CourseGroup::create(['name' => 'Higiene en cocina']);
+        $this->version = $this->group->versions()->create(['year' => 2026, 'market_id' => Market::where('code', 'MX')->value('id')]);
     }
 
     private function userWithRole(string $role): User
@@ -85,7 +90,7 @@ class CourseReportTest extends TestCase
 
     private function payload(array $overrides = []): array
     {
-        return array_merge(['title' => 'Curso: Higiene', 'cut_date' => '2026-10-13', 'survey' => 'higiene'], $this->workbooks(), $overrides);
+        return array_merge(['title' => 'Curso: Higiene', 'cut_date' => '2026-10-13', 'survey' => 'higiene', 'course_group_version_id' => $this->version->id], $this->workbooks(), $overrides);
     }
 
     private function tempIsEmpty(): bool
@@ -111,13 +116,14 @@ class CourseReportTest extends TestCase
         $this->assertSame(1, $report->summary['completados']);
         $this->assertSame(['cubo', 'inicio_mes', 'encuesta', 'catalogo'], array_keys($report->data));
         $this->assertSame($this->admin->id, $report->created_by);
+        $this->assertSame($this->version->id, $report->course_group_version_id);
         $this->assertTrue($this->tempIsEmpty());
 
         // Solo agregados: ni nombres ni números de empleado en lo guardado.
         $this->assertStringNotContainsString('"A"', json_encode($report->data));
 
         $this->get(route('course-groups.reports.show', [$this->group, $report]))->assertOk()->assertSee('Curso: Higiene');
-        $this->get(route('course-groups.show', $this->group))->assertOk()->assertSee('13/10/2026');
+        $this->get(route('course-groups.versions.show', [$this->group, $this->version, 'seccion' => 'reportes']))->assertOk()->assertSee('13/10/2026')->assertSee('Cortes de reporte');
     }
 
     public function test_a_wrong_file_shows_a_clear_error_and_still_deletes_the_upload(): void
@@ -132,6 +138,18 @@ class CourseReportTest extends TestCase
 
         $this->assertSame(0, CourseReport::count());
         $this->assertTrue($this->tempIsEmpty());
+    }
+
+    public function test_a_new_cut_needs_a_version_of_its_own_folder(): void
+    {
+        $other = CourseGroup::create(['name' => 'Otra'])->versions()->create(['year' => 2026, 'market_id' => Market::where('code', 'MX')->value('id')]);
+
+        $this->actingAs($this->admin)->post(route('course-groups.reports.store', $this->group), $this->payload(['course_group_version_id' => '']))
+            ->assertSessionHasErrors('course_group_version_id');
+        $this->actingAs($this->admin)->post(route('course-groups.reports.store', $this->group), $this->payload(['course_group_version_id' => $other->id]))
+            ->assertSessionHasErrors('course_group_version_id');
+
+        $this->assertSame(0, CourseReport::count());
     }
 
     public function test_validation_requires_the_three_xlsx_files(): void
@@ -329,7 +347,7 @@ class CourseReportTest extends TestCase
 
         $this->actingAs($this->admin)
             ->delete(route('course-groups.reports.destroy', [$this->group, $report]))
-            ->assertRedirect(route('course-groups.show', $this->group));
+            ->assertRedirect(route('course-groups.versions.show', [$this->group, $this->version, 'seccion' => 'reportes']));
 
         $this->assertModelMissing($report);
         $this->assertModelExists($other);

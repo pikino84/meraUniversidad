@@ -5,7 +5,7 @@
 > antes de migrar, pruebas solo en sqlite, build solo en local, PHP 8.1). Antes de empezar, leer
 > `CLAUDE.md` §0, §3, §5, §10 y este documento completo.
 
-Creado: 2026-10-15. Estado: **por implementar** (rama `qa`, verificar en `university.meracorporation.com`).
+Creado: 2026-10-15. Estado: **implementado en local (rama `qa`, 2026-10-19), sin commit**; falta QA en `university.meracorporation.com`. §9 respondido el 2026-10-19.
 
 ---
 
@@ -231,6 +231,37 @@ Solo **agregar** campos (CLAUDE.md §10): `year`, `market` (`code`), `market_nam
 8. **Higiene 2026:** ¿sus 5 módulos en español sin carpeta (ids 20–25) van a la versión México o Latam de la
    carpeta 2?
 
+### Respuestas del usuario (2026-10-19)
+1. **Español → México**, salvo las carpetas que se indiquen con `--map` (p. ej. `manipulacion-de-alimentos:LATAM`).
+2. **Año = el del código de la carpeta** (`…-EL-25` → 2025, `…-EL-26` → 2026). Sin código → 2026. Las carpetas
+   6, 7 y 8 quedan en 2025.
+3. **Versión por defecto: México** (`mera.versions.default_market = MX`).
+4. **Sufijos de Latam y EUA: preguntar a Capacitación.** Provisionales `LATAM` y `US` en `markets.code`; se
+   editan en la pantalla "Versiones" cuando los confirmen. Va en el correo pendiente (CLAUDE.md §6).
+5. **"+ Año" copia solo la estructura:** mismas versiones con descripción y links de evaluación/encuesta,
+   **sin módulos y apagadas**. También se puede crear el año vacío.
+6. **Un módulo, una sola versión.** Para contenidos iguales se usa el respaldo a la versión padre (§5.3).
+7. **Ninguna fusión por ahora.** Cada carpeta se migra tal cual. `--merge` **no se implementó**: se hará cuando
+   Capacitación confirme qué carpetas son el mismo curso (incluido si la carpeta 6 es de EPP).
+8. **Higiene 2026, módulos en español (ids 20–25): los acomoda Capacitación** con "Mover a…". El comando no
+   los toca, igual que los demás sin carpeta.
+
+**URLs (decisión adicional del usuario): versión primero**, como `/en/higiene`. Reemplaza la tabla de §5.2:
+
+| URL | Muestra |
+|---|---|
+| `/<slug-carpeta>` | México (versión por defecto), año más reciente publicado |
+| `/<slug-versión>/<slug-carpeta>` | Esa versión, año más reciente. P. ej. `/eua/higiene`, `/latam/higiene` |
+| `/<slug-versión>/<slug-carpeta>/<año>` | Esa versión y año. P. ej. `/latam/higiene/2025` |
+| `/en/<slug-carpeta>` y `/<slug-carpeta>/en` | **301** → `/eua/<slug-carpeta>` |
+
+Consecuencias:
+- El slug de una versión pasa a ser **primer segmento** de la URL. Debe ser único, no chocar con rutas ni
+  carpetas de `public/` ni con slugs de carpetas, y **entrar en `CourseGroup::reservedSlugs()`** (y al revés:
+  al crear una versión, rechazar slugs que ya use una carpeta o una ruta). `en` y `es` siguen reservados.
+- Las rutas `/{versión}/{carpeta}` se registran al final de `routes/web.php`, antes de `/{carpeta}`, con la
+  versión restringida a los slugs de `markets` (no a cualquier texto).
+
 ## 10. Orden sugerido
 1. Responder §9 con el usuario.
 2. Migraciones (backup antes) + modelos `Market` y `CourseGroupVersion` + `CourseGroupOrganizer` por versión,
@@ -240,3 +271,39 @@ Solo **agregar** campos (CLAUDE.md §10): `year`, `market` (`code`), `market_nam
 5. Página pública, rutas nuevas, 301 y programa. Reportes por versión.
 6. API (campos nuevos). Build local, QA en el servidor y documentación en `CLAUDE.md` (§3, §10 y bitácora),
    con permiso.
+
+## 11. Avance (rama `qa`, 2026-10-19)
+- ✅ **Datos:** migración aditiva `2026_10_19_000000_create_markets_and_course_group_versions` (tablas `markets` y
+  `course_group_versions`; `course_group_version_id` en `courses` y `course_reports`). Crea México (`MX`, `/mexico`,
+  es-MX), Latam (`LATAM`, `/latam`, es-419) y EUA (`US`, `/eua`, en-US). Config `mera.versions`
+  (`default_market` = MX, `english_market` = US, claves de avance anteriores).
+- ✅ **Modelos y lógica:** `Market`, `CourseGroupVersion`. `CourseGroupOrganizer` ordena y mueve **por versión**
+  (México y Latam comparten idioma pero son listas distintas); el módulo sigue guardando `course_group_id` y
+  `language` (de su versión) para la API y los filtros. `createYear()` copia solo la estructura (§9.5).
+- ✅ **Comando** `mera:versions-from-languages [--dry-run] [--year=] [--es=MX] [--en=US] [--map=slug:CÓDIGO]
+  [--backup-dir=]`: año y país desde el código del nombre, `--map` para excepciones, copia los datos de la página
+  de la carpeta a la versión (descripción, links, publicación; `name_en` como título de EUA), asigna los cortes de
+  reporte, respaldo JSON e idempotente. Probado en local con los datos del usuario.
+- ✅ **Panel:** detalle de carpeta con pestañas de año y de versión, "Nuevo año" (copiar estructura o elegir
+  versiones), "Agregar versión", "Editar versión" (código del catálogo, título, descripción, links), publicar por
+  versión, borrar versión vacía, reportes por versión. Lista de carpetas con "2026: México 5 · EUA 5". "Mover a…"
+  y formulario del módulo con Carpeta → Año → Versión (la versión se crea si no existe). Pantalla **Versiones**
+  (solo super admin): crear, editar, ordenar, activar/desactivar, "Pertenece a"; una versión usada no se borra.
+  Editar carpeta queda solo con nombre y link (las columnas viejas de la carpeta se conservan como respaldo).
+- ✅ **Página pública:** `/<carpeta>` (México), `/<versión>/<carpeta>[/<año>]`, 301 desde `/en/<carpeta>` y
+  `/<carpeta>/en` a `/eua/<carpeta>`; selector de versión y de año, `hreflang` por versión, respaldo a la versión
+  padre con aviso, avance por dispositivo con clave nueva y lectura de la anterior. Los slugs de versiones quedan
+  reservados para carpetas y al revés.
+- ✅ **Programas:** `version => ['market' => 'LATAM']` en el de manipulación de alimentos; `mera:program-folder`
+  acomoda en esa versión. URLs del programa sin cambios.
+- ✅ **API:** se agregan `year`, `market`, `market_name` y `catalog_code`; nada se quitó.
+- ✅ Pruebas: 172 en verde (nuevas: `CourseVersionsTest`; reescritas: `CourseGroupTest`, `CoursePageTest`).
+  QA visual en local (1366 y 375 px).
+- ⏳ Commit (con permiso), QA en `university.` (correr el comando con `--dry-run` primero) y documentación final.
+- ⏳ Pendiente de Capacitación: sufijos de Latam/EUA en el catálogo y las fusiones de carpetas (§9.4 y §9.7).
+- 🔄 **Cambio de URLs (2026-10-19, pedido del usuario):** el link público sigue la ruta del panel:
+  `/<carpeta>/<año>/<versión>` (p. ej. `/higiene/2026/mexico`). Reemplaza a `/<versión>/<carpeta>[/<año>]` de la
+  respuesta 9.9 (no se llegó a desplegar). La página muestra solo esa versión, sin selector de versión ni de año.
+  `/<carpeta>` y `/<carpeta>/<año>` redirigen (301) a la versión por defecto más reciente; `/en/<carpeta>` y
+  `/<carpeta>/en`, a EUA.
+

@@ -1,13 +1,13 @@
-{{-- Reportes de curso de la carpeta (docs/reportes/INSTRUCTIVO_REPORTES.md §5.3). Variables: $group, $reports --}}
+{{-- Reportes de una versión (docs/reportes/INSTRUCTIVO_REPORTES.md §5.3). Variables: $group, $version, $reports --}}
 @php $tz = config('mera.display_timezone'); @endphp
-<section class="card mera-table-card mt-4" aria-labelledby="reportes-carpeta">
+<section class="card mera-table-card" aria-labelledby="reportes-version">
     <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="mera-section-toolbar">
             <div>
-                <h2 id="reportes-carpeta" class="h5 mb-1 mera-section-title"><i class="fas fa-chart-bar" aria-hidden="true"></i> Reportes</h2>
-                <small class="text-muted">Avance, evaluación y satisfacción por corte, a partir de los Excel de la plataforma de capacitación.</small>
+                <h2 id="reportes-version" class="h6 mb-1">Cortes de reporte</h2>
+                <small class="text-muted">Avance, evaluación y satisfacción a partir de los Excel de la plataforma de capacitación.</small>
             </div>
-            <a href="{{ route('course-groups.reports.create', $group) }}" class="btn mera-btn-primary btn-sm">
+            <a href="{{ route('course-groups.reports.create', [$group, 'version' => $version->id]) }}" class="btn mera-btn-primary btn-sm">
                 <i class="fas fa-plus" aria-hidden="true"></i> Nuevo corte
             </a>
         </div>

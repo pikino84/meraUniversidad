@@ -25,6 +25,7 @@ class ActivityLogController extends Controller
         'categorias' => 'Categorías',
         'usuarios' => 'Usuarios',
         'reportes' => 'Reportes de curso',
+        'versiones' => 'Versiones (países)',
     ];
 
     /** Tipo de registro → nombre en singular. */
@@ -34,6 +35,8 @@ class ActivityLogController extends Controller
         Category::class => 'Categoría',
         User::class => 'Usuario',
         \App\Models\CourseReport::class => 'Reporte',
+        \App\Models\CourseGroupVersion::class => 'Versión de carpeta',
+        \App\Models\Market::class => 'Versión',
     ];
 
     /** Campo técnico → etiqueta en español. */
@@ -62,6 +65,15 @@ class ActivityLogController extends Controller
         'title' => 'Título',
         'cut_date' => 'Fecha de corte',
         'shared_at' => 'Link para compartir',
+        'course_group_version_id' => 'Año y versión',
+        'year' => 'Año',
+        'market_id' => 'Versión',
+        'catalog_code' => 'Código del catálogo',
+        'evaluation_url' => 'Evaluación',
+        'survey_url' => 'Encuesta',
+        'code' => 'Código',
+        'hreflang' => 'Idioma y país',
+        'is_active' => 'Activa',
     ];
 
     public function index(Request $request): View
@@ -139,11 +151,18 @@ class ActivityLogController extends Controller
 
         return match ($field) {
             'language' => CourseGroup::LANGUAGES[$value] ?? (string) $value,
-            'is_published' => $value ? 'Sí' : 'No',
+            'is_published', 'is_active' => $value ? 'Sí' : 'No',
+            'market_id' => \App\Models\Market::cached()->firstWhere('id', (int) $value)?->name ?? "#{$value}",
+            'course_group_version_id' => $this->versionLabel((int) $value),
             'course_group_id' => $this->groupName((int) $value),
             'category_id', 'parent_id' => Category::pathMap()[(int) $value] ?? "#{$value}",
             default => is_scalar($value) ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE),
         };
+    }
+
+    private function versionLabel(int $id): string
+    {
+        return \App\Models\CourseGroupVersion::with('market')->find($id)?->label() ?? "#{$id}";
     }
 
     /** @var array<int,string>|null Nombres de carpetas (por request, no estático). */

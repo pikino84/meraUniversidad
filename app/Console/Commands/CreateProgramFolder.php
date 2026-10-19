@@ -4,12 +4,13 @@ namespace App\Console\Commands;
 
 use App\Models\Course;
 use App\Models\CourseGroup;
+use App\Models\Market;
 use App\Services\Courses\CourseGroupOrganizer;
 use Illuminate\Console\Command;
 
 /**
  * Crea la carpeta de curso que alimenta un programa de config('mera.programs') y le acomoda,
- * en español, los módulos de su lista fija (por slug). Idempotente: si la carpeta ya existe
+ * en la versión de la config (p. ej. Latam), los módulos de su lista fija (por slug). Idempotente: si la carpeta ya existe
  * no la duplica, y no mueve módulos que ya estén en OTRA carpeta.
  *
  * No cambia ninguna URL: la página del programa sigue en su mismo link, y si algo falta en la
@@ -75,13 +76,35 @@ class CreateProgramFolder extends Command
             }
         }
 
-        if (! $dryRun && $group && $toMove !== []) {
-            $organizer->moveModules($toMove, $group->id, $default);
+        // Versión de la carpeta (docs/carpetas/INSTRUCTIVO_VERSIONES.md §5.4): la de 'version' en la
+        // config (p. ej. Latam) o la versión por defecto; año de la config o el actual.
+        $market = Market::byCode((string) ($page['version']['market'] ?? config('mera.versions.default_market')));
+        $year = (int) ($page['version']['year'] ?? now(config('mera.display_timezone'))->year);
+
+        if (! $dryRun && $group && $toMove !== [] && $market) {
+            $version = $organizer->version($group, $year, $market);
+
+            if ($version->wasRecentlyCreated) {
+                $version->fill([
+                    'description' => $page['lead'] ?? null,
+                    'evaluation_url' => $this->actionUrl($program, 'evaluation', $default),
+                    'survey_url' => $this->actionUrl($program, 'survey', $default),
+                ])->save();
+            }
+
+            $organizer->moveModules($toMove, $version);
         }
 
-        $this->info($dryRun ? 'Fin (sin cambios).' : count($toMove).' módulo(s) acomodados en español.');
+        $this->info($dryRun ? 'Fin (sin cambios).' : count($toMove)." módulo(s) acomodados en {$year} · ".($market?->name ?? '—').'.');
 
         return self::SUCCESS;
+    }
+
+    private function actionUrl(array $program, string $type, string $language): ?string
+    {
+        $url = collect($program['actions'] ?? [])->firstWhere('type', $type)['url'] ?? null;
+
+        return is_array($url) ? ($url[$language] ?? null) : $url;
     }
 
     private function createGroup(array $program, array $page, string $slug): CourseGroup

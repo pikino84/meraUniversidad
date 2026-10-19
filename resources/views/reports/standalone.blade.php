@@ -27,6 +27,7 @@ html, body { margin: 0; background: #F3F8F4; color: #1d2a22; font-family: 'Monts
 </style>
 </head>
 <body>
+@include('partials.test-environment')
 <main class="mera-standalone">
     <header class="mera-standalone-head">
         <div>

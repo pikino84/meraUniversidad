@@ -12,6 +12,7 @@ return [
     'skip' => 'Skip to content',
     'logo_alt' => 'MERA · Vision, Values, Results',
     'language_switch' => 'Language',
+    'parent_version_notice' => 'Showing the :version version.',
     'progress_title' => 'Your progress',
     'progress_count' => ':done of :total modules',
     'step_modules' => 'Step 1 · Your :count modules',

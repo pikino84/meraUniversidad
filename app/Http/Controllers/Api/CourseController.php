@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Course;
 use App\Models\CourseGroup;
+use App\Models\CourseGroupVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -81,10 +82,11 @@ class CourseController extends Controller
         return Cache::remember(Course::API_CACHE_KEY, now()->addMinutes($minutes), function () {
             $paths = Category::pathMap();
             $groups = CourseGroup::pluck('name', 'id');
+            $versions = CourseGroupVersion::with('market:id,code,name')->get(['id', 'year', 'market_id', 'catalog_code'])->keyBy('id');
 
             return Course::query()
                 ->orderBy('id') // mismo orden que el Course::all() original
-                ->get(['id', 'name', 'slug', 'description', 'cover_image', 'path', 'category_id', 'course_group_id', 'language', 'position', 'created_at', 'updated_at'])
+                ->get(['id', 'name', 'slug', 'description', 'cover_image', 'path', 'category_id', 'course_group_id', 'course_group_version_id', 'language', 'position', 'created_at', 'updated_at'])
                 ->map(fn (Course $course) => [
                     'id' => $course->id,
                     'name' => $course->name,
@@ -97,6 +99,11 @@ class CourseController extends Controller
                     'course_group' => $course->course_group_id ? ($groups[$course->course_group_id] ?? null) : null,
                     'language' => $course->language,
                     'position' => $course->position,
+                    // Año y versión por país (docs/carpetas/INSTRUCTIVO_VERSIONES.md §7): también AGREGADOS.
+                    'year' => $versions[$course->course_group_version_id]->year ?? null,
+                    'market' => $versions[$course->course_group_version_id]->market->code ?? null,
+                    'market_name' => $versions[$course->course_group_version_id]->market->name ?? null,
+                    'catalog_code' => $versions[$course->course_group_version_id]->catalog_code ?? null,
                     // Formato original (relativo, sin "/" inicial)
                     'cover_image' => $course->cover_image ? Course::publicPath($course->cover_image) : null,
                     'url' => $course->path ? Course::publicPath(rtrim($course->path, '/').'/'.config('mera.courses.entry_file')) : null,

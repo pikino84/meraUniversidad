@@ -53,6 +53,15 @@ class CourseReportRequest extends FormRequest
             'cut_date' => ['required', 'date', 'before_or_equal:'.now(config('mera.display_timezone'))->toDateString()],
         ];
 
+        // Versión (carpeta + año + país) del corte, docs/carpetas/INSTRUCTIVO_VERSIONES.md §3.3.
+        // Obligatoria al crear si la carpeta ya tiene versiones; al actualizar, si no se manda, se conserva.
+        $group = $this->route('courseGroup');
+        $rules['course_group_version_id'] = [
+            $creating && $group?->versions()->exists() ? 'required' : 'nullable',
+            'integer',
+            Rule::exists('course_group_versions', 'id')->where('course_group_id', $group?->id),
+        ];
+
         if ($creating) {
             $rules['survey'] = ['required', 'string', Rule::in(array_keys(config('report_surveys')))];
         }
@@ -77,7 +86,7 @@ class CourseReportRequest extends FormRequest
 
     public function attributes(): array
     {
-        return self::FILES + ['title' => 'título', 'cut_date' => 'fecha de corte', 'survey' => 'encuesta'];
+        return self::FILES + ['title' => 'título', 'cut_date' => 'fecha de corte', 'survey' => 'encuesta', 'course_group_version_id' => 'versión'];
     }
 
     public function messages(): array

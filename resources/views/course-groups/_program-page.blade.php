@@ -8,7 +8,7 @@
             </h2>
             <small class="text-muted">
                 Esta carpeta alimenta la página del programa: el orden de los módulos y los links de evaluación
-                y encuesta de «Editar carpeta» se reflejan ahí. Los links no cambian.
+                y encuesta de su versión («Editar versión») se reflejan ahí. Los links no cambian.
             </small>
         </div>
     </div>
@@ -20,10 +20,10 @@
             @if (isset($programLinks[$code]))
             <code class="mera-public-url">{{ $programLinks[$code] }}</code>
             <span class="mera-public-actions">
-                <button type="button" class="btn btn-sm mera-btn-cancel" data-copy="{{ $programLinks[$code] }}" aria-label="Copiar link en {{ $label }}">
+                <button type="button" class="btn btn-sm mera-btn-ghost" data-copy="{{ $programLinks[$code] }}" aria-label="Copiar link en {{ $label }}">
                     <i class="fas fa-copy" aria-hidden="true"></i> <span data-copy-label>Copiar link</span>
                 </button>
-                <a href="{{ $programLinks[$code] }}" target="_blank" rel="noopener" class="btn btn-sm mera-btn-cancel"
+                <a href="{{ $programLinks[$code] }}" target="_blank" rel="noopener" class="btn btn-sm mera-btn-ghost"
                     aria-label="Ver la página en {{ $label }} (nueva pestaña)">
                     <i class="fas fa-external-link-alt" aria-hidden="true"></i> Ver
                 </a>
@@ -31,7 +31,7 @@
             @else
             <small class="mera-public-warn">
                 <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-                Sin módulos en {{ strtolower($label) }}: esta versión no se muestra al público. Agrégalos en la pestaña {{ $label }}.
+                Sin módulos en {{ strtolower($label) }}: esta versión no se muestra al público. Agrégalos en la versión que usa el programa (config/mera.php).
             </small>
             @endif
         </li>

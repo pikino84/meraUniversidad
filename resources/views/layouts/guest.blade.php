@@ -15,6 +15,7 @@
     </head>
     <body class="font-sans text-gray-800 antialiased">
         @include('partials.page-loader')
+    @include('partials.test-environment')
         <div class="mera-auth">
             <aside class="mera-auth-brand" aria-hidden="true">
                 <div style="position:relative;z-index:1">

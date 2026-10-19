@@ -1,7 +1,10 @@
-{{-- Variables: $action, $method, $group (nullable), $submitLabel --}}
+{{-- Variables: $action, $method, $group (nullable), $submitLabel
+     La descripción, la evaluación, la encuesta y la publicación son de cada versión
+     (course-groups/versions/edit), no de la carpeta. --}}
 @php
     $editing = isset($group);
     $base = rtrim(url('/'), '/').'/';
+    $published = $editing && $group->versions()->where('is_published', true)->exists();
 @endphp
 @include('partials.form-errors')
 
@@ -12,21 +15,13 @@
     @endif
 
     <div class="row g-3">
-        <div class="col-md-6">
+        <div class="col-12">
             <div class="form-group mera-form-group mb-0">
                 <label for="group-name">Nombre del curso <span class="text-danger" aria-hidden="true">*</span></label>
                 <input id="group-name" type="text" name="name" maxlength="150" required @unless ($editing) autofocus @endunless
                     class="form-control mera-input @error('name') is-invalid @enderror"
-                    value="{{ old('name', $group->name ?? '') }}" placeholder="Ej. Manipulación de alimentos">
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group mera-form-group mb-0">
-                <label for="group-name-en">Nombre en inglés <small class="text-muted fw-normal">(opcional)</small></label>
-                <input id="group-name-en" type="text" name="name_en" maxlength="150"
-                    class="form-control mera-input @error('name_en') is-invalid @enderror"
-                    value="{{ old('name_en', $group->name_en ?? '') }}" placeholder="Ej. Food handling">
-                <small class="form-text text-muted">Título de la página en inglés. Si se deja vacío, usa el nombre en español.</small>
+                    value="{{ old('name', $group->name ?? '') }}" placeholder="Ej. NRM-HIG-002-EL-26 | Introducción a la Higiene">
+                <small class="form-text text-muted">Se puede usar el código del catálogo al inicio («CÓDIGO | Título»).</small>
             </div>
         </div>
 
@@ -40,14 +35,15 @@
                     <input id="group-slug" type="text" name="slug" maxlength="120" inputmode="url" autocomplete="off"
                         pattern="{{ \App\Models\CourseGroup::SLUG_PATTERN }}" @if ($editing) required @endif
                         class="form-control mera-input" aria-describedby="group-slug-help"
-                        value="{{ old('slug', $group->slug ?? '') }}" placeholder="manipulacion-de-alimentos">
+                        value="{{ old('slug', $group->slug ?? '') }}" placeholder="introduccion-a-la-higiene">
                 </div>
                 <small id="group-slug-help" class="form-text text-muted">
-                    Solo minúsculas, números y guiones. La versión en inglés lleva <code>/en/</code> antes del link (p. ej. <code>/en/higiene</code>).
-                    @if ($editing && $group->is_published)
+                    Solo minúsculas, números y guiones. Cada versión lleva su nombre antes del link
+                    (p. ej. <code>/eua/introduccion-a-la-higiene</code>); México va sin prefijo.
+                    @if ($published)
                     <strong class="text-danger d-block mt-1">
                         <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-                        La página está publicada: si cambias el link, el anterior dejará de funcionar para quien ya lo tenga.
+                        Hay páginas publicadas: si cambias el link, el anterior dejará de funcionar para quien ya lo tenga.
                     </strong>
                     @endif
                 </small>
@@ -55,41 +51,10 @@
         </div>
     </div>
 
-    <fieldset class="mera-fieldset mt-4 mb-3">
-        <legend>Página pública <small class="text-muted fw-normal">(todo opcional)</small></legend>
-        <p class="text-muted small mb-3">
-            Texto de presentación y links de la evaluación y la encuesta (Microsoft Forms).
-            Si un campo en inglés queda vacío, la página en inglés usa el de español.
-        </p>
-
-        <div class="row g-3">
-            @foreach (['es' => 'español', 'en' => 'inglés'] as $code => $label)
-            <div class="col-lg-6">
-                <h3 class="h6 mera-fieldset-sub">{{ ucfirst($label) }}</h3>
-                <div class="form-group mera-form-group mb-3">
-                    <label for="group-description-{{ $code }}">Descripción</label>
-                    <textarea id="group-description-{{ $code }}" name="description_{{ $code }}" rows="3" maxlength="600"
-                        class="form-control mera-input @error('description_'.$code) is-invalid @enderror"
-                        placeholder="{{ $code === 'es' ? 'Ej. Aprende paso a paso cómo cuidar los alimentos que servimos.' : 'E.g. Learn step by step how to take care of the food we serve.' }}">{{ old('description_'.$code, $group->{'description_'.$code} ?? '') }}</textarea>
-                </div>
-                <div class="form-group mera-form-group mb-3">
-                    <label for="group-evaluation-{{ $code }}">Link de la evaluación</label>
-                    <input id="group-evaluation-{{ $code }}" type="url" name="evaluation_url_{{ $code }}" maxlength="500"
-                        class="form-control mera-input @error('evaluation_url_'.$code) is-invalid @enderror"
-                        value="{{ old('evaluation_url_'.$code, $group->{'evaluation_url_'.$code} ?? '') }}"
-                        placeholder="https://forms.cloud.microsoft/…">
-                </div>
-                <div class="form-group mera-form-group mb-0">
-                    <label for="group-survey-{{ $code }}">Link de la encuesta</label>
-                    <input id="group-survey-{{ $code }}" type="url" name="survey_url_{{ $code }}" maxlength="500"
-                        class="form-control mera-input @error('survey_url_'.$code) is-invalid @enderror"
-                        value="{{ old('survey_url_'.$code, $group->{'survey_url_'.$code} ?? '') }}"
-                        placeholder="https://forms.cloud.microsoft/…">
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </fieldset>
+    <p class="small text-muted mt-3 mb-0">
+        La descripción, los links de evaluación y encuesta y la publicación se configuran en cada versión
+        («Editar versión», dentro de la carpeta).
+    </p>
 
     <div class="mera-form-actions">
         <button type="submit" class="btn mera-btn-save">

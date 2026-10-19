@@ -24,7 +24,7 @@
 {{-- Solo lo ven administradores: la página está apagada para el público. --}}
 <div class="mera-prog-preview" role="status" lang="es">
     <span>👁 <b>Vista previa.</b> Esta página está <b>apagada</b>: el público aún no puede verla.</span>
-    <a href="{{ route('course-groups.show', $preview) }}">Ir al panel para publicarla</a>
+    <a href="{{ $preview }}">Ir al panel para publicarla</a>
 </div>
 @endif
 
@@ -48,12 +48,16 @@
         <p class="mera-prog-eyebrow">{{ $page['eyebrow'] }}</p>
         @endif
         <h1 class="mera-prog-title">{{ $page['title'] }}</h1>
+        @if (! empty($notice))
+        <p class="mera-prog-notice" role="note">{{ $notice }}</p>
+        @endif
         <p class="mera-prog-lead">{{ $page['lead'] }}</p>
     </div>
 </header>
 
 <main id="contenido" class="mera-prog-wrap mera-prog-main" tabindex="-1"
     data-program-progress="{{ $storageKey }}" data-total="{{ $total }}"
+    @if (! empty($legacyStorageKey)) data-progress-legacy="{{ $legacyStorageKey }}" @endif
     data-i18n-count="{{ __('program.progress_count', ['done' => '{done}', 'total' => '{total}']) }}"
     data-i18n-seen="{{ __('program.module_seen_suffix') }}">
 

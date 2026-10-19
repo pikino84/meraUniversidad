@@ -1,7 +1,7 @@
 /**
  * Arrastrar y soltar para ordenar los módulos de una carpeta (CLAUDE.md §12, U18).
  *
- * Se activa en <ol data-sortable-url="…" data-sortable-language="es|en">, con un <li data-id>
+ * Se activa en <ol data-sortable-url="…"> (la URL ya indica la versión), con un <li data-id>
  * por módulo y un asa [data-sortable-handle]. Usa drag & drop nativo (sin dependencias) y
  * guarda con PATCH. Las flechas ↑/↓ siguen funcionando como alternativa accesible y en
  * pantallas táctiles, donde el arrastre nativo no está disponible.
@@ -90,7 +90,6 @@ async function save(list, status, order, previous) {
 
     try {
         await window.axios.patch(list.dataset.sortableUrl, {
-            language: list.dataset.sortableLanguage,
             order: order.map(Number),
         }, {
             headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '' },

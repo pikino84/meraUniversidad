@@ -32,6 +32,7 @@ class CourseReportController extends Controller
         return view('reports.create', [
             'group' => $courseGroup,
             'surveys' => $this->surveys(),
+            'versions' => $this->versions($courseGroup),
         ]);
     }
 
@@ -45,6 +46,7 @@ class CourseReportController extends Controller
                 $request->input('survey'),
                 $request->workbooks(),
                 $request->user()->id,
+                $request->integer('course_group_version_id') ?: null,
             );
         } catch (ReportFormatException $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -69,7 +71,7 @@ class CourseReportController extends Controller
     {
         Gate::authorize('update', $report);
 
-        return view('reports.edit', ['group' => $courseGroup, 'report' => $report]);
+        return view('reports.edit', ['group' => $courseGroup, 'report' => $report, 'versions' => $this->versions($courseGroup)]);
     }
 
     public function update(CourseReportRequest $request, CourseGroup $courseGroup, CourseReport $report): RedirectResponse
@@ -77,7 +79,7 @@ class CourseReportController extends Controller
         $files = $request->workbooks();
 
         try {
-            $this->reports->update($report, $request->string('title')->trim(), $request->input('cut_date'), $files, $request->user()->id);
+            $this->reports->update($report, $request->string('title')->trim(), $request->input('cut_date'), $files, $request->user()->id, $request->integer('course_group_version_id') ?: null);
         } catch (ReportFormatException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         } catch (Throwable $e) {
@@ -96,7 +98,11 @@ class CourseReportController extends Controller
 
         $report->delete();
 
-        return redirect()->route('course-groups.show', $courseGroup)->with('success', "Corte «{$report->title}» eliminado.");
+        $back = $report->course_group_version_id
+            ? route('course-groups.versions.show', [$courseGroup, $report->course_group_version_id, 'seccion' => 'reportes'])
+            : route('course-groups.show', $courseGroup);
+
+        return redirect($back)->with('success', "Corte «{$report->title}» eliminado.");
     }
 
     /**
@@ -183,6 +189,11 @@ class CourseReportController extends Controller
             ->view('reports.show', ['group' => $report->group, 'report' => $report, 'shared' => true])
             ->header('X-Robots-Tag', 'noindex, nofollow')
             ->header('Referrer-Policy', 'no-referrer'); // que el token no viaje en el Referer
+    }
+
+    private function versions(CourseGroup $group)
+    {
+        return $group->versions()->with('market')->ordered()->get();
     }
 
     /** @return array<string,string> clave => nombre */

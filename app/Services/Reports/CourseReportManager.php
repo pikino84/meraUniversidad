@@ -26,13 +26,14 @@ class CourseReportManager
      *
      * @throws ReportFormatException
      */
-    public function create(CourseGroup $group, string $title, string $cutDate, string $surveyKey, array $files, ?int $userId): CourseReport
+    public function create(CourseGroup $group, string $title, string $cutDate, string $surveyKey, array $files, ?int $userId, ?int $versionId = null): CourseReport
     {
         $data = $this->buildFrom($files, $surveyKey);
 
-        return DB::transaction(function () use ($group, $title, $cutDate, $surveyKey, $data, $userId) {
+        return DB::transaction(function () use ($group, $title, $cutDate, $surveyKey, $data, $userId, $versionId) {
             $report = new CourseReport(['title' => $title, 'cut_date' => $cutDate, 'survey' => $surveyKey]);
             $report->group()->associate($group);
+            $report->course_group_version_id = $versionId;
             $this->fill($report, $data);
             $report->forceFill(['created_by' => $userId, 'updated_by' => $userId])->save();
 
@@ -48,12 +49,16 @@ class CourseReportManager
      *
      * @throws ReportFormatException
      */
-    public function update(CourseReport $report, string $title, string $cutDate, ?array $files, ?int $userId): CourseReport
+    public function update(CourseReport $report, string $title, string $cutDate, ?array $files, ?int $userId, ?int $versionId = null): CourseReport
     {
         $data = $files ? $this->buildFrom($files, $report->survey) : null;
 
-        DB::transaction(function () use ($report, $title, $cutDate, $data, $userId) {
+        DB::transaction(function () use ($report, $title, $cutDate, $data, $userId, $versionId) {
             $report->fill(['title' => $title, 'cut_date' => $cutDate]);
+
+            if ($versionId) {
+                $report->course_group_version_id = $versionId;
+            }
 
             if ($data !== null) {
                 $this->fill($report, $data);

@@ -35,6 +35,11 @@ class CourseReport extends Model
         return $this->belongsTo(CourseGroup::class, 'course_group_id');
     }
 
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(CourseGroupVersion::class, 'course_group_version_id');
+    }
+
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

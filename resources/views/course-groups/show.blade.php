@@ -3,127 +3,104 @@
 @section('title', $group->name)
 
 @section('content')
-@include('partials.page-header', [
-    'title' => $group->name,
-    'subtitle' => 'Carpeta de curso · módulos por idioma y en orden',
-    'action' => ['url' => route('courses.index', ['carpeta' => 'sin', 'mover_a' => $group->id, 'idioma' => $language]), 'label' => 'Agregar módulos'],
-])
+@php
+    // Nivel carpeta: Carpeta → Año → Versión (pedido del usuario 2026-10-19). Los módulos, el link
+    // y los reportes están en la página de cada versión (course-groups/versions/show).
+    $yearVersions = $year ? $years[$year] : collect();
+    $usedMarkets = $yearVersions->pluck('market_id')->all();
+    $freeMarkets = $markets->reject(fn ($m) => in_array($m->id, $usedMarkets, true))->values();
+    $nextYear = max((int) $versions->max('year'), (int) now(config('mera.display_timezone'))->year - 1) + 1;
+@endphp
 
-@php($programLinks = \App\Support\ProgramCatalog::linkedTo($group))
-@if ($programLinks || \App\Support\ProgramCatalog::isLinked($group))
-@include('course-groups._program-page')
+<x-folder-header :crumbs="[['Carpetas', route('course-groups.index')], [$group->name, null]]"
+    :title="$group->name" subtitle="Elige el año y la versión para ver sus módulos, su link y sus reportes.">
+    @include('course-groups.versions._new-year', ['open' => false, 'popover' => true])
+    <a href="{{ route('course-groups.edit', $group) }}" class="btn btn-sm mera-btn-ghost">
+        <i class="fas fa-pencil-alt" aria-hidden="true"></i> Editar carpeta
+    </a>
+</x-folder-header>
+
+@if ($versions->isEmpty())
+<div class="card mera-table-card">
+    <div class="card-body text-center py-4">
+        <h2 class="h5">Esta carpeta todavía no tiene años</h2>
+        <p class="text-muted mb-3">Crea el primer año con sus versiones (México, Latam, EUA…). También se crean solos al mover módulos a la carpeta.</p>
+        @include('course-groups.versions._new-year', ['open' => true, 'popover' => false])
+    </div>
+</div>
 @else
-@include('course-groups._public-page')
-@endif
 
-<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-    <nav class="mera-lang-tabs" aria-label="Idioma">
-        @foreach (\App\Models\CourseGroup::LANGUAGES as $code => $label)
-        <a href="{{ route('course-groups.show', [$group, 'idioma' => $code]) }}"
-            class="mera-lang-tab {{ $language === $code ? 'is-active' : '' }}"
-            @if ($language === $code) aria-current="page" @endif>
-            <i class="fas fa-folder{{ $language === $code ? '-open' : '' }}" aria-hidden="true"></i>
-            {{ $label }} <span class="mera-lang-count">{{ $counts[$code] }}</span>
+<section aria-labelledby="anios">
+    <h2 id="anios" class="mera-level-title">Año</h2>
+    <nav class="mera-lang-tabs mb-4" aria-label="Año">
+        @foreach ($years as $y => $list)
+        <a href="{{ route('course-groups.show', [$group, 'anio' => $y]) }}"
+            class="mera-lang-tab {{ $year === $y ? 'is-active' : '' }}"
+            @if ($year === $y) aria-current="page" @endif>
+            {{ $y }}
         </a>
         @endforeach
     </nav>
-    <div class="d-flex gap-2">
-        <a href="{{ route('courses.create', ['carpeta' => $group->id, 'idioma' => $language]) }}" class="btn mera-btn-cancel btn-sm">
-            <i class="fas fa-upload" aria-hidden="true"></i> Subir módulo nuevo aquí
-        </a>
-        <a href="{{ route('course-groups.edit', $group) }}" class="btn mera-btn-cancel btn-sm">
-            <i class="fas fa-pencil-alt" aria-hidden="true"></i> Editar carpeta
-        </a>
-    </div>
-</div>
+</section>
 
-<div class="card mera-table-card">
-    <div class="card-body">
-        @if ($modules->isEmpty())
-        <div class="text-center py-4">
-            <p class="mb-3 text-muted">
-                No hay módulos en {{ \App\Models\CourseGroup::languageLabel($language) }} en esta carpeta.
-            </p>
-            <a href="{{ route('courses.index', ['carpeta' => 'sin', 'mover_a' => $group->id, 'idioma' => $language]) }}" class="btn mera-btn-primary">
-                <i class="fas fa-folder-open" aria-hidden="true"></i> Agregar módulos existentes
+<section aria-labelledby="versiones">
+    <h2 id="versiones" class="mera-level-title">Versiones de {{ $year }}</h2>
+    <ul class="mera-version-grid list-unstyled">
+        @foreach ($yearVersions as $v)
+        <li>
+            <a href="{{ route('course-groups.versions.show', [$group, $v]) }}" class="mera-version-card">
+                <span class="mera-version-card-name">{{ $v->market->name }}</span>
+                <span class="mera-version-card-lang">{{ $v->language() === 'en' ? 'Inglés' : 'Español' }}</span>
+                <span class="mera-version-card-meta">
+                    {{ $v->modules_count }} {{ $v->modules_count === 1 ? 'módulo' : 'módulos' }}
+                    · {{ $v->reports_count }} {{ $v->reports_count === 1 ? 'reporte' : 'reportes' }}
+                </span>
+                @if ($v->is_published)
+                <span class="mera-status mera-status-on"><i class="fas fa-circle" aria-hidden="true"></i> Página publicada</span>
+                @else
+                <span class="mera-status mera-status-off"><i class="fas fa-circle" aria-hidden="true"></i> Página apagada</span>
+                @endif
+                <i class="fas fa-chevron-right mera-version-card-go" aria-hidden="true"></i>
             </a>
-        </div>
-        @else
-        @if ($modules->count() > 1)
-        <p class="small text-muted mb-2 mera-sortable-hint">
-            <i class="fas fa-arrows-alt-v" aria-hidden="true"></i>
-            Arrastra un módulo por su número para cambiar el orden, o usa las flechas.
-        </p>
-        @endif
-        <div class="visually-hidden" aria-live="polite" data-sortable-status></div>
-        <ol class="mera-module-list list-unstyled mb-0"
-            @if ($modules->count() > 1)
-            data-sortable-url="{{ route('course-groups.reorder', $group) }}"
-            data-sortable-language="{{ $language }}"
-            @endif>
-            @foreach ($modules as $module)
-            <li class="mera-module-row" data-id="{{ $module->id }}">
-                <span class="mera-module-num" aria-hidden="true" data-sortable-handle title="Arrastra para cambiar el orden">{{ $loop->iteration }}</span>
-                <div class="mera-module-name">
-                    <strong>{{ $module->name }}</strong>
-                    <small class="text-muted d-block" data-sortable-label>Módulo {{ $loop->iteration }} de {{ $modules->count() }}</small>
-                    @php($titleNumber = $module->titleModuleNumber())
-                    @if ($titleNumber)
-                    {{-- Se muestra solo si no coincide; sortable-modules.js lo actualiza al arrastrar. --}}
-                    <small class="mera-missing-badge" data-title-number="{{ $titleNumber }}" title="Revisa el orden: el título indica otro número de módulo." @if ($titleNumber === $loop->iteration) hidden @endif>
-                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> El título dice Módulo {{ $titleNumber }}
-                    </small>
-                    @endif
-                </div>
-                <div class="mera-module-actions">
-                    <form method="POST" action="{{ route('courses.move', $module) }}" class="d-inline" data-sortable-arrow="up">
-                        @csrf @method('PATCH')
-                        <input type="hidden" name="direction" value="up">
-                        <button class="mera-action-btn mera-edit-btn" title="Subir" aria-label="Subir {{ $module->name }}" @disabled($loop->first)>
-                            <i class="fas fa-arrow-up" aria-hidden="true"></i>
-                        </button>
-                    </form>
-                    <form method="POST" action="{{ route('courses.move', $module) }}" class="d-inline" data-sortable-arrow="down">
-                        @csrf @method('PATCH')
-                        <input type="hidden" name="direction" value="down">
-                        <button class="mera-action-btn mera-edit-btn" title="Bajar" aria-label="Bajar {{ $module->name }}" @disabled($loop->last)>
-                            <i class="fas fa-arrow-down" aria-hidden="true"></i>
-                        </button>
-                    </form>
-                    @if ($module->content_url)
-                    <a href="{{ $module->content_url }}" target="_blank" rel="noopener" class="mera-action-btn mera-add-btn"
-                        title="Ver módulo" aria-label="Ver {{ $module->name }} (nueva pestaña)">
-                        <i class="fa fa-eye" aria-hidden="true"></i>
-                    </a>
-                    @endif
-                    <a href="{{ route('courses.edit', $module) }}" class="mera-action-btn mera-edit-btn"
-                        title="Editar" aria-label="Editar {{ $module->name }}">
-                        <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-                    </a>
-                    <form method="POST" action="{{ route('courses.ungroup', $module) }}" class="d-inline"
-                        data-confirm="¿Quitar el módulo de esta carpeta?" data-confirm-strong="{{ $module->name }}" data-confirm-tone="info"
-                        data-confirm-detail="El módulo no se borra: regresa a «Sin carpeta» y su link sigue igual."
-                        data-confirm-button="Quitar">
-                        @csrf @method('DELETE')
-                        <button class="mera-action-btn mera-neutral-btn" title="Quitar de la carpeta" aria-label="Quitar {{ $module->name }} de la carpeta">
-                            <i class="fas fa-unlink" aria-hidden="true"></i>
-                        </button>
-                    </form>
-                </div>
-            </li>
-            @endforeach
-        </ol>
-        @endif
-    </div>
-</div>
+        </li>
+        @endforeach
 
-@if ($withoutLanguage->isNotEmpty())
-<p class="text-muted small mt-3">
-    {{ $withoutLanguage->count() }} módulo(s) de esta carpeta no tienen idioma. Edítalos para asignarles Español o Inglés.
-</p>
+        @if ($freeMarkets->isNotEmpty())
+        <li>
+            <div class="mera-version-card mera-version-card-add">
+                <span class="mera-version-card-meta">Agregar versión a {{ $year }}</span>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach ($freeMarkets as $m)
+                    <form method="POST" action="{{ route('course-groups.versions.store', $group) }}">
+                        @csrf
+                        <input type="hidden" name="year" value="{{ $year }}">
+                        <input type="hidden" name="market_ids[]" value="{{ $m->id }}">
+                        <button type="submit" class="btn btn-sm mera-btn-ghost" aria-label="Agregar la versión {{ $m->name }} a {{ $year }}">
+                            <i class="fas fa-plus" aria-hidden="true"></i> {{ $m->name }}
+                        </button>
+                    </form>
+                    @endforeach
+                </div>
+            </div>
+        </li>
+        @endif
+    </ul>
+</section>
 @endif
 
-@include('course-groups._reports')
-
-<p class="mt-3"><a href="{{ route('course-groups.index') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Todas las carpetas</a></p>
+@if ($withoutVersion || $reportsWithoutVersion->isNotEmpty())
+<div class="alert alert-warning mt-3" role="status">
+    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+    @if ($withoutVersion)
+    {{ $withoutVersion }} {{ $withoutVersion === 1 ? 'módulo de esta carpeta no tiene' : 'módulos de esta carpeta no tienen' }} año ni versión:
+    selecciónalos en <a href="{{ route('courses.index', ['carpeta' => $group->id]) }}">Módulos</a> y usa «Mover a…».
+    @endif
+    @if ($reportsWithoutVersion->isNotEmpty())
+    {{ $reportsWithoutVersion->count() }} {{ $reportsWithoutVersion->count() === 1 ? 'corte de reporte no tiene' : 'cortes de reporte no tienen' }} versión; asígnasela con «Actualizar corte»:
+    @foreach ($reportsWithoutVersion as $r)
+    <a href="{{ route('course-groups.reports.edit', [$group, $r]) }}">{{ $r->title }} ({{ $r->cut_date->format('d/m/Y') }})</a>@if (! $loop->last), @endif
+    @endforeach
+    @endif
+</div>
+@endif
 @endsection

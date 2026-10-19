@@ -28,12 +28,14 @@ class Course extends Model
         'path',
         'category_id',
         'course_group_id',
+        'course_group_version_id',
         'language',
         'position',
     ];
 
     protected $casts = [
         'course_group_id' => 'integer',
+        'course_group_version_id' => 'integer',
         'position' => 'integer',
         'trash_items' => 'array',
     ];
@@ -59,7 +61,7 @@ class Course extends Model
     {
         return LogOptions::defaults()
             ->useLogName('cursos')
-            ->logOnly(['name', 'slug', 'description', 'category_id', 'course_group_id', 'language', 'position', 'cover_image', 'path'])
+            ->logOnly(['name', 'slug', 'description', 'category_id', 'course_group_id', 'course_group_version_id', 'language', 'position', 'cover_image', 'path'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -78,6 +80,14 @@ class Course extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(CourseGroup::class, 'course_group_id');
+    }
+
+    /**
+     * Versión (carpeta + año + país) a la que pertenece (docs/carpetas/INSTRUCTIVO_VERSIONES.md).
+     */
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(CourseGroupVersion::class, 'course_group_version_id');
     }
 
     /**

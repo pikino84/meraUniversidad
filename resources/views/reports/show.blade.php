@@ -21,7 +21,8 @@
 
 @unless ($shared)
 <div class="mera-report-actions mb-3">
-    <a href="{{ route('course-groups.show', $group) }}" class="btn mera-btn-cancel btn-sm"><i class="fas fa-arrow-left" aria-hidden="true"></i> {{ $group->name }}</a>
+    @php($version = $report->version()->with('market')->first())
+    <a href="{{ $version ? route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']) : route('course-groups.show', $group) }}" class="btn mera-btn-cancel btn-sm"><i class="fas fa-arrow-left" aria-hidden="true"></i> {{ $group->name }}{{ $version ? ' · '.$version->label() : '' }}</a>
     <a href="{{ route('course-groups.reports.edit', [$group, $report]) }}" class="btn mera-btn-cancel btn-sm"><i class="fas fa-pencil-alt" aria-hidden="true"></i> Actualizar corte</a>
     <a href="{{ route('course-groups.reports.download', [$group, $report]) }}" class="btn mera-btn-cancel btn-sm" data-no-loader>
         <i class="fas fa-download" aria-hidden="true"></i> Descargar HTML

@@ -8,7 +8,7 @@ import { initSubmitGuard } from './modules/submit-guard';
 import { initFlashMessages } from './modules/flash';
 import { initUploadForms } from './modules/upload';
 import { initProgramProgress } from './modules/program-progress';
-import { initCourseGroups } from './modules/course-groups';
+import { initCourseGroups, initNewYearForm } from './modules/course-groups';
 import { initSortableModules } from './modules/sortable-modules';
 import { initShowPasswords, initUnsavedWarning } from './modules/unsaved';
 import { initPanelTemplate } from './modules/panel-template';
@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initUploadForms();
     initProgramProgress();
     initCourseGroups();
+    initNewYearForm();
     initSortableModules();
     initUnsavedWarning();
     initShowPasswords();

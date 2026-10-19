@@ -4,6 +4,8 @@ namespace App\Support;
 
 use App\Models\Course;
 use App\Models\CourseGroup;
+use App\Models\CourseGroupVersion;
+use App\Models\Market;
 
 /**
  * Programas públicos multi-idioma definidos en config('mera.programs').
@@ -135,16 +137,15 @@ final class ProgramCatalog
      */
     private static function groupModules(array $page, string $language): array
     {
-        $group = self::group($page);
+        $version = self::version($page, $language);
 
-        if (! $group) {
+        if (! $version) {
             return [];
         }
 
         $overrides = collect($page['modules'] ?? [])->keyBy('course_slug');
 
-        return $group->modules()
-            ->where('language', $language)
+        return $version->modules()
             ->ordered()
             ->get(['id', 'name', 'slug', 'path', 'position'])
             ->values()
@@ -160,6 +161,34 @@ final class ProgramCatalog
     private static function group(array $page): ?CourseGroup
     {
         return empty($page['course_group']) ? null : CourseGroup::where('slug', $page['course_group'])->first();
+    }
+
+    /**
+     * Versión de la carpeta que alimenta un idioma del programa: la de 'version' en la config
+     * (país y año) o, si falta, la versión por defecto del idioma y su año más reciente
+     * (docs/carpetas/INSTRUCTIVO_VERSIONES.md §5.4).
+     */
+    private static function version(array $page, string $language): ?CourseGroupVersion
+    {
+        $group = self::group($page);
+
+        if (! $group) {
+            return null;
+        }
+
+        $code = $page['version']['market']
+            ?? ($language === 'en' ? config('mera.versions.english_market') : config('mera.versions.default_market'));
+        $market = Market::cached()->firstWhere('code', $code);
+
+        if (! $market) {
+            return null;
+        }
+
+        $query = $group->versions()->where('market_id', $market->id);
+
+        return empty($page['version']['year'])
+            ? $query->orderByDesc('year')->first()
+            : $query->where('year', (int) $page['version']['year'])->first();
     }
 
     /**
@@ -195,20 +224,21 @@ final class ProgramCatalog
 
     /**
      * Evaluación y encuesta con la URL del idioma; si no tiene, la del idioma por defecto.
-     * Si el programa tiene carpeta de curso con links capturados en "Editar carpeta", esos
-     * mandan; los de la config quedan como respaldo.
+     * Si el programa tiene carpeta de curso con links capturados en su versión ("Editar versión"),
+     * esos mandan; los de la config quedan como respaldo.
      *
      * @return list<array{type:string,url:string}>
      */
     public static function actions(array $program, string $language): array
     {
         $default = $program['default_language'] ?? 'es';
-        $group = self::group($program['languages'][$language] ?? []) ?? self::group($program['languages'][$default] ?? []);
+        $version = self::version($program['languages'][$language] ?? [], $language)
+            ?? self::version($program['languages'][$default] ?? [], $default);
         $actions = [];
 
         foreach ($program['actions'] ?? [] as $action) {
             $url = $action['url'] ?? null;
-            $resolved = $group?->actionUrl($action['type'], $language)
+            $resolved = ($version?->{"{$action['type']}_url"})
                 ?: (is_array($url) ? ((($url[$language] ?? null) ?: ($url[$default] ?? null))) : $url);
 
             if ($resolved) {

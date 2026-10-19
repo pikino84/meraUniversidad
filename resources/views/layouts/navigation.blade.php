@@ -8,6 +8,7 @@
             ['dashboard', 'dashboard', 'fas fa-tachometer-alt', 'Dashboard', $isPanelUser],
             ['courses.index', 'courses.*', 'fas fa-book', 'Módulos', $isPanelUser],
             ['course-groups.index', 'course-groups.*', 'fas fa-folder', 'Carpetas de curso', $isPanelUser],
+            ['markets.index', 'markets.*', 'fas fa-globe', 'Versiones', $isSuperAdmin],
             ['categories.index', 'categories.*', 'fas fa-tags', 'Categorías', $isPanelUser && config('mera.categories_enabled')],
         ]],
         ['Administración', [

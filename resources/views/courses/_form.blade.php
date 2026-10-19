@@ -57,16 +57,18 @@
         </div>
         @endif
 
-        {{-- Carpeta de curso → idioma → posición (CLAUDE.md §10). Todo opcional. --}}
+        {{-- Carpeta de curso → año → versión → posición (CLAUDE.md §10, INSTRUCTIVO_VERSIONES.md). Todo opcional. --}}
         @php
+            $courseVersion = isset($course) ? $course->version : null;
             $selectedGroup = old('course_group_id', $course->course_group_id ?? request('carpeta'));
-            $selectedLanguage = old('language', $course->language ?? request('idioma', 'es'));
+            $selectedYear = old('year', $courseVersion?->year ?? request('anio', now(config('mera.display_timezone'))->year));
+            $selectedMarket = old('market_id', $courseVersion?->market_id ?? request('version', \App\Models\Market::defaultMarket()?->id));
         @endphp
         <div class="col-12">
             <fieldset class="mera-fieldset mb-3">
                 <legend>Carpeta del curso <small class="text-muted fw-normal">(opcional)</small></legend>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <label for="course-group" class="form-label">Carpeta</label>
                         <select id="course-group" name="course_group_id"
                             class="form-control form-select mera-input @error('course_group_id') is-invalid @enderror"
@@ -82,16 +84,21 @@
                         </small>
                         @endif
                     </div>
+                    <div class="col-6 col-md-2" data-group-dependent>
+                        <label for="course-year" class="form-label">Año</label>
+                        <input id="course-year" type="number" name="year" min="2020" max="2100" inputmode="numeric"
+                            class="form-control mera-input @error('year') is-invalid @enderror" value="{{ $selectedYear }}">
+                    </div>
                     <div class="col-6 col-md-3" data-group-dependent>
-                        <label for="course-language" class="form-label">Idioma</label>
-                        <select id="course-language" name="language"
-                            class="form-control form-select mera-input @error('language') is-invalid @enderror">
-                            @foreach (\App\Models\CourseGroup::LANGUAGES as $code => $label)
-                            <option value="{{ $code }}" @selected($selectedLanguage === $code)>{{ $label }}</option>
+                        <label for="course-market" class="form-label">Versión</label>
+                        <select id="course-market" name="market_id"
+                            class="form-control form-select mera-input @error('market_id') is-invalid @enderror">
+                            @foreach ($markets as $market)
+                            <option value="{{ $market->id }}" @selected((string) $selectedMarket === (string) $market->id)>{{ $market->label() }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-6 col-md-3" data-group-dependent>
+                    <div class="col-6 col-md-2" data-group-dependent>
                         <label for="course-position" class="form-label">N.º de módulo</label>
                         <input id="course-position" type="number" name="position" min="1" max="999" inputmode="numeric"
                             class="form-control mera-input @error('position') is-invalid @enderror"
@@ -99,7 +106,7 @@
                     </div>
                 </div>
                 <small class="form-text text-muted">
-                    El link del módulo no cambia al moverlo de carpeta.
+                    El link del módulo no cambia al moverlo de carpeta, año o versión. Si la versión no existe en la carpeta, se crea.
                 </small>
             </fieldset>
         </div>

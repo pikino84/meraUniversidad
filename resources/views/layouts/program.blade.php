@@ -27,6 +27,7 @@
 
 <body class="mera-prog-body">
     @include('partials.page-loader')
+    @include('partials.test-environment')
     <a href="#contenido" class="mera-prog-skip">{{ __('program.skip') }}</a>
     @yield('content')
 </body>

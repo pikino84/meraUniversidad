@@ -5,7 +5,7 @@
 @section('content')
 @include('partials.page-header', [
     'title' => 'Carpetas de curso',
-    'subtitle' => 'Agrupa los módulos de cada curso por idioma y en orden',
+    'subtitle' => 'Agrupa los módulos de cada curso por año y versión (México, Latam, EUA…)',
     'action' => ['url' => route('course-groups.create'), 'label' => 'Nueva carpeta'],
 ])
 
@@ -22,7 +22,7 @@
     <div class="card-body text-center py-5">
         <i class="fas fa-folder-open" style="font-size:48px;color:#81CFF4" aria-hidden="true"></i>
         <h2 class="h5 mt-3">Aún no hay carpetas de curso</h2>
-        <p class="text-muted mb-3">Crea una carpeta por curso y después mueve ahí sus módulos en español e inglés.</p>
+        <p class="text-muted mb-3">Crea una carpeta por curso y después mueve ahí sus módulos, por año y versión.</p>
         <a href="{{ route('course-groups.create') }}" class="btn mera-btn-primary">Crear la primera carpeta</a>
     </div>
 </div>
@@ -34,15 +34,22 @@
             <i class="fas fa-folder mera-group-icon" aria-hidden="true"></i>
             <span>
                 <strong class="mera-group-name">{{ $group->name }}</strong>
+                @php($published = $group->versions->where('is_published', true)->count())
                 <span class="mera-group-meta">
-                    <span class="mera-lang-pill">Español · {{ $group->es_count }}</span>
-                    <span class="mera-lang-pill mera-lang-pill-en">Inglés · {{ $group->en_count }}</span>
+                    @forelse ($group->versions->groupBy('year') as $year => $yearVersions)
+                    <span class="mera-year-pill">
+                        <b>{{ $year }}:</b>
+                        {{ $yearVersions->map(fn ($v) => $v->market->name.' '.$v->modules_count)->join(' · ') }}
+                    </span>
+                    @empty
+                    <span class="mera-year-pill mera-year-pill-empty">Sin versiones</span>
+                    @endforelse
                     @if (\App\Support\ProgramCatalog::isLinked($group))
                     <span class="mera-status mera-status-on"><i class="fas fa-circle" aria-hidden="true"></i> Página del programa</span>
-                    @elseif ($group->is_published)
-                    <span class="mera-status mera-status-on"><i class="fas fa-circle" aria-hidden="true"></i> Página publicada</span>
+                    @elseif ($published)
+                    <span class="mera-status mera-status-on"><i class="fas fa-circle" aria-hidden="true"></i> {{ $published }} {{ $published === 1 ? 'página publicada' : 'páginas publicadas' }}</span>
                     @else
-                    <span class="mera-status mera-status-off"><i class="fas fa-circle" aria-hidden="true"></i> Página apagada</span>
+                    <span class="mera-status mera-status-off"><i class="fas fa-circle" aria-hidden="true"></i> Páginas apagadas</span>
                     @endif
                 </span>
             </span>
@@ -70,7 +77,7 @@
                 'label' => "Eliminar carpeta {$group->name}",
                 'confirm' => '¿Eliminar la carpeta?',
                 'strong' => $group->name,
-                'detail' => 'Sus '.($group->es_count + $group->en_count).' módulos NO se borran: regresan a «Sin carpeta» y sus links siguen funcionando.',
+                'detail' => 'Sus '.$group->versions->sum('modules_count').' módulos NO se borran: regresan a «Sin carpeta» y sus links siguen funcionando. Se borran sus versiones y sus páginas públicas.',
             ])
         </div>
     </li>

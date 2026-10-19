@@ -94,7 +94,10 @@ return [
     |   'modules'      → lista explícita: cada módulo se resuelve por el SLUG del curso en la BD
     |                    (re-subir un ZIP no rompe el enlace); "fallback_path" solo si el curso no
     |                    existe en la BD; "start" = ancla opcional de inicio (isEazy: "#/slide/…").
-    |   'course_group' → slug de una carpeta de curso: toma sus módulos de ESE idioma, en orden.
+    |   'course_group' → slug de una carpeta de curso: toma los módulos de una de sus VERSIONES, en
+    |                    orden. 'version' => ['market' => 'LATAM', 'year' => 2026] la elige; sin
+    |                    'market', la versión por defecto del idioma (es → mera.versions.default_market,
+    |                    en → mera.versions.english_market); sin 'year', el año más reciente.
     |
     | Evaluación y encuesta: 'url' puede ser un texto (igual para todos los idiomas) o un arreglo
     | por idioma. Un idioma sin URL propia usa la del idioma por defecto.
@@ -115,6 +118,7 @@ return [
                     // Si la carpeta tiene módulos en español, se usan esos y en su orden; la lista de
                     // abajo queda como RESPALDO y aporta el título corto y el ancla de inicio por slug.
                     'course_group' => 'manipulacion-de-alimentos',
+                    'version' => ['market' => 'LATAM'], // sus 5 módulos son la versión Latam
                     'modules' => [
                         ['title' => 'Recepción y almacenamiento operativo', 'course_slug' => 'modulo-1-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-1-manejo-higienico-latam', 'start' => '#/slide/saz3GISUgN'],
                         ['title' => 'Proceso en cocina: del congelador a la mesa', 'course_slug' => 'modulo-2-manejo-higienico-latam', 'fallback_path' => 'cursos/modulo-2-manejo-higienico-latam', 'start' => '#/slide/WL8kWAa7Y'],
@@ -125,7 +129,7 @@ return [
                 ],
 
                 // Versión en inglés: se publica sola en /food-handling-process en cuanto la carpeta
-                // tenga módulos en la pestaña Inglés (mientras tanto da 404).
+                // tenga módulos en la versión EUA (mientras tanto da 404).
                 'en' => [
                     'slug' => 'food-handling-process',
                     'eyebrow' => 'Online course',
@@ -154,6 +158,31 @@ return [
     | Reglas generales de agrupación, IDÉNTICAS al script de referencia (generar_reporte.py).
     | La definición de cada encuesta (preguntas favorables y temas) está en config/report_surveys.php.
     */
+    /*
+    | Carpetas por año y versión por país (docs/carpetas/INSTRUCTIVO_VERSIONES.md).
+    | Las versiones (México, Latam, EUA…) se editan en el panel; aquí solo los valores por defecto.
+    */
+    /*
+    | Fuera de producción (QA en university.meracorporation.com y local) todas las páginas llevan
+    | el cintillo "Entorno de pruebas" y el panel ofrece "Apagar todo lo compartido"
+    | (pedido del usuario 2026-10-19: Capacitación subía material real a QA).
+    */
+    'test_environment' => [
+        'production_url' => env('MERA_PRODUCTION_URL', 'https://cursos.meracorporation.com'),
+    ],
+
+    'versions' => [
+        // Versión que muestra /<carpeta> (sin versión en la URL).
+        'default_market' => env('MERA_DEFAULT_MARKET', 'MX'),
+
+        // Antes de las versiones, la página pública guardaba el avance como carpeta:<slug>:<idioma>.
+        // La versión que heredó cada idioma lee esa clave para no perder el avance.
+        'legacy_language_markets' => ['es' => 'MX', 'en' => 'US'],
+
+        // Página en inglés anterior (/en/<carpeta> y /<carpeta>/en): 301 a esta versión.
+        'english_market' => 'US',
+    ],
+
     'reports' => [
         // Tamaño máximo de CADA uno de los 3 Excel (KB).
         'max_upload_kb' => (int) env('MERA_REPORTS_MAX_UPLOAD_KB', 30720),

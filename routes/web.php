@@ -5,13 +5,16 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseGroupController;
+use App\Http\Controllers\CourseGroupVersionController;
 use App\Http\Controllers\CoursePageController;
 use App\Http\Controllers\CourseReportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MarketController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TestEnvironmentController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\UserController;
 use App\Models\CourseGroup;
@@ -55,11 +58,19 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
         Route::resource('categories', CategoryController::class)->except('show');
         Route::resource('courses', CourseController::class)->except('show');
 
-        // Carpetas de curso (CLAUDE.md §10): Curso → Idioma → Módulos en orden
+        // Carpetas de curso (CLAUDE.md §10): Curso → Año → Versión por país → Módulos en orden
+        // (docs/carpetas/INSTRUCTIVO_VERSIONES.md).
         Route::resource('course-groups', CourseGroupController::class);
         Route::patch('course-groups/{courseGroup}/move', [CourseGroupController::class, 'move'])->name('course-groups.move');
-        Route::patch('course-groups/{courseGroup}/reorder', [CourseGroupController::class, 'reorder'])->name('course-groups.reorder');
-        Route::patch('course-groups/{courseGroup}/publish', [CourseGroupController::class, 'publish'])->name('course-groups.publish');
+        Route::prefix('course-groups/{courseGroup}/versiones')->name('course-groups.versions.')->scopeBindings()->group(function () {
+            Route::post('/', [CourseGroupVersionController::class, 'store'])->name('store');
+            Route::get('{version}', [CourseGroupVersionController::class, 'show'])->name('show');
+            Route::get('{version}/editar', [CourseGroupVersionController::class, 'edit'])->name('edit');
+            Route::put('{version}', [CourseGroupVersionController::class, 'update'])->name('update');
+            Route::delete('{version}', [CourseGroupVersionController::class, 'destroy'])->name('destroy');
+            Route::patch('{version}/publicar', [CourseGroupVersionController::class, 'publish'])->name('publish');
+            Route::patch('{version}/orden', [CourseGroupVersionController::class, 'reorder'])->name('reorder');
+        });
 
         // Reportes de curso por carpeta (docs/reportes/INSTRUCTIVO_REPORTES.md): super admin y admin.
         Route::prefix('course-groups/{courseGroup}/reportes')->name('course-groups.reports.')->scopeBindings()->group(function () {
@@ -78,10 +89,16 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
         Route::patch('courses/{course}/move', [CourseGroupController::class, 'moveModule'])->name('courses.move');
         Route::delete('courses/{course}/group', [CourseGroupController::class, 'removeModule'])->name('courses.ungroup');
 
+        // Solo fuera de producción (cintillo "Entorno de pruebas"): en producción responde 404.
+        Route::post('entorno-pruebas/apagar-compartido', [TestEnvironmentController::class, 'unshare'])->name('test-environment.unshare');
+
         Route::middleware('role:'.User::ROLE_SUPER_ADMIN)->group(function () {
             Route::resource('roles', RoleController::class)->except('show');
             Route::resource('permissions', PermissionController::class)->except('show');
             Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity.logs.index');
+            // Versiones por país (México, Latam, EUA…): catálogo editable (INSTRUCTIVO_VERSIONES.md §4).
+            Route::resource('versiones', MarketController::class)->except('show')->parameters(['versiones' => 'market'])->names('markets');
+            Route::patch('versiones/{market}/move', [MarketController::class, 'move'])->name('markets.move');
             // Papelera de módulos (F2): restaurar lo borrado mientras no se purgue.
             Route::get('papelera', [TrashController::class, 'index'])->name('trash.index');
             Route::post('papelera/{course}/restaurar', [TrashController::class, 'restore'])->withTrashed()->name('trash.restore');
@@ -97,16 +114,27 @@ Route::get('reportes/compartido/{token}', [CourseReportController::class, 'share
 
 require __DIR__.'/auth.php';
 
-// Página pública de cada carpeta de curso (CLAUDE.md §10): /<slug> (español) y /en/<slug> (inglés).
-// SIEMPRE al final: cualquier ruta existente (login, cursos, dashboard…) se resuelve antes. Los
-// slugs reservados no se pueden asignar a una carpeta (CourseGroup::reservedSlugs(), incluye "en").
-Route::get('/{language}/{courseGroup}', [CoursePageController::class, 'showLanguage'])
-    ->where(['language' => 'en', 'courseGroup' => CourseGroup::SLUG_PATTERN])
-    ->name('course-pages.show.lang');
+// Página pública de cada carpeta de curso, por versión (docs/carpetas/INSTRUCTIVO_VERSIONES.md §5).
+// El link sigue la ruta del panel (Carpeta → Año → Versión):
+//   /<carpeta>/<año>/<versión>       la página (p. ej. /higiene/2026/mexico). Es el link que se comparte
+//   /<carpeta>/<año>                 301 a la versión por defecto (México) de ese año
+//   /<carpeta>                       301 al año más reciente
+//   /en/<carpeta> y /<carpeta>/en    formatos anteriores: 301 a la versión en inglés (EUA) más reciente
+// SIEMPRE al final: cualquier ruta existente (login, cursos, dashboard…) se resuelve antes. Los slugs
+// de carpetas no pueden ser rutas (CourseGroup::reservedSlugs()). Segmentos como texto (sin binding):
+// las versiones se editan en el panel y la caché de rutas no las ve.
+Route::get('/en/{group}', [CoursePageController::class, 'legacyEnglish'])
+    ->where('group', CourseGroup::SLUG_PATTERN)
+    ->name('course-pages.legacy-en');
+Route::get('/{group}/en', [CoursePageController::class, 'legacyEnglish'])
+    ->where('group', CourseGroup::SLUG_PATTERN)
+    ->name('course-pages.legacy-en.suffix');
+Route::get('/{group}/{year}/{market}', [CoursePageController::class, 'version'])
+    ->where(['group' => CourseGroup::SLUG_PATTERN, 'year' => '20\d{2}', 'market' => CourseGroup::SLUG_PATTERN])
+    ->name('course-pages.version');
+Route::get('/{group}/{year}', [CoursePageController::class, 'year'])
+    ->where(['group' => CourseGroup::SLUG_PATTERN, 'year' => '20\d{2}'])
+    ->name('course-pages.year');
 Route::get('/{courseGroup}', [CoursePageController::class, 'show'])
     ->where('courseGroup', CourseGroup::SLUG_PATTERN)
     ->name('course-pages.show');
-// Formato anterior /<slug>/en (hasta 2026-10-15): redirección permanente al nuevo.
-Route::get('/{courseGroup}/{language}', [CoursePageController::class, 'legacyLanguage'])
-    ->where(['courseGroup' => CourseGroup::SLUG_PATTERN, 'language' => 'en'])
-    ->name('course-pages.legacy-lang');

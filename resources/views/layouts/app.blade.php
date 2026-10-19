@@ -33,6 +33,7 @@
 
 <body class="font-sans antialiased">
     @include('partials.page-loader')
+    @include('partials.test-environment', ['unshare' => auth()->user()?->hasAnyRole(\App\Models\User::PANEL_ROLES)])
     <a href="#main-content" class="visually-hidden-focusable">Saltar al contenido</a>
 
     {{-- P12: se quitó el preloader de la plantilla (.loader-bg): atenuaba cada página ~1 s aunque ya hubiera cargado. --}}

@@ -2918,6 +2918,18 @@ textarea.mera-input {
     outline-offset: 2px;
 }
 
+/* Aviso de versión padre en las páginas por carpeta (Panamá → Latam, INSTRUCTIVO_VERSIONES.md §5.3) */
+.mera-prog-notice {
+    display: inline-block;
+    margin: 6px 0 0;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
 /* Tablas del panel: el texto puede partirse en líneas (la plantilla fuerza nowrap); acciones no (U11) */
 .mera-table th,
 .mera-table td {
@@ -4098,5 +4110,469 @@ nav[role="navigation"] .inline-flex.shadow-sm {
 @media (prefers-reduced-motion: reduce) {
     .mera-tag-check span {
         transition: none;
+    }
+}
+
+/* =========================================================
+   CARPETAS POR AÑO Y VERSIÓN (docs/carpetas/INSTRUCTIVO_VERSIONES.md)
+   ========================================================= */
+.mera-year-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #E3F0D0;
+    color: #024D25;
+    font-size: 12px;
+}
+
+.mera-year-pill-empty {
+    background: #eef2ef;
+    color: #5F6368;
+}
+
+.mera-version-tabs .mera-tab-flag {
+    margin-left: 4px;
+    font-size: 11px;
+    opacity: .8;
+}
+
+.mera-version-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: #fff;
+    border-left: 4px solid #93C01F;
+    box-shadow: 0 6px 18px rgba(2, 77, 37, .06);
+}
+
+.mera-version-head h2 {
+    color: #024D25;
+    font-weight: 700;
+}
+
+.mera-inline-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.mera-inline-add .form-select {
+    width: auto;
+    min-width: 140px;
+}
+
+.mera-new-year {
+    position: relative;
+}
+
+.mera-new-year > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.mera-new-year > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mera-new-year[open] > .mera-new-year-form {
+    margin-top: 10px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #dfe9e2;
+    box-shadow: 0 10px 24px rgba(2, 77, 37, .1);
+    max-width: 560px;
+}
+
+/* En la fila de años, el formulario "Nuevo año" flota sobre el contenido (no empuja las pestañas). */
+.mera-new-year.is-popover[open] > .mera-new-year-form {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 40;
+    width: min(560px, calc(100vw - 32px));
+}
+
+.mera-new-year:not(.is-popover) > .mera-new-year-form {
+    margin-inline: auto;
+}
+
+.mera-bulk-bar .mera-bulk-year {
+    flex: 0 0 100px;
+    width: 100px;
+}
+
+@media (max-width: 575.98px) {
+    .mera-bulk-bar .mera-bulk-year {
+        flex: 1 1 100px;
+    }
+
+    .mera-inline-add {
+        width: 100%;
+    }
+
+    .mera-inline-add .form-select {
+        flex: 1 1 auto;
+    }
+}
+
+/* ===================== CARPETA → AÑO → VERSIÓN (2026-10-19) =====================
+   Pedido del usuario: la carpeta se veía saturada (pestañas, botones y colores juntos). Ahora cada
+   nivel tiene su página y su ruta de navegación; dentro de la versión, una sección a la vez.
+   Botones secundarios en "ghost" (contorno discreto); un solo botón verde por pantalla. */
+.mera-crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 0;
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+.mera-crumbs li + li::before {
+    content: "›";
+    margin: 0 8px;
+    color: #8a958e;
+}
+
+.mera-crumbs a {
+    color: #024D25;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mera-crumbs a:hover,
+.mera-crumbs a:focus-visible {
+    text-decoration: underline;
+}
+
+.mera-crumbs [aria-current] {
+    color: #5F6368;
+}
+
+.mera-folder-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.mera-folder-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn.mera-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px 14px;
+    border: 1px solid #cfdcd3;
+    border-radius: 999px;
+    background: #fff;
+    color: #024D25 !important;
+    font-weight: 600;
+    text-transform: none;
+}
+
+.btn.mera-btn-ghost:hover,
+.btn.mera-btn-ghost:focus-visible {
+    border-color: #024D25;
+    background: #F3F8F4;
+}
+
+.btn.mera-btn-ghost:focus-visible {
+    outline: 3px solid #93C01F;
+    outline-offset: 2px;
+}
+
+.btn.mera-btn-ghost-danger {
+    color: #C62828 !important;
+}
+
+.btn.mera-btn-ghost-danger:hover,
+.btn.mera-btn-ghost-danger:focus-visible {
+    border-color: #C62828;
+    background: #FDECEC;
+}
+
+/* Sobre el degradado del encabezado: contorno blanco. */
+.mera-folder-header .btn.mera-btn-ghost {
+    border-color: rgba(255, 255, 255, .6);
+    background: transparent;
+    color: #fff !important;
+}
+
+.mera-folder-header .btn.mera-btn-ghost:hover,
+.mera-folder-header .btn.mera-btn-ghost:focus-visible {
+    border-color: #fff;
+    background: rgba(255, 255, 255, .15);
+}
+
+.mera-folder-header .mera-new-year.is-popover[open] > .mera-new-year-form {
+    left: auto;
+    right: 0;
+    color: #1d2a22;
+}
+
+.mera-level-title {
+    margin: 0 0 8px;
+    color: #5F6368;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.mera-version-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+    margin: 0;
+}
+
+.mera-version-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: 100%;
+    padding: 18px 44px 18px 20px;
+    border: 1px solid #dfe9e2;
+    border-radius: 16px;
+    background: #fff;
+    color: #1d2a22;
+    text-decoration: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+a.mera-version-card:hover,
+a.mera-version-card:focus-visible {
+    border-color: #55882B;
+    box-shadow: 0 8px 20px rgba(2, 77, 37, .1);
+    color: #1d2a22;
+}
+
+a.mera-version-card:focus-visible {
+    outline: 3px solid #93C01F;
+    outline-offset: 2px;
+}
+
+.mera-version-card-name {
+    color: #024D25;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.mera-version-card-lang,
+.mera-version-card-meta {
+    color: #5F6368;
+    font-size: 13px;
+}
+
+.mera-version-card .mera-status {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+.mera-version-card-go {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    color: #9aa7a0;
+    transform: translateY(-50%);
+}
+
+.mera-version-card-add {
+    justify-content: center;
+    padding-right: 20px;
+    border-style: dashed;
+    background: #FAFCFA;
+}
+
+.mera-section-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #dfe9e2;
+}
+
+.mera-section-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    margin-bottom: -1px;
+    padding: 8px 14px;
+    border-bottom: 3px solid transparent;
+    color: #5F6368;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mera-section-tab:hover,
+.mera-section-tab:focus-visible {
+    color: #024D25;
+}
+
+.mera-section-tab.is-active {
+    border-bottom-color: #024D25;
+    color: #024D25;
+}
+
+.mera-section-count {
+    min-width: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: #eef2ef;
+    color: #024D25;
+    font-size: 12px;
+    text-align: center;
+}
+
+.mera-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #b4bdb7;
+}
+
+.mera-dot.is-on {
+    background: #2E7D32;
+}
+
+.mera-section-toolbar,
+.mera-share-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.mera-share-url {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #F3F8F4;
+}
+
+.mera-share-url .mera-public-url {
+    flex: 1 1 260px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.mera-share-url + .mera-public-warn {
+    margin-top: 10px;
+}
+
+.mera-facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 18px;
+    font-size: 14px;
+}
+
+.mera-facts dt {
+    color: #5F6368;
+    font-weight: 600;
+}
+
+.mera-facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.mera-empty-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 6px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #FAFCFA;
+    color: #5F6368;
+    font-size: 14px;
+}
+
+@media (max-width: 575.98px) {
+    .mera-facts {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    .mera-facts dd {
+        margin-bottom: 8px;
+    }
+
+    .mera-section-tab {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding-inline: 8px;
+        font-size: 14px;
+    }
+}
+
+/* Dentro de la versión: acciones de módulo neutras (antes, círculos celestes) y un solo botón
+   principal verde oscuro y compacto por sección. */
+.mera-module-actions .mera-action-btn {
+    border: 1px solid #dfe9e2;
+    background: #fff;
+    color: #024D25;
+}
+
+.mera-module-actions .mera-action-btn:hover:not([disabled]),
+.mera-module-actions .mera-action-btn:focus-visible {
+    border-color: #024D25;
+    background: #F3F8F4;
+    color: #024D25;
+}
+
+.mera-section-toolbar .btn.mera-btn-primary,
+.mera-share-head .btn.mera-btn-primary {
+    min-height: 36px;
+    padding: 6px 16px;
+    border: 0;
+    background: #024D25;
+    color: #fff !important;
+    font-size: 14px;
+    box-shadow: none;
+}
+
+.mera-section-toolbar .btn.mera-btn-primary:hover,
+.mera-share-head .btn.mera-btn-primary:hover {
+    background: #55882B;
+}
+
+@media (max-width: 575.98px) {
+    .mera-section-tabs {
+        flex-wrap: nowrap;
+    }
+
+    .mera-section-tab {
+        gap: 6px;
     }
 }
