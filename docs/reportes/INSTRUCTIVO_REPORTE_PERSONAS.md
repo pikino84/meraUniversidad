@@ -6,7 +6,8 @@
 > pruebas solo en sqlite, build solo en local, PHP 8.1). Antes de empezar, leer `CLAUDE.md` §0, §3 y §5,
 > `INSTRUCTIVO_REPORTES.md` §4–§7 y este documento completo.
 
-Creado: 2026-10-15 (revisado el mismo día con la referencia de Capacitación). Estado: **por implementar**
+Creado: 2026-10-15 (revisado el mismo día con la referencia de Capacitación). §10 respondido el 2026-10-19
+(queda abierto: exportaciones de encuestas de otros cursos y el código de Coaching Ejecutivo 2025). Estado: **por implementar**
 (rama `qa`, verificar en `university.meracorporation.com`).
 
 ---
@@ -225,6 +226,34 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
    `config/report_surveys.php`.
 7. **El reporte por curso actual:** ¿se mantiene igual mientras se usa el seguimiento? (Recomendado: sí; §5.)
 8. **Retención:** ¿cuántos cortes guardar? (propuesta: 6)
+
+### Respuestas del usuario (2026-10-19)
+1. **Cursos del año:** lista **editable** en el panel; arranca con **los 37 cursos de 2026** (incluye
+   `NRM-SEG-007-EL-26-MX` y `NEG-TEC-005-BL-26`, que la referencia quitaba). Las cifras de aceptación de §9
+   pasan a ser las de "Todos los cursos de 2026 (37)".
+2. **Completado y aprobado (Capacitación, 2026-10-19):** son dos cifras distintas.
+   - **Realizado (completado):** vio el curso al 100 % **y presentó la evaluación**, con cualquier calificación.
+     Es la regla actual del reporte por curso (Higiene: 2,623 = 79 %), que **no cambia**.
+   - **Aprobado:** realizado y calificación **≥ mínima del curso** (80; **Corresponsal Cambiario: 90**). La
+     mínima va en el catálogo por curso (`passing_grade`, 80 por defecto). Realizado con menos → **reprobado**.
+     Higiene: 1,605 aprobados (48.6 %) y 1,018 reprobados (30.8 %).
+   - Calificación sin el 100 % de avance → **no** está realizado (en curso).
+   - Curso **sin evaluación** (solo Inducción a la Empresa) → realizado y aprobado con el 100 %.
+   - **Calificación:** la plataforma ya exporta **la más alta** cuando se repite la evaluación: se usa tal cual.
+   - Estados por persona y curso: **aprobado · reprobado · en curso · sin iniciar**.
+3. **Equivalencias:** Capacitación va a **corregir los códigos en la plataforma** para que coincidan con el
+   catálogo (se les envió la lista de `docs/reportes/equivalencias_codigos.csv` el 2026-10-19; Coaching
+   Ejecutivo 2025, `NEG-LID-004-BL-25`, sin código en el catálogo: pendiente). Aun así, el catálogo acepta
+   alias por curso (editables en el panel) para los cortes con códigos anteriores y para cambios futuros.
+4. **Acceso:** admin y super admin. Las localidades solo reciben el link sin nombres (§7.2.7).
+5. **Bajas:** se sube también el **reporte de personal** y se excluye a quien ya no aparece, con aviso del
+   número excluido (como el reporte por curso).
+6. **Encuestas:** todos los cursos tienen encuesta; las preguntas **cambian en algunos cursos** (intentan que
+   sean iguales). ⏳ Capacitación enviará exportaciones de algunas encuestas para configurarlas
+   (`config/report_surveys.php` por curso, con una base común).
+7. **Reporte por curso actual:** mantiene "completado" (realizado). Mejora sugerida: mostrar también
+   aprobados y reprobados con la mínima del curso.
+8. **Retención:** últimos **6 cortes** (configurable).
 
 ## 11. Orden sugerido
 1. Responder §10 con el usuario.
