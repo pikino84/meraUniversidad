@@ -93,6 +93,15 @@ class CourseGroupVersion extends Model
         return $this->year.' · '.($this->market?->name ?? '—');
     }
 
+    /**
+     * Curso del catálogo por su código (no se guarda en la versión): de ahí salen el alcance
+     * General/Específico y la mínima para aprobar (INSTRUCTIVO_REPORTE_PERSONAS.md §7.3).
+     */
+    public function catalogCourse(): ?CatalogCourse
+    {
+        return filled($this->catalog_code) ? CatalogCourse::resolve($this->catalog_code) : null;
+    }
+
     /** Título de la página: el propio de la versión o, si va vacío, el de la carpeta. */
     public function displayTitle(): string
     {

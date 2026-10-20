@@ -4590,7 +4590,7 @@ a.mera-version-card:focus-visible {
 
 .mera-catalog-filters {
     display: grid;
-    grid-template-columns: 160px 200px minmax(0, 1fr) auto;
+    grid-template-columns: 150px 190px 160px minmax(0, 1fr) auto;
     gap: 8px;
 }
 
@@ -4637,6 +4637,11 @@ a.mera-version-card:focus-visible {
 .mera-track-filter-actions {
     display: flex;
     gap: 6px;
+}
+
+.mera-track-filter-toggle {
+    grid-column: 1 / -2;
+    align-self: center;
 }
 
 .mera-track-cards {
@@ -4822,7 +4827,8 @@ a.mera-version-card:focus-visible {
     }
 
     .mera-track-filter-wide,
-    .mera-track-filter-actions {
+    .mera-track-filter-actions,
+    .mera-track-filter-toggle {
         grid-column: 1 / -1;
     }
 
@@ -4843,5 +4849,77 @@ a.mera-version-card:focus-visible {
     .mera-folder-header-actions,
     .mera-crumbs {
         display: none !important;
+    }
+}
+
+/* Alcance del curso (§7.3): General / Específico */
+.mera-scope-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #E3F0D0;
+    color: #024D25;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mera-scope-badge.is-specific {
+    background: #EDE7F6;
+    color: #4527A0;
+}
+
+.mera-scope-badge.is-bl {
+    background: #E5F5FD;
+    color: #0B5A7A;
+}
+
+.mera-track-bar-label .mera-scope-badge {
+    margin-left: 4px;
+    padding: 0 6px;
+    font-size: 10px;
+    vertical-align: 1px;
+}
+
+.mera-track-scope-note {
+    margin: -6px 0 14px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: #F3F8F4;
+    color: #33433A;
+}
+
+/* Encuestas del seguimiento (§6.1) */
+.mera-survey-question {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #FAFCFA;
+    border: 1px solid #E6ECE8;
+}
+
+.mera-survey-open summary {
+    cursor: pointer;
+}
+
+.mera-survey-open ul {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.mera-survey-upload {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: end;
+    padding-top: 14px;
+    border-top: 1px solid #E6ECE8;
+}
+
+.mera-table tr.is-current td {
+    background: #F3F8F4;
+}
+
+@media (max-width: 767.98px) {
+    .mera-survey-upload {
+        grid-template-columns: 1fr;
     }
 }

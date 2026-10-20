@@ -2,7 +2,9 @@
 
 namespace App\Services\Reports;
 
+use App\Models\CatalogCourse;
 use App\Models\ProgressReport;
+use App\Models\ProgressReportSurvey;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -23,7 +25,10 @@ class ProgressReportManager
         'personal' => 'reporte de personal',
     ];
 
-    public function __construct(private readonly ProgressReportBuilder $builder) {}
+    public function __construct(
+        private readonly ProgressReportBuilder $builder,
+        private readonly ProgressSurveyAnalyzer $surveys,
+    ) {}
 
     /**
      * @param  array{progreso: UploadedFile|string, personal: UploadedFile|string}  $files  subidos o rutas
@@ -68,6 +73,70 @@ class ProgressReportManager
         return $report;
     }
 
+    /**
+     * Agrega (o reemplaza) la encuesta de un curso al corte (§6.1). El curso se toma del selector o, si
+     * no se eligió, se propone por el título del cuestionario entre los cursos del corte.
+     *
+     * @throws ReportFormatException
+     */
+    public function addSurvey(ProgressReport $report, UploadedFile|string $file, ?string $courseCode, ?int $userId): ProgressReportSurvey
+    {
+        $candidates = $this->courseCandidates($report);
+
+        return $this->withTemporaryFiles(['encuesta' => $file], function (array $paths) use ($report, $courseCode, $userId, $candidates) {
+            $result = $this->surveys->analyze($paths['encuesta'], $courseCode);
+            $code = $courseCode ?: ProgressSurveyAnalyzer::guessCourse($result['title'], $candidates);
+
+            if ($code === null) {
+                throw new ReportFormatException("No se reconoció el curso de «{$result['title']}». Elige el curso en la lista y vuelve a subirla.");
+            }
+
+            // Curso propuesto con configuración en report_surveys: se vuelve a leer para su satisfacción.
+            if ($code !== $courseCode && collect(config('report_surveys'))->contains(fn ($s) => in_array($code, $s['course_codes'] ?? [], true))) {
+                $result = $this->surveys->analyze($paths['encuesta'], $code);
+            }
+
+            $inCut = DB::table('progress_report_items as i')->join('progress_report_people as p', 'p.id', '=', 'i.progress_report_person_id')
+                ->where('i.progress_report_id', $report->id)->where('i.course_code', $code)->pluck('p.employee_number')->flip();
+            $notInCut = count(array_filter($result['employees'], fn ($num) => ! isset($inCut[$num])));
+
+            $warnings = $result['warnings'];
+            if ($notInCut) {
+                $warnings[] = "{$notInCut} respuestas son de personas que no tienen este curso en el corte (bajas, otra localidad o el curso no se les asignó).";
+            }
+
+            return DB::transaction(function () use ($report, $code, $result, $notInCut, $warnings, $userId) {
+                $report->surveys()->where('course_code', $code)->delete();
+
+                return $report->surveys()->create([
+                    'catalog_course_id' => CatalogCourse::resolve($code)?->id,
+                    'course_code' => $code,
+                    'title' => mb_substr($result['title'], 0, 255),
+                    'responses' => $result['responses'],
+                    'active' => $result['active'],
+                    'not_in_cut' => $notInCut,
+                    'data' => $result['data'],
+                    'warnings' => $warnings ?: null,
+                    'created_by' => $userId,
+                ]);
+            });
+        });
+    }
+
+    /**
+     * Cursos del corte para proponer el de una encuesta: código => título y nombre corto.
+     *
+     * @return array<string,string>
+     */
+    public function courseCandidates(ProgressReport $report): array
+    {
+        $codes = DB::table('progress_report_items')->where('progress_report_id', $report->id)
+            ->where('year', '>=', (int) config('mera.progress.tracking_from_year', 2026))->distinct()->pluck('course_code');
+        $catalog = CatalogCourse::query()->whereIn('code', $codes)->get()->keyBy('code');
+
+        return $codes->mapWithKeys(fn ($code) => [$code => trim(($catalog[$code]->title ?? '').' '.($catalog[$code]->short_title ?? $code))])->all();
+    }
+
     public function delete(ProgressReport $report): void
     {
         DB::transaction(function () use ($report) {
@@ -91,6 +160,7 @@ class ProgressReportManager
     /**
      * @template T
      *
+     * @param  array<string, UploadedFile|string>  $files
      * @param  callable(array<string,string>): T  $callback
      * @return T
      */
@@ -101,7 +171,7 @@ class ProgressReportManager
 
         try {
             $paths = [];
-            foreach (array_keys(self::FILES) as $key) {
+            foreach (array_keys($files) as $key) {
                 $paths[$key] = $files[$key] instanceof UploadedFile
                     ? $files[$key]->move($dir, "{$key}.xlsx")->getPathname()
                     : (string) $files[$key];

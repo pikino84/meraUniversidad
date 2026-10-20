@@ -9,7 +9,8 @@
 Creado: 2026-10-15 (revisado el mismo día con la referencia de Capacitación). §10 respondido el 2026-10-19.
 El mismo día por la tarde llegaron 5 encuestas más (§6.1) y se acordó la división **General / Específico**
 con la columna `Alcance` del catálogo (§7.3). Estado: **en implementación** (catálogo, corte, tablero, colaboradores y ficha
-listos en local; falta §7.3, encuestas por curso, links por localidad y descarga; avance en §12)
+listos en local, más §7.3 y encuestas por curso; faltan links por localidad, descarga y comparación con el corte
+anterior; avance en §12)
 (rama `qa`, verificar en `university.meracorporation.com`).
 
 ---
@@ -380,9 +381,28 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
     buscar (también por código de la plataforma) y ajustar mínima, evaluación, si cuenta y códigos alternos.
   - `CatalogCourse::resolve()` (código o alterno), `codeFromName()`, `done()` (realizado) y `passes()` (aprobado).
   - Pruebas: `tests/Feature/Reports/CourseCatalogTest.php` (Excel sintético con la misma estructura).
-- ⏳ **Nuevo (2026-10-19):** columna `Alcance` → `course_catalog.scope` (§7.3): migración aditiva, importador
-  (cualquier hoja, por encabezado, siempre actualiza) y vista de solo lectura en el catálogo. Encuestas de
-  5 cursos más (§6.1).
+- ✅ **§7.3 Generales y específicos (2026-10-20, sin commit):** migración aditiva `course_catalog.scope`; el importador
+  busca «Alcance» en **cualquier hoja** (por Ruta/Sub/#/Mod/Año/País o por código escrito), gana la primera hoja si
+  no coinciden (aviso) y **siempre** actualiza el alcance; sin columna, respaldo con «Nivel» («Todo MERA» = General)
+  y aviso. Con el catálogo v12 (sin «Alcance» todavía) quedan 8 generales y 42 específicos de 2026: **el respaldo no
+  es fiel** (p. ej. `NRM-HIG-005` dice «Cocina»); se corrige solo cuando Capacitación llene la columna.
+  Catálogo: columna y filtro «Alcance» (solo lectura). Tablero: ranking, avance por área, «dónde reprueban más» y
+  cursos/horas por persona **solo con generales** por defecto (aviso en pantalla), interruptor «Incluir cursos
+  específicos»; con un curso elegido, cuenta ese curso. Etiquetas «Específico» y «BL» en «Cómo va cada curso».
+  Sección **«Cursos específicos y presenciales»** (a quién va: 3 áreas y 3 puestos con más asignados, % realizado,
+  aprobado y sin iniciar, nota de BL). Ficha: «Cursos generales» y «Específicos de su puesto o área». Versiones de
+  carpeta: etiqueta General/Específico leída del catálogo por su `catalog_code`.
+- ✅ **§6.1 Encuestas por curso (2026-10-20, sin commit):** tabla `progress_report_surveys` (migración aditiva), una
+  encuesta por curso y por corte (se reemplaza al volver a subirla). `ProgressSurveyAnalyzer` (lector rápido, todas
+  las columnas): indicadores comunes sin configurar (**% recomienda, NPS, % problemas técnicos**), distribución de
+  cada pregunta cerrada y respuestas abiertas (solo texto; nunca nombre ni número). Con `course_codes` en
+  `config/report_surveys.php` (Higiene: `NRM-HIG-002-EL-26`) también la satisfacción con la regla del reporte por
+  curso: **Higiene 76.1 %** (igual que el reporte por curso). El curso se **propone por el título** entre los cursos
+  del corte (5 de 6 reconocidos; Salas VIP pide elegirlo). Aviso de respuestas de personas sin el curso en el corte.
+  Con las encuestas reales: Huracán recomienda 97.6 % / NPS +80; Tus áreas 98.2 % / +81; Orientación a Resultados
+  97.7 % / +78; Despega 98.1 % / +79; Salas VIP 95.8 % / +83 (coincide con la tabla de §6.1). Tablero: sección
+  «Lo que opinan» (tabla para comparar cursos; con un curso elegido, respuestas por pregunta) y formulario para
+  agregar encuestas. Falta: temas de las abiertas por curso (palabras clave) y vista propia de Despega.
 - ✅ **Paso 3 — `OrgMapper` (2026-10-19):** reglas de localidad/área/puesto en una clase; `PersonnelDirectory` la usa.
   `mera:report-verify` con los Excel reales de Higiene: **coincide fila por fila** (sin cambios en el reporte por curso).
 - ✅ **Pasos 4-6 — Corte, tablero y ficha (2026-10-19, sin commit):**
@@ -405,7 +425,6 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
     consulta de colaboradores por estado con búsqueda, paginada y **CSV** (queda en el historial); **ficha individual**
     imprimible con sus cursos y su avance en cortes anteriores.
   - Rendimiento del tablero: 1 consulta sin JOIN + cálculo en PHP (8.6 s → 1.5 s en local sin OPcache).
-- ⏳ Pendiente: encuesta por curso dentro del corte (Capacitación mandó 5 exportaciones el 2026-10-19; las preguntas
-  cambian en algunos cursos), links por localidad sin nombres (§7.2.7), "Descargar HTML" (§7.2.8), comparación con el
-  corte anterior (§7.2.2) y medir el tiempo del corte en QA (§9).
+- ⏳ Pendiente: links por localidad sin nombres (§7.2.7), "Descargar HTML" (§7.2.8), comparación con el corte anterior
+  (§7.2.2), temas de las respuestas abiertas por curso y medir el tiempo del corte en QA (§9).
 

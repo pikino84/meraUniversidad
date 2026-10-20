@@ -25,12 +25,23 @@
     <div class="mera-track-card"><span>Horas</span><b>{{ round($hoursReal, 1) }} h</b><small>de {{ round($hours, 1) }} h asignadas</small></div>
 </section>
 
-<section class="card mera-table-card" aria-labelledby="t-cursos-persona">
+@php
+    // §7.3: generales (para todos) y específicos de su puesto o área. Sin curso en el catálogo: general.
+    $groups = [
+        'generales' => ['Cursos generales', $items->filter(fn ($i) => $i->catalogCourse?->isGeneral() ?? true)],
+        'especificos' => ['Específicos de su puesto o área', $items->reject(fn ($i) => $i->catalogCourse?->isGeneral() ?? true)],
+    ];
+@endphp
+@if ($items->isEmpty())
+<section class="card mera-table-card"><div class="card-body">
+    <p class="text-muted mb-0">No tiene cursos que cuenten para el seguimiento en este corte.</p>
+</div></section>
+@endif
+@foreach ($groups as $key => [$heading, $list])
+@if ($list->isNotEmpty())
+<section class="card mera-table-card {{ $loop->first ? '' : 'mt-3' }}" aria-labelledby="t-{{ $key }}">
     <div class="card-body">
-        <h2 id="t-cursos-persona" class="h6 mera-track-title">Sus cursos</h2>
-        @if ($items->isEmpty())
-        <p class="text-muted mb-0">No tiene cursos que cuenten para el seguimiento en este corte.</p>
-        @else
+        <h2 id="t-{{ $key }}" class="h6 mera-track-title">{{ $heading }} <span class="mera-section-count">{{ $list->count() }}</span></h2>
         <div class="table-responsive">
             <table class="table mera-table mera-table-stack mb-0">
                 <thead>
@@ -43,9 +54,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($items as $item)
+                    @foreach ($list as $item)
                     <tr>
-                        <td data-label="Curso">{{ $labels[$item->course_code] ?? $item->course_code }}<small class="d-block text-muted">{{ $item->course_code }} · {{ $item->year }}</small></td>
+                        <td data-label="Curso">
+                            {{ $labels[$item->course_code] ?? $item->course_code }}
+                            @if ($item->catalogCourse?->modality === 'BL')<span class="mera-scope-badge is-bl">BL</span>@endif
+                            <small class="d-block text-muted">{{ $item->course_code }} · {{ $item->year }}</small>
+                        </td>
                         <td data-label="Estado"><span class="mera-status {{ $badge[$item->status] ?? '' }}"><i class="fas fa-circle" aria-hidden="true"></i> {{ $item->statusLabel() }}</span></td>
                         <td data-label="Avance">{{ round($item->progress * 100) }} %</td>
                         <td data-label="Calificación">
@@ -58,9 +73,10 @@
                 </tbody>
             </table>
         </div>
-        @endif
     </div>
 </section>
+@endif
+@endforeach
 
 @if ($history->count() > 1)
 <section class="card mera-table-card mt-3" aria-labelledby="t-historial">

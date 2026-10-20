@@ -57,6 +57,10 @@
             @endforeach
         </select>
     </div>
+    <label class="mera-tag-check mera-track-filter-toggle" title="Por defecto, las comparaciones entre localidades, áreas y puestos usan solo los cursos generales (para todos).">
+        <input type="checkbox" name="especificos" value="1" @checked($filters['especificos'])>
+        <span>Incluir cursos específicos en las comparaciones</span>
+    </label>
     <div class="mera-track-filter-actions">
         <button type="submit" class="btn mera-btn-save btn-sm">Aplicar</button>
         @if (collect($filters)->except('anio')->filter()->isNotEmpty())

@@ -173,4 +173,39 @@ class CourseCatalogTest extends TestCase
         ]);
         $this->assertSame($higiene->id, CatalogCourse::resolve('NRM-HIG-020-EL-26')?->id);
     }
+
+    public function test_scope_comes_from_the_alcance_column_of_any_sheet_or_falls_back_to_level(): void
+    {
+        $importer = app(CourseCatalogImporter::class);
+
+        // Sin columna «Alcance»: respaldo con «Nivel» (Todo MERA = General) y aviso.
+        $result = $importer->import($this->catalog());
+        $this->assertCount(6, $result['scope_from_level']);
+        $this->assertSame('general', CatalogCourse::firstWhere('code', 'NRM-SEG-005-EL-26-MX')->scope); // Todo MERA
+        $this->assertSame('specific', CatalogCourse::firstWhere('code', 'NRM-HIG-002-EL-26')->scope);   // Cocina
+
+        // Con «Alcance» en la tabla de nomenclaturas y en otra hoja que lo identifica por código.
+        $path = $this->makeXlsxSheets([
+            'Catálogo de Cursos' => [
+                ['CATÁLOGO DE CURSOS'],
+                [...self::HEADERS, 'Alcance'],
+                ['=IFERROR(…)', 'Normativo', 'HIG', 2, 'EL', 2026, 'GLOBAL', 'Curso: Introducción a la Higiene', 'NOM-251', '', 'Cocina', 2, '', 'Higiene AyB 2026', 'General'],
+                ['=IFERROR(…)', 'Negocio', 'OPE', 7, 'EL', 2026, 'MX', 'Corresponsal Cambiario', '', '', 'Operativo', 1, '', 'Corresponsal Cambiario', ''],
+            ],
+            'Información completa' => [
+                ['Código', 'Curso', 'Alcance'],
+                ['NRM-HIG-002-EL-26 | Higiene AyB 2026', 'Higiene', 'Específico'],         // choca: gana la primera hoja
+                ['NEG-OPE-007-EL-26-MX', 'Corresponsal Cambiario', 'Específico'],
+            ],
+        ], 'Catalogo_MERA_v13.xlsx');
+
+        $result = $importer->import($path);
+        $this->assertSame('general', CatalogCourse::firstWhere('code', 'NRM-HIG-002-EL-26')->scope);      // el Excel manda (antes: específico)
+        $this->assertSame('specific', CatalogCourse::firstWhere('code', 'NEG-OPE-007-EL-26-MX')->scope);  // de la otra hoja
+        $this->assertSame(['NRM-HIG-002-EL-26 (hoja «Información completa»)'], $result['scope_conflicts']);
+        $this->assertSame([], $result['scope_from_level']);
+
+        $this->actingAs($this->superAdmin)->get(route('course-catalog.index', ['alcance' => 'specific']))
+            ->assertOk()->assertSee('Corresponsal Cambiario')->assertDontSee('Higiene AyB 2026');
+    }
 }

@@ -13,6 +13,7 @@
 | - catalog: temas de "lo que más valoran" (v..) y "qué piden mejorar" (m..), en el orden del
 |   CSV original. keywords: fragmentos (sin acentos, en minúsculas) para proponer temas a las
 |   respuestas NUEVAS; un admin corrige la propuesta en pantalla.
+| - course_codes: cursos del catálogo que usan la encuesta en el seguimiento anual (opcional).
 | - precoded_file: CSV privado (storage/, fuera de git) con respuestas ya clasificadas por
 |   No. de empleado. Tiene prioridad sobre las palabras clave.
 */
@@ -21,6 +22,11 @@ return [
 
     'higiene' => [
         'name' => 'Introducción a la Higiene y Procedimientos',
+
+        // Seguimiento anual (INSTRUCTIVO_REPORTE_PERSONAS.md §6.1): cursos del catálogo que usan esta
+        // configuración para calcular la satisfacción. Sin configuración, la encuesta muestra los
+        // indicadores comunes (recomienda, NPS, problemas técnicos) y la distribución de cada pregunta.
+        'course_codes' => ['NRM-HIG-002-EL-26'],
 
         'favorable' => [
             ['f_utilidad', 'temas tratados son útiles', ['Muy de acuerdo', 'De acuerdo']],

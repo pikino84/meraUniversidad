@@ -51,4 +51,41 @@ trait BuildsSpreadsheets
 
         return $path;
     }
+
+    /**
+     * Excel con varias hojas (p. ej. el catálogo con la tabla de nomenclaturas y la de información).
+     *
+     * @param  array<string, list<list<mixed>>>  $sheets  nombre de la hoja => filas
+     */
+    protected function makeXlsxSheets(array $sheets, string $name = 'archivo.xlsx'): string
+    {
+        $dir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mera-xlsx-'.Str::random(8);
+        File::ensureDirectoryExists($dir);
+
+        if ($this->spreadsheetDirs === []) {
+            $this->beforeApplicationDestroyed(fn () => array_map(fn ($d) => File::deleteDirectory($d), $this->spreadsheetDirs));
+        }
+        $this->spreadsheetDirs[] = $dir;
+
+        $path = $dir.DIRECTORY_SEPARATOR.$name;
+        $writer = new Writer;
+        $writer->openToFile($path);
+
+        $first = true;
+        foreach ($sheets as $sheetName => $rows) {
+            if (! $first) {
+                $writer->addNewSheetAndMakeItCurrent();
+            }
+            $writer->getCurrentSheet()->setName($sheetName);
+            $first = false;
+
+            foreach ($rows as $row) {
+                $writer->addRow(new Row(array_map(fn ($value) => Cell::fromValue($value), $row)));
+            }
+        }
+
+        $writer->close();
+
+        return $path;
+    }
 }

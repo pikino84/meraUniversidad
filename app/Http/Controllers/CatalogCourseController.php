@@ -26,11 +26,13 @@ class CatalogCourseController extends Controller
             'anio' => $request->integer('anio') ?: null,
             'ruta' => in_array($request->query('ruta'), array_keys(CatalogCourse::ROUTES), true) ? $request->query('ruta') : null,
             'q' => trim((string) $request->query('q')),
+            'alcance' => in_array($request->query('alcance'), [CatalogCourse::SCOPE_GENERAL, CatalogCourse::SCOPE_SPECIFIC], true) ? $request->query('alcance') : null,
         ];
 
         $courses = CatalogCourse::query()
             ->when($filters['anio'], fn ($q, $year) => $q->where('year', $year))
             ->when($filters['ruta'], fn ($q, $route) => $q->where('route', $route))
+            ->when($filters['alcance'], fn ($q, $scope) => $q->where('scope', $scope))
             ->tap(fn ($q) => Like::contains($q, ['code', 'short_title', 'title', 'aliases'], $filters['q']))
             ->ordered()
             ->paginate(10)
@@ -79,6 +81,13 @@ class CatalogCourseController extends Controller
         }
         if ($result['missing']) {
             $message .= ' '.count($result['missing']).' cursos ya no vienen en el Excel (se conservan): '.implode(', ', array_slice($result['missing'], 0, 5)).'.';
+        }
+
+        if ($result['scope_from_level']) {
+            $message .= ' '.count($result['scope_from_level']).' cursos sin «Alcance» en el Excel: se tomó de «Nivel» (Todo MERA = General).';
+        }
+        if ($result['scope_conflicts']) {
+            $message .= ' Alcance distinto entre hojas (ganó la de nomenclaturas): '.implode(', ', array_slice($result['scope_conflicts'], 0, 5)).'.';
         }
 
         return redirect()->route('course-catalog.index')->with('success', $message);

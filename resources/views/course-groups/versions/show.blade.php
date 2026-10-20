@@ -16,10 +16,14 @@
     $addModulesUrl = route('courses.index', ['carpeta' => 'sin', 'mover_a' => $group->id, 'anio' => $version->year, 'version' => $version->market_id]);
 @endphp
 
+@php($catalogCourse = $version->catalogCourse())
 <x-folder-header
     :crumbs="[['Carpetas', route('course-groups.index')], [$group->name, route('course-groups.show', $group)], [(string) $version->year, route('course-groups.show', [$group, 'anio' => $version->year])], [$version->market->name, null]]"
     :title="$version->market->name.' · '.$version->year"
     :subtitle="$group->name.' · página en '.($version->language() === 'en' ? 'inglés' : 'español').($version->catalog_code ? ' · '.$version->catalog_code : '')">
+    @if ($catalogCourse)
+    <span class="mera-scope-badge {{ $catalogCourse->isGeneral() ? '' : 'is-specific' }}" title="Alcance según el catálogo de cursos">{{ $catalogCourse->scopeLabel() }}</span>
+    @endif
 </x-folder-header>
 
 <nav class="mera-section-tabs" aria-label="Secciones de {{ $version->label() }}">

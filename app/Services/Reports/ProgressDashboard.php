@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  */
 class ProgressDashboard
 {
-    public const FILTERS = ['anio', 'curso', 'ruta', 'localidad', 'area', 'centro'];
+    public const FILTERS = ['anio', 'curso', 'ruta', 'localidad', 'area', 'centro', 'especificos'];
 
     /** @var array<string, mixed> */
     public array $filters;
@@ -46,6 +46,8 @@ class ProgressDashboard
             'localidad' => $this->text($request, 'localidad'),
             'area' => $this->text($request, 'area'),
             'centro' => $this->text($request, 'centro'),
+            // §7.3: las comparaciones usan solo cursos generales salvo que se pida incluir los específicos.
+            'especificos' => $request->boolean('especificos') ?: null,
         ];
     }
 
@@ -89,8 +91,9 @@ class ProgressDashboard
         // Sin JOIN: las personas del corte (~3 mil) van a un mapa y los cursos que no cuentan se
         // quitan por id. Así la consulta usa solo el índice (corte, año, curso) de las asignaciones.
         $people = DB::table('progress_report_people')->where('progress_report_id', $this->report->id)
-            ->get(['id', 'locality', 'area', 'work_center'])->keyBy('id');
+            ->get(['id', 'locality', 'area', 'work_center', 'position'])->keyBy('id');
         $excluded = $this->excludedCourseIds();
+        $catalog = CatalogCourse::query()->get(['id', 'scope', 'modality'])->keyBy('id');
         $rows = [];
 
         foreach (DB::table('progress_report_items')->where('progress_report_id', $this->report->id)->where('year', $this->filters['anio'] ?? 0)
@@ -100,10 +103,15 @@ class ProgressDashboard
                 continue;
             }
             $person = $people[$r->progress_report_person_id];
+            $course = $r->catalog_course_id !== null ? ($catalog[$r->catalog_course_id] ?? null) : null;
             $rows[] = [
                 'c' => $r->course_code, 's' => (int) $r->status, 'g' => $r->grade === null ? null : (float) $r->grade,
                 'h' => (float) $r->hours, 'p' => (float) $r->progress, 'm' => $r->started_at ? substr((string) $r->started_at, 0, 7) : null,
                 'pid' => (int) $r->progress_report_person_id, 'loc' => $person->locality, 'area' => $person->area, 'wc' => $person->work_center,
+                'pos' => $person->position,
+                // Sin curso en el catálogo: general (se avisa en el corte) y modalidad del código.
+                'sc' => $course?->scope === CatalogCourse::SCOPE_SPECIFIC ? CatalogCourse::SCOPE_SPECIFIC : CatalogCourse::SCOPE_GENERAL,
+                'mod' => $course?->modality ?? (explode('-', $r->course_code)[3] ?? ''),
             ];
         }
 
@@ -144,6 +152,63 @@ class ProgressDashboard
         }));
     }
 
+    /**
+     * Filas para COMPARAR localidades, áreas y puestos (§7.3): solo cursos generales, salvo que se pida
+     * incluir los específicos o se haya elegido un curso (entonces cuenta ese curso).
+     */
+    private function comparable(array $except = []): array
+    {
+        $rows = $this->filtered($except);
+
+        if ($this->filters['especificos'] || $this->filters['curso']) {
+            return $rows;
+        }
+
+        return array_values(array_filter($rows, fn ($r) => $r['sc'] === CatalogCourse::SCOPE_GENERAL));
+    }
+
+    /** ¿Las comparaciones van solo con cursos generales? (para las etiquetas del tablero) */
+    public function generalsOnly(): bool
+    {
+        return ! $this->filters['especificos'] && ! $this->filters['curso'];
+    }
+
+    /** Totales para comparar (cursos y horas por persona): solo generales por defecto. */
+    public function comparableTotals(): array
+    {
+        return $this->aggregate($this->comparable());
+    }
+
+    /**
+     * Cursos específicos y presenciales (BL), §7.3: a quién van (áreas y puestos con más asignados),
+     * cifras y modalidad. Sin ranking entre localidades.
+     */
+    public function specificCourses(): Collection
+    {
+        $labels = $this->courseLabels();
+        $rows = array_filter($this->filtered(['curso']), fn ($r) => $r['sc'] === CatalogCourse::SCOPE_SPECIFIC || $r['mod'] === 'BL');
+        $groups = [];
+        foreach ($rows as $r) {
+            $groups[$r['c']][] = $r;
+        }
+
+        $top = function (array $list, string $field): array {
+            $counts = array_count_values(array_column($list, $field));
+            arsort($counts);
+
+            return array_slice($counts, 0, 3, true);
+        };
+
+        return collect($groups)->map(fn ($list, $code) => $this->aggregate($list) + [
+            'k' => (string) $code,
+            'label' => $labels[$code] ?? $code,
+            'modality' => $list[0]['mod'],
+            'specific' => $list[0]['sc'] === CatalogCourse::SCOPE_SPECIFIC,
+            'areas' => $top($list, 'area'),
+            'positions' => $top($list, 'pos'),
+        ])->sortBy('label')->values();
+    }
+
     /** @return array<string,int> clave de estado en la URL => asignaciones (pestañas de colaboradores) */
     public function statusCounts(): array
     {
@@ -163,8 +228,13 @@ class ProgressDashboard
     {
         $labels = $this->courseLabels();
 
+        $meta = [];
+        foreach ($this->rows() as $r) {
+            $meta[$r['c']] ??= ['specific' => $r['sc'] === CatalogCourse::SCOPE_SPECIFIC, 'modality' => $r['mod']];
+        }
+
         return $this->groupBy($this->filtered(['curso']), 'c')
-            ->map(fn ($r) => ['label' => $labels[$r['k']] ?? $r['k']] + $r)
+            ->map(fn ($r) => ['label' => $labels[$r['k']] ?? $r['k']] + ($meta[$r['k']] ?? []) + $r)
             ->sortByDesc('pct_done')->values();
     }
 
@@ -173,13 +243,13 @@ class ProgressDashboard
     {
         $min = (int) config('mera.progress.dashboard.ranking_min_people', 10);
 
-        return $this->groupBy($this->filtered(['localidad']), 'loc')
+        return $this->groupBy($this->comparable(['localidad']), 'loc')
             ->filter(fn ($r) => $r['people'] >= $min)->sortByDesc('pct_done')->values();
     }
 
     public function byArea(): Collection
     {
-        return $this->groupBy($this->filtered(['area']), 'area')->sortByDesc('pct_done')->values();
+        return $this->groupBy($this->comparable(['area']), 'area')->sortByDesc('pct_done')->values();
     }
 
     /** Avance por mes de inicio: iniciadas y realizadas por mes, y acumulado contra lo asignado. */
@@ -229,7 +299,7 @@ class ProgressDashboard
     {
         $min = (int) config('mera.progress.dashboard.failing_min_graded', 20);
 
-        return $this->groupBy($this->filtered(['localidad']), 'loc')
+        return $this->groupBy($this->comparable(['localidad']), 'loc')
             ->filter(fn ($r) => $r['done'] >= $min)
             ->map(fn ($r) => $r + ['pct_failed' => round($r['failed'] / max(1, $r['done']) * 100, 1)])
             ->sortByDesc('pct_failed')->values();

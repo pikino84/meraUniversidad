@@ -18,12 +18,13 @@ use ZipArchive;
 class FastSheetReader
 {
     /**
-     * @param  array<string, array{0:string, 1?:bool}>  $columns
+     * @param  array<string, array{0:string, 1?:bool}>|null  $columns  null = todas, con el encabezado como clave
+     *                                                                 (las encuestas: sus preguntas cambian por curso)
      * @return Generator<int, array<string, mixed>>
      *
      * @throws ReportFormatException
      */
-    public function rows(string $path, string $label, array $columns): Generator
+    public function rows(string $path, string $label, ?array $columns): Generator
     {
         $zip = new ZipArchive;
 
@@ -62,7 +63,7 @@ class FastSheetReader
                         foreach ($row as $i => $value) {
                             $headers[$i] = ReportWorkbookReader::clean($value);
                         }
-                        $indexes = $this->locate($headers, $columns, $label);
+                        $indexes = $columns === null ? $this->allColumns($headers) : $this->locate($headers, $columns, $label);
                         $wanted = array_flip($indexes);
                     } elseif ($row !== []) {
                         $out = [];
@@ -105,6 +106,23 @@ class FastSheetReader
         if ($indexes === null) {
             throw new ReportFormatException("El archivo «{$label}» está vacío (no tiene encabezados).");
         }
+    }
+
+    /**
+     * Todas las columnas: encabezado => índice. Sin encabezado: "Columna N"; repetido: "<texto> (N)".
+     *
+     * @param  array<int,string>  $headers
+     * @return array<string,int>
+     */
+    private function allColumns(array $headers): array
+    {
+        $indexes = [];
+        foreach ($headers as $i => $header) {
+            $key = $header === '' ? 'Columna '.($i + 1) : $header;
+            $indexes[isset($indexes[$key]) ? "{$key} ({$i})" : $key] = $i;
+        }
+
+        return $indexes;
     }
 
     /** Índice de columna desde la referencia de celda ("AB12" → 27). */

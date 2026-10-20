@@ -199,6 +199,116 @@ class ProgressReportTest extends TestCase
         $this->assertSame(0, ProgressReport::count() + ProgressReportItem::count());
     }
 
+    public function test_comparisons_use_only_general_courses_unless_asked(): void
+    {
+        CatalogCourse::where('code', 'NEG-OPE-007-EL-26-MX')->update(['scope' => CatalogCourse::SCOPE_SPECIFIC, 'modality' => 'BL']);
+        config(['mera.progress.dashboard.ranking_min_people' => 1]);
+        $report = $this->createCut();
+        $ana = $report->people()->firstWhere('employee_number', '1');
+
+        // Las tarjetas de avance cuentan todo; cursos por persona y el ranking, solo los generales.
+        $default = $this->actingAs($this->admin)->get(route('progress.show', $report))->assertOk()
+            ->assertSee('solo cursos generales')->assertSee('Cursos específicos y presenciales')->assertSee('BL · presencial');
+        $this->assertSame(8, $default->viewData('totals')['assigned']);
+        $this->assertSame(6, $default->viewData('comparable')['assigned']);
+        $monterrey = $default->viewData('localities')->firstWhere('k', 'Monterrey');
+        $this->assertSame(3, $monterrey['assigned'] ?? null); // sin Corresponsal Cambiario
+        $specific = $default->viewData('specific');
+        $this->assertSame(['NEG-OPE-007-EL-26-MX'], $specific->pluck('k')->all());
+        $this->assertSame(['Cocina' => 1, 'Piso / Restaurantes' => 1], $specific[0]['areas']);
+
+        $all = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'especificos' => 1]))->assertDontSee('solo cursos generales');
+        $this->assertSame(8, $all->viewData('comparable')['assigned']);
+
+        // Si se elige un curso específico, el ranking es de ese curso.
+        $one = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'curso' => 'NEG-OPE-007-EL-26-MX']));
+        $this->assertSame(2, $one->viewData('comparable')['assigned']);
+
+        // Ficha: generales y específicos por separado.
+        $this->actingAs($this->admin)->get(route('progress.person', [$report, $ana]))
+            ->assertSeeInOrder(['Cursos generales', 'Higiene 2026', 'Específicos de su puesto o área', 'Corresponsal Cambiario']);
+    }
+
+    private function survey(string $title, array $answers): UploadedFile
+    {
+        $headers = ['Cuestionario', 'Fecha', 'No. Empleado', 'Colaborador', 'Estatus colaborador', 'Departamento', 'Puesto', 'Centro de trabajo', 'Entidad legal', 'Resultado',
+            '¡Hola! Gracias', '¿Los temas tratados son útiles?', '¿Tuviste algún problema técnico durante el curso? ', '¿Recomendarías este curso? ',
+            'En una escala del 0 al 10, ¿qué tan probable es que recomiendes este curso?', '¿Qué fue lo que más te gustó del curso?', '¡Gracias!'];
+        $rows = [$headers];
+        foreach ($answers as [$num, $name, $status, $useful, $tech, $recommend, $score, $liked]) {
+            $rows[] = [$title, new DateTime('2026-10-01'), $num, $name, $status, 'Cocina', 'Cocinero', 'Centro', 'MERA', 100, '', $useful.'  ', $tech.' ', $recommend.' ', $score, $liked, ''];
+        }
+        $path = $this->makeXlsx($rows, 'encuesta.xlsx');
+
+        return new UploadedFile($path, '2026-10-19 Encuesta de satisfacción responses.xlsx', null, null, true);
+    }
+
+    public function test_course_surveys_show_common_indicators_without_personal_data(): void
+    {
+        $report = $this->createCut();
+        $file = $this->survey('Encuesta de Satisfacción - Higiene 2026', [
+            ['1', 'Ana Pérez', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, 'Los videos'],
+            ['2', 'Beto Pérez', 'active', 'De acuerdo', 'Sí', 'Sí', 9, 'Los ejemplos de cocina'],
+            ['3', 'Caro Pérez', 'deleted', 'Indeciso', 'No', 'No', 4, ''],
+            ['9', 'Zoe Sin Curso', 'active', 'Muy de acuerdo', 'No', 'Sí', 8, 'Todo'],
+        ]);
+
+        // Sin elegir curso: se reconoce por el título.
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $file])
+            ->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, 'Higiene 2026') && str_contains($m, '4 respuestas'));
+
+        $survey = $report->surveys()->sole();
+        $this->assertSame(['NRM-HIG-002-EL-26', 4, 3, 1], [$survey->course_code, $survey->responses, $survey->active, $survey->not_in_cut]); // Zoe no tiene el curso
+        $this->assertEquals(75, $survey->indicator('recommend'));
+        $this->assertSame(25, $survey->indicator('nps'));      // 2 promotores y 1 detractor, de 4
+        $this->assertEquals(25, $survey->indicator('tech_problems'));
+        $this->assertNull($survey->indicator('satisfaction')); // sin configuración para este código en las pruebas
+        $this->assertSame(['Muy de acuerdo' => 2, 'De acuerdo' => 1, 'Indeciso' => 1], $survey->data['closed'][0]['answers']); // sin espacios al final
+        $this->assertSame(['Los videos', 'Los ejemplos de cocina', 'Todo'], $survey->data['open'][0]['answers']);
+
+        $stored = json_encode($survey->getAttributes());
+        $this->assertStringNotContainsString('Ana Pérez', $stored);
+        $this->assertStringNotContainsString('Zoe', $stored);
+
+        $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'curso' => 'NRM-HIG-002-EL-26']))
+            ->assertOk()->assertSee('Lo que opinan')->assertSee('+25')->assertSee('respuestas por pregunta')->assertSee('Los ejemplos de cocina');
+
+        // Otra encuesta del mismo curso la reemplaza; un título que no se reconoce pide elegir el curso.
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Higiene 2026', [['1', 'Ana', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, 'Bien']])]);
+        $this->assertSame(1, $report->surveys()->sole()->responses);
+
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Algo que no existe', [['1', 'Ana', 'active', 'Sí', 'No', 'Sí', 10, '']])])
+            ->assertSessionHas('error', fn ($m) => str_contains($m, 'Elige el curso'));
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), [
+            'encuesta' => $this->survey('Encuesta de Satisfacción - Algo que no existe', [['1', 'Ana', 'active', 'Sí', 'No', 'Sí', 10, '']]),
+            'course_code' => 'NEG-CUL-004-EL-26',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame(['NEG-CUL-004-EL-26', 'NRM-HIG-002-EL-26'], $report->surveys()->orderBy('course_code')->pluck('course_code')->all());
+
+        $this->actingAs($this->admin)->delete(route('progress.surveys.destroy', [$report, $report->surveys()->firstWhere('course_code', 'NEG-CUL-004-EL-26')]));
+        $this->assertSame(1, $report->surveys()->count());
+    }
+
+    public function test_configured_surveys_use_the_same_satisfaction_rule_as_the_course_report(): void
+    {
+        config(['report_surveys' => ['prueba' => [
+            'name' => 'Prueba',
+            'course_codes' => ['NRM-HIG-002-EL-26'],
+            'favorable' => [['f_util', 'temas tratados son útiles', ['Muy de acuerdo', 'De acuerdo']], ['f_rec', 'Recomendarías', ['Sí']]],
+        ]]]);
+        $report = $this->createCut();
+
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Higiene 2026', [
+            ['1', 'A', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, ''],
+            ['2', 'B', 'active', 'De acuerdo', 'No', 'No', 9, ''],
+            ['3', 'C', 'active', 'Indeciso', 'No', 'Sí', 9, ''],
+            ['4', 'D', 'active', 'De acuerdo', 'No', 'Sí', 9, ''],
+        ])]);
+
+        // Favorable en TODAS las configuradas: A y D → 50 %.
+        $this->assertEquals(50, $report->surveys()->sole()->indicator('satisfaction'));
+    }
+
     public function test_the_fast_reader_reads_only_the_requested_columns(): void
     {
         $path = $this->makeXlsx([

@@ -17,7 +17,9 @@
         <p class="small text-muted">
             Sube el <strong>Catalogo_MERA_v*.xlsx</strong> de Capacitación. Se agregan los cursos nuevos y se actualizan
             nombre, horas, instructor, etc. No se borra ningún curso ni se cambia lo que se ajusta aquí
-            (calificación mínima, evaluación, si cuenta y códigos de la plataforma).
+            (calificación mínima, evaluación, si cuenta y códigos de la plataforma). El <strong>alcance</strong>
+            (General o Específico) sale siempre de la columna «Alcance» del Excel; si no viene, se toma de «Nivel»
+            («Todo MERA» = General).
         </p>
         <form method="POST" action="{{ route('course-catalog.import') }}" enctype="multipart/form-data" class="d-flex flex-wrap gap-2 align-items-center">
             @csrf
@@ -42,6 +44,12 @@
         @foreach (array_keys(\App\Models\CatalogCourse::ROUTES) as $route)
         <option value="{{ $route }}" @selected($filters['ruta'] === $route)>{{ $route }}</option>
         @endforeach
+    </select>
+    <label class="visually-hidden" for="f-alcance">Alcance</label>
+    <select id="f-alcance" name="alcance" class="form-select mera-input">
+        <option value="">Todo alcance</option>
+        <option value="general" @selected($filters['alcance'] === 'general')>Generales</option>
+        <option value="specific" @selected($filters['alcance'] === 'specific')>Específicos</option>
     </select>
     <label class="visually-hidden" for="f-q">Buscar</label>
     <input id="f-q" type="search" name="q" value="{{ $filters['q'] }}" class="form-control mera-input" placeholder="Código o nombre">
@@ -70,6 +78,7 @@
                     <tr>
                         <th scope="col">Curso</th>
                         <th scope="col">Año · País</th>
+                        <th scope="col">Alcance</th>
                         <th scope="col">Horas</th>
                         <th scope="col">Para aprobar</th>
                         <th scope="col">Seguimiento</th>
@@ -87,6 +96,10 @@
                             @endif
                         </td>
                         <td data-label="Año · País" class="mera-nowrap">{{ $course->year }} · {{ $course->countryLabel() }}<small class="d-block text-muted">{{ $course->route }} · {{ $course->modality }}</small></td>
+                        <td data-label="Alcance">
+                            <span class="mera-scope-badge {{ $course->isGeneral() ? '' : 'is-specific' }}">{{ $course->scopeLabel() }}</span>
+                            @if ($course->level)<small class="d-block text-muted">{{ $course->level }}</small>@endif
+                        </td>
                         <td data-label="Horas">{{ $course->hours !== null ? rtrim(rtrim(number_format($course->hours, 2), '0'), '.') : '—' }}</td>
                         <td data-label="Para aprobar" class="mera-nowrap">
                             @if ($course->has_evaluation)

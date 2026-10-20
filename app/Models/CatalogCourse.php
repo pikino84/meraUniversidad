@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -28,11 +29,16 @@ class CatalogCourse extends Model
         'Desarrollo Personal' => 'DPR',
     ];
 
+    /** Alcance (§7.3): general = para todos; específico = ciertas áreas o puestos. */
+    public const SCOPE_GENERAL = 'general';
+
+    public const SCOPE_SPECIFIC = 'specific';
+
     public const CODE_PATTERN = '/^(NRM|NEG|CMP|DPR)-[A-Z]{3}-\d{3}-(EL|BL|PR)-\d{2}(-[A-Z]{2,})?$/';
 
     protected $fillable = [
         'code', 'route', 'sub', 'number', 'modality', 'year', 'country', 'title', 'short_title',
-        'reference', 'competency', 'level', 'hours', 'instructor',
+        'reference', 'competency', 'level', 'scope', 'hours', 'instructor',
         'aliases', 'passing_grade', 'has_evaluation', 'in_tracking',
     ];
 
@@ -59,7 +65,7 @@ class CatalogCourse extends Model
     {
         return LogOptions::defaults()
             ->useLogName('catalogo')
-            ->logOnly(['code', 'short_title', 'aliases', 'passing_grade', 'has_evaluation', 'in_tracking'])
+            ->logOnly(['code', 'short_title', 'scope', 'aliases', 'passing_grade', 'has_evaluation', 'in_tracking'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -121,6 +127,40 @@ class CatalogCourse extends Model
     public function passes(float $progress, ?float $grade): bool
     {
         return $progress >= 1 && (! $this->has_evaluation || ($grade !== null && $grade >= $this->passing_grade));
+    }
+
+    public function isGeneral(): bool
+    {
+        return $this->scope !== self::SCOPE_SPECIFIC;
+    }
+
+    public function scopeLabel(): string
+    {
+        return match ($this->scope) {
+            self::SCOPE_GENERAL => 'General',
+            self::SCOPE_SPECIFIC => 'Específico',
+            default => 'Sin alcance',
+        };
+    }
+
+    /**
+     * Alcance desde el texto del Excel ("General", "Específico"); null si viene vacío o con otro valor.
+     */
+    public static function scopeFrom(mixed $value): ?string
+    {
+        $text = Str::lower(Str::ascii(trim((string) $value)));
+
+        return match (true) {
+            str_starts_with($text, 'general') => self::SCOPE_GENERAL,
+            str_starts_with($text, 'especific'), str_starts_with($text, 'specific') => self::SCOPE_SPECIFIC,
+            default => null,
+        };
+    }
+
+    /** Respaldo si el Excel no trae "Alcance": "Todo MERA" en Nivel = general; lo demás, específico. */
+    public static function scopeFromLevel(?string $level): string
+    {
+        return Str::lower(Str::ascii(trim((string) $level))) === 'todo mera' ? self::SCOPE_GENERAL : self::SCOPE_SPECIFIC;
     }
 
     public function countryLabel(): string

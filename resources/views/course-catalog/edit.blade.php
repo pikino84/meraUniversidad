@@ -68,6 +68,7 @@
                 <dt>Ruta</dt><dd>{{ $course->route }} · {{ $course->sub }} · {{ $course->modality }}</dd>
                 <dt>Año · País</dt><dd>{{ $course->year }} · {{ $course->countryLabel() }}</dd>
                 <dt>Horas</dt><dd>{{ $course->hours ?? '—' }}</dd>
+                <dt>Alcance</dt><dd>{{ $course->scopeLabel() }} <small class="text-muted">(sale del Excel del catálogo, columna «Alcance»)</small></dd>
                 <dt>Dirigido a</dt><dd>{{ $course->level ?? '—' }}</dd>
                 <dt>Instructor</dt><dd>{{ $course->instructor ?? '—' }}</dd>
             </dl>

@@ -4,6 +4,8 @@ namespace App\Services\Reports;
 
 use App\Models\CatalogCourse;
 use Illuminate\Support\Facades\DB;
+use OpenSpout\Reader\XLSX\Options;
+use OpenSpout\Reader\XLSX\Reader;
 
 /**
  * Carga el catálogo de cursos desde "Catalogo_MERA_v*.xlsx" (docs/reportes/INSTRUCTIVO_REPORTE_PERSONAS.md §6).
@@ -15,6 +17,10 @@ use Illuminate\Support\Facades\DB;
  *   evaluación, si cuenta, códigos alternos) ni borra cursos que ya no vengan: los avisa.
  * - Al crear, aplica config('mera.progress.catalog_defaults') y deja fuera del seguimiento los cursos
  *   anteriores a config('mera.progress.tracking_from_year') (2026).
+ * - Alcance (General/Específico, §7.3): columna "Alcance" en CUALQUIER hoja que identifique el curso
+ *   (Ruta/Sub/#/Mod/Año/País o un código). Si dos hojas no coinciden, gana la primera (tabla de
+ *   nomenclaturas) y se avisa. Es la excepción a "no pisar": el alcance SIEMPRE se toma del Excel. Si
+ *   falta, respaldo con "Nivel" ("Todo MERA" = General) y aviso.
  *
  * Recibe rutas, no el Request (como ReportWorkbookReader).
  */
@@ -46,15 +52,28 @@ class CourseCatalogImporter
     public function __construct(private readonly ReportWorkbookReader $reader) {}
 
     /**
-     * @return array{created: list<string>, updated: list<string>, unchanged: int, skipped: list<string>, missing: list<string>}
+     * @return array{created: list<string>, updated: list<string>, unchanged: int, skipped: list<string>, missing: list<string>, scope_from_level: list<string>, scope_conflicts: list<string>}
      *
      * @throws ReportFormatException
      */
     public function import(string $path, bool $dryRun = false): array
     {
         $rows = $this->read($path);
+        $scopes = $this->readScopes($path);
         $existing = CatalogCourse::all()->keyBy('code');
-        $result = ['created' => [], 'updated' => [], 'unchanged' => 0, 'skipped' => $rows['skipped'], 'missing' => []];
+        $result = [
+            'created' => [], 'updated' => [], 'unchanged' => 0, 'skipped' => $rows['skipped'], 'missing' => [],
+            'scope_from_level' => [], 'scope_conflicts' => $scopes['conflicts'],
+        ];
+
+        foreach ($rows['courses'] as $code => $data) {
+            if (isset($scopes['scopes'][$code])) {
+                $rows['courses'][$code]['scope'] = $scopes['scopes'][$code];
+            } else {
+                $rows['courses'][$code]['scope'] = CatalogCourse::scopeFromLevel($data['level']);
+                $result['scope_from_level'][] = $code;
+            }
+        }
 
         DB::transaction(function () use ($rows, $existing, $dryRun, &$result) {
             foreach ($rows['courses'] as $code => $data) {
@@ -145,6 +164,106 @@ class CourseCatalogImporter
         }
 
         return ['courses' => $courses, 'skipped' => $skipped];
+    }
+
+    /**
+     * Alcance por código desde todas las hojas que lo traen.
+     *
+     * @return array{scopes: array<string,string>, conflicts: list<string>}
+     */
+    private function readScopes(string $path): array
+    {
+        $options = new Options;
+        $options->SHOULD_FORMAT_DATES = false;
+        $options->SHOULD_PRESERVE_EMPTY_ROWS = false;
+        $reader = new Reader($options);
+        $scopes = [];
+        $conflicts = [];
+        $scan = (int) config('mera.progress.catalog_header_scan', 10);
+
+        try {
+            $reader->open($path);
+
+            foreach ($reader->getSheetIterator() as $sheet) {
+                $map = null;
+                $seen = 0;
+
+                foreach ($sheet->getRowIterator() as $row) {
+                    $values = $row->toArray();
+
+                    if ($map === null) {
+                        $map = $this->scopeColumns($values);
+                        if ($map === null && ++$seen >= $scan) {
+                            break; // esta hoja no tiene alcance
+                        }
+
+                        continue;
+                    }
+
+                    $scope = CatalogCourse::scopeFrom($values[$map['scope']] ?? null);
+                    $code = $this->codeFromRow($values, $map);
+
+                    if ($scope === null || $code === null) {
+                        continue;
+                    }
+
+                    if (isset($scopes[$code]) && $scopes[$code] !== $scope) {
+                        $conflicts[] = "{$code} (hoja «{$sheet->getName()}»)";
+
+                        continue; // gana la primera hoja (nomenclaturas)
+                    }
+
+                    $scopes[$code] ??= $scope;
+                }
+            }
+        } finally {
+            $reader->close();
+        }
+
+        return ['scopes' => $scopes, 'conflicts' => array_values(array_unique($conflicts))];
+    }
+
+    /**
+     * Índices de "Alcance" y de lo que identifica al curso en una fila de encabezados, o null.
+     *
+     * @return array<string,int>|null
+     */
+    private function scopeColumns(array $headers): ?array
+    {
+        $normalized = array_map(fn ($h) => ReportWorkbookReader::normalize(ReportWorkbookReader::clean($h)), $headers);
+        $find = fn (string $text) => ($i = array_search(ReportWorkbookReader::normalize($text), $normalized, true)) === false ? null : $i;
+
+        $map = array_filter([
+            'scope' => $find('Alcance'),
+            'route' => $find('Ruta'), 'sub' => $find('Sub'), 'number' => $find('#'),
+            'modality' => $find('Mod'), 'year' => $find('Año'), 'country' => $find('País'),
+            'code' => $find('Código') ?? $find('Nomenclatura') ?? $find('Código del curso'),
+        ], fn ($i) => $i !== null);
+
+        $byParts = isset($map['route'], $map['sub'], $map['number'], $map['modality'], $map['year']);
+
+        return isset($map['scope']) && ($byParts || isset($map['code'])) ? $map : null;
+    }
+
+    private function codeFromRow(array $values, array $map): ?string
+    {
+        if (isset($map['route'], $map['sub'], $map['number'], $map['modality'], $map['year'])
+            && is_numeric($values[$map['number']] ?? null) && is_numeric($values[$map['year']] ?? null)) {
+            $code = CatalogCourse::buildCode(
+                ReportWorkbookReader::clean($values[$map['route']] ?? ''), ReportWorkbookReader::clean($values[$map['sub']] ?? ''),
+                (int) $values[$map['number']], ReportWorkbookReader::clean($values[$map['modality']] ?? ''),
+                (int) $values[$map['year']], ReportWorkbookReader::clean($values[$map['country']] ?? ''),
+            );
+
+            if ($code !== null) {
+                return $code;
+            }
+        }
+
+        // Código escrito (no fórmula): "NRM-HIG-002-EL-26" o "NRM-HIG-002-EL-26 | Título".
+        $text = isset($map['code']) ? (string) ($values[$map['code']] ?? '') : '';
+
+        return str_starts_with($text, '=') ? null : CatalogCourse::codeFromName($text);
     }
 
     private function text(mixed $value, int $max): ?string

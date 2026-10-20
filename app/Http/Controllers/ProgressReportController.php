@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProgressReport;
 use App\Models\ProgressReportItem;
 use App\Models\ProgressReportPerson;
+use App\Models\ProgressReportSurvey;
 use App\Services\Reports\ProgressDashboard;
 use App\Services\Reports\ProgressReportManager;
 use App\Services\Reports\ReportFormatException;
@@ -90,13 +91,59 @@ class ProgressReportController extends Controller
             'filters' => $dashboard->filters,
             'options' => $dashboard->options(),
             'totals' => $dashboard->totals(),
+            'comparable' => $dashboard->comparableTotals(),
+            'specific' => $dashboard->specificCourses(),
             'courses' => $dashboard->byCourse(),
             'localities' => $dashboard->byLocality(),
             'areas' => $dashboard->byArea(),
             'months' => $dashboard->byMonth(),
             'bands' => $dashboard->gradeBands(),
             'failing' => $dashboard->failingByLocality(),
+            // Encuestas (§6.1): la tabla compara cursos; con un curso elegido, su detalle.
+            'surveys' => $report->surveys()->orderBy('course_code')->get(),
+            'surveyCourses' => $this->manager->courseCandidates($report),
         ]);
+    }
+
+    /** Agrega (o reemplaza) la encuesta de satisfacción de un curso al corte. */
+    public function storeSurvey(Request $request, ProgressReport $report): RedirectResponse
+    {
+        $request->validate([
+            'encuesta' => ['required', 'file', 'max:'.(int) config('mera.reports.max_upload_kb'), function ($attribute, $value, $fail) {
+                if ($value instanceof UploadedFile && strtolower($value->getClientOriginalExtension()) !== 'xlsx') {
+                    $fail('La encuesta debe ser un archivo de Excel (.xlsx).');
+                }
+            }],
+            'course_code' => ['nullable', 'string', 'max:40', function ($attribute, $value, $fail) use ($report) {
+                if (filled($value) && ! array_key_exists($value, $this->manager->courseCandidates($report))) {
+                    $fail('Ese curso no está en este corte.');
+                }
+            }],
+        ], ['encuesta.required' => 'Elige el Excel de la encuesta.']);
+
+        try {
+            $survey = $this->manager->addSurvey($report, $request->file('encuesta'), $request->input('course_code') ?: null, $request->user()->id);
+        } catch (ReportFormatException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            Log::error('Error al agregar una encuesta al seguimiento', ['report' => $report->id, 'exception' => $e]);
+
+            return back()->with('error', 'No se pudo leer la encuesta. Revisa el archivo e inténtalo de nuevo.');
+        }
+
+        $labels = (new ProgressDashboard($report, $request))->courseLabels();
+
+        return redirect()->route('progress.show', ['report' => $report, 'curso' => $survey->course_code])->withFragment('t-opinan')
+            ->with('success', 'Encuesta agregada a «'.($labels[$survey->course_code] ?? $survey->course_code).'»: '.number_format($survey->responses).' respuestas.'
+                .($request->filled('course_code') ? '' : ' El curso se reconoció por el título; si no es, elimínala y vuelve a subirla eligiendo el curso.'));
+    }
+
+    public function destroySurvey(ProgressReport $report, ProgressReportSurvey $survey): RedirectResponse
+    {
+        abort_unless($survey->progress_report_id === $report->id, 404);
+        $survey->delete();
+
+        return back()->with('success', 'Encuesta eliminada del corte.');
     }
 
     /** Consulta de colaboradores: persona × curso por estado, con búsqueda (§7.2.5). */

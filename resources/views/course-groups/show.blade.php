@@ -50,7 +50,10 @@
         <li>
             <a href="{{ route('course-groups.versions.show', [$group, $v]) }}" class="mera-version-card">
                 <span class="mera-version-card-name">{{ $v->market->name }}</span>
-                <span class="mera-version-card-lang">{{ $v->language() === 'en' ? 'Inglés' : 'Español' }}</span>
+                <span class="mera-version-card-lang">
+                    {{ $v->language() === 'en' ? 'Inglés' : 'Español' }}
+                    @if ($cc = $v->catalogCourse())· <span class="mera-scope-badge {{ $cc->isGeneral() ? '' : 'is-specific' }}">{{ $cc->scopeLabel() }}</span>@endif
+                </span>
                 <span class="mera-version-card-meta">
                     {{ $v->modules_count }} {{ $v->modules_count === 1 ? 'módulo' : 'módulos' }}
                     · {{ $v->reports_count }} {{ $v->reports_count === 1 ? 'reporte' : 'reportes' }}

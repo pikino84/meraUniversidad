@@ -39,6 +39,8 @@ class ImportCourseCatalog extends Command
         $this->listing('Actualizados', $result['updated']);
         $this->listing('Filas que no se pudieron leer', $result['skipped'], 'warn');
         $this->listing('En la base pero no en este Excel (no se borran)', $result['missing'], 'warn');
+        $this->listing('Sin columna «Alcance»: se tomó de «Nivel» (Todo MERA = General)', $result['scope_from_level'], 'warn');
+        $this->listing('Alcance distinto entre hojas (ganó la primera)', $result['scope_conflicts'], 'warn');
 
         if ($this->option('aliases')) {
             if (! is_file($this->option('aliases'))) {

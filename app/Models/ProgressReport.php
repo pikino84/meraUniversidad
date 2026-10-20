@@ -42,6 +42,11 @@ class ProgressReport extends Model
         return $this->hasMany(ProgressReportItem::class);
     }
 
+    public function surveys(): HasMany
+    {
+        return $this->hasMany(ProgressReportSurvey::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

@@ -14,6 +14,8 @@
         <span class="mera-track-bar-label">
             @if (! empty($numbered))<b class="mera-track-rank">{{ $loop->iteration }}</b>@endif
             @if ($url)<a href="{{ $url }}">{{ $r['label'] }}</a>@else{{ $r['label'] }}@endif
+            @if (! empty($r['specific']))<span class="mera-scope-badge is-specific">Específico</span>@endif
+            @if (($r['modality'] ?? null) === 'BL')<span class="mera-scope-badge is-bl">BL</span>@endif
             <small>{{ number_format($r['people']) }} {{ $r['people'] === 1 ? 'persona' : 'personas' }}</small>
         </span>
         <span class="mera-track-bar" role="img"
