@@ -169,7 +169,7 @@ class ProgressSurveyAnalyzer
         $avgLength = array_sum(array_map('mb_strlen', $filled)) / max(1, $n);
 
         return count($distinct) <= self::MAX_CLOSED_OPTIONS
-            && ($n === 1 || count($distinct) < $n)
+            && count($distinct) < $n
             && $avgLength <= 40;
     }
 

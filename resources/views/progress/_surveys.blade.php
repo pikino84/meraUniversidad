@@ -27,7 +27,7 @@
                         <th scope="col">NPS</th>
                         <th scope="col">Problemas técnicos</th>
                         <th scope="col">Satisfacción</th>
-                        <th scope="col" class="text-center mera-col-actions">Acciones</th>
+                        @unless ($share)<th scope="col" class="text-center mera-col-actions">Acciones</th>@endunless
                     </tr>
                 </thead>
                 <tbody>
@@ -43,6 +43,7 @@
                         <td data-label="NPS">{{ $s->indicator('nps') === null ? '—' : sprintf('%+d', $s->indicator('nps')) }}</td>
                         <td data-label="Problemas técnicos">{{ $pct($s->indicator('tech_problems')) }}</td>
                         <td data-label="Satisfacción">{{ $pct($s->indicator('satisfaction')) }}@if ($s->indicator('satisfaction') === null)<small class="d-block text-muted">sin configurar</small>@endif</td>
+                        @unless ($share)
                         <td data-label="Acciones" class="text-center mera-col-actions">
                             @include('partials.delete-button', [
                                 'action' => route('progress.surveys.destroy', [$report, $s]),
@@ -52,6 +53,7 @@
                                 'detail' => 'Se puede volver a subir cuando quieras.',
                             ])
                         </td>
+                        @endunless
                     </tr>
                     @endforeach
                 </tbody>
@@ -66,6 +68,13 @@
         @endforeach
         <div class="mera-track-grid mt-2">
             @foreach ($current->data['closed'] ?? [] as $q)
+            @php
+                // Compartido: las respuestas con menos de 3 menciones se agrupan (ningún texto único a la vista).
+                if ($share) {
+                    $rare = array_filter($q['answers'], fn ($n) => $n < 3);
+                    $q['answers'] = array_diff_key($q['answers'], $rare) + ($rare ? ['Otras respuestas' => array_sum($rare)] : []);
+                }
+            @endphp
             <div class="mera-survey-question">
                 <p class="small fw-semibold mb-2">{{ $q['question'] }}</p>
                 <ol class="mera-track-months list-unstyled mb-0">
@@ -80,7 +89,8 @@
             </div>
             @endforeach
         </div>
-        @foreach ($current->data['open'] ?? [] as $q)
+        {{-- Respuestas abiertas: solo en el panel (pueden traer nombres escritos por quien respondió). --}}
+        @foreach ($share ? [] : ($current->data['open'] ?? []) as $q)
         <details class="mera-survey-open mt-2">
             <summary><span class="fw-semibold">{{ $q['question'] }}</span> <span class="mera-section-count">{{ number_format(count($q['answers'])) }}</span></summary>
             <ul class="small mb-0 mt-2">
@@ -92,6 +102,7 @@
         <p class="small text-muted mb-0">Elige un curso en el filtro (o en la tabla) para ver las respuestas de su encuesta.</p>
         @endif
 
+        @unless ($share)
         <form method="POST" action="{{ route('progress.surveys.store', $report) }}" enctype="multipart/form-data" class="mera-survey-upload mt-3"
             data-loader-message="Leyendo la encuesta…">
             @csrf
@@ -111,5 +122,6 @@
             <button type="submit" class="btn btn-sm mera-btn-save">Agregar</button>
         </form>
         <p class="small text-muted mt-1 mb-0">El Excel no se guarda: solo los totales y el texto de las respuestas abiertas (sin nombres). Si el curso ya tenía encuesta, se reemplaza.</p>
+        @endunless
     </div>
 </section>

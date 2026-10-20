@@ -439,6 +439,19 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
   - Rendimiento del tablero: 1 consulta sin JOIN + cálculo en PHP (8.6 s → 1.5 s en local sin OPcache).
 - ✅ **Conexión con los reportes por curso (2026-10-20, sin commit):** `ProgressCourseSummary` (por `catalog_code`),
   tarjeta "En el seguimiento anual" en la pestaña Reportes de la versión y links del tablero a las carpetas (§5).
-- ⏳ Pendiente: links por localidad sin nombres (§7.2.7), "Descargar HTML" (§7.2.8), comparación con el corte anterior
-  (§7.2.2), temas de las respuestas abiertas por curso y medir el tiempo del corte en QA (§9).
+- ✅ **Tablero reorganizado (2026-10-20, pedido del usuario; sin commit):** URL legible `/seguimiento/2026-10-12` (columna
+  `slug`; `/seguimiento/1` redirige con 301), **editar nombre y fecha de corte** (la fecha cambia el link). Vista: barra de
+  filtros compacta (año, curso, localidad, área; ruta, centro y "incluir específicos" en "Más filtros"), se aplica al
+  cambiar (`auto-submit.js`) y muestra los filtros activos como etiquetas; 4 indicadores (realizado, aprobado, sin iniciar,
+  promedio) con "¿Cómo se calcula?"; **una pestaña a la vez** (`?vista=`): Resumen (barra de avance del año, cursos y
+  localidades con menor avance, mes a mes), Cursos (orden por menor/mayor avance o nombre + específicos y presenciales),
+  Localidades (ranking y dónde reprueban más), Áreas y puestos (puestos con menor avance), Evaluación (rangos, dónde
+  reprueban, promedio por curso) y Opiniones (encuestas). Cada pestaña calcula solo lo suyo.
+- ✅ **§7.2.7 Links para compartir (2026-10-20, sin commit):** tabla `progress_report_shares`; pantalla "Compartir" del
+  corte: un link por localidad o de toda la empresa, copiar, ver y desactivar (404). El link abre el tablero sin sesión
+  (`noindex`), sin nombres, sin consulta de colaboradores ni respuestas abiertas; las respuestas cerradas con menos de 3
+  menciones se agrupan en "Otras respuestas"; el de una localidad queda fijo en ella (aunque se pida otra en la URL) y no
+  muestra comparaciones entre localidades. Queda en el historial y "Apagar todo lo compartido" también los apaga.
+- ⏳ Pendiente: "Descargar HTML" (§7.2.8), comparación con el corte anterior (§7.2.2), temas de las respuestas abiertas
+  por curso y medir el tiempo del corte en QA (§9).
 

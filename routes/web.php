@@ -96,11 +96,16 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
             Route::get('nuevo', [ProgressReportController::class, 'create'])->name('create');
             Route::post('/', [ProgressReportController::class, 'store'])->middleware('throttle:5,1')->name('store');
             Route::get('{report}', [ProgressReportController::class, 'show'])->name('show');
+            Route::get('{report}/editar', [ProgressReportController::class, 'edit'])->name('edit');
+            Route::put('{report}', [ProgressReportController::class, 'update'])->name('update');
             Route::get('{report}/personas', [ProgressReportController::class, 'people'])->name('people');
             Route::get('{report}/personas/descargar', [ProgressReportController::class, 'export'])->middleware('throttle:20,1')->name('export');
             Route::get('{report}/personas/{person}', [ProgressReportController::class, 'person'])->name('person');
             Route::post('{report}/encuestas', [ProgressReportController::class, 'storeSurvey'])->middleware('throttle:10,1')->name('surveys.store');
             Route::delete('{report}/encuestas/{survey}', [ProgressReportController::class, 'destroySurvey'])->name('surveys.destroy');
+            Route::get('{report}/compartir', [ProgressReportController::class, 'shares'])->name('shares');
+            Route::post('{report}/compartir', [ProgressReportController::class, 'storeShare'])->name('shares.store');
+            Route::delete('{report}/compartir/{share}', [ProgressReportController::class, 'destroyShare'])->name('shares.destroy');
             Route::delete('{report}', [ProgressReportController::class, 'destroy'])->name('destroy');
         });
 
@@ -135,6 +140,12 @@ Route::get('reportes/compartido/{token}', [CourseReportController::class, 'share
     ->where('token', '[A-Za-z0-9]{48}')
     ->middleware('throttle:30,1')
     ->name('reports.shared');
+
+// Seguimiento anual compartido sin sesión (§7.2.7): sin nombres, noindex; al desactivarlo, 404.
+Route::get('seguimiento/compartido/{token}', [ProgressReportController::class, 'shared'])
+    ->where('token', '[A-Za-z0-9]{48}')
+    ->middleware('throttle:60,1')
+    ->name('progress.shared');
 
 require __DIR__.'/auth.php';
 

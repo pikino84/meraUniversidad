@@ -9,6 +9,7 @@ use App\Models\ProgressReport;
 use App\Models\ProgressReportItem;
 use App\Models\User;
 use App\Services\Reports\FastSheetReader;
+use App\Support\TestEnvironment;
 use DateTime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -149,7 +150,16 @@ class ProgressReportTest extends TestCase
         $this->assertSame(62.5, $totals['pct_done']);
         $this->assertSame(85.0, $totals['avg_grade']); // 95, 85, 70 y 90 (Inducción no tiene evaluación)
 
-        $response->assertSee('Cómo va cada curso')->assertSee('Higiene 2026')->assertSee('Ranking de localidades')->assertDontSee('Higiene 2025');
+        // Resumen por defecto; cada pestaña muestra su sección.
+        $response->assertSee('Cursos con menor avance')->assertSee('Localidades con menor avance')->assertSee('Avance mes a mes');
+        $cursos = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => 'cursos']))
+            ->assertOk()->assertSee('Cómo va cada curso')->assertSee('Higiene 2026')->assertDontSee('Higiene 2025');
+        $this->assertSame('avance-asc', $cursos->viewData('sort'));
+        $this->assertSame(['CMP-XYZ-001-EL-26', 'Corresponsal Cambiario', 'Higiene 2026'], // sin curso en el catálogo: su código
+            $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => 'cursos', 'orden' => 'nombre']))->viewData('courses')->pluck('label')->take(3)->all());
+        foreach (['localidades' => 'Ranking de localidades', 'areas' => 'Puestos con menor avance', 'evaluacion' => 'Promedio por curso', 'opiniones' => 'Lo que opinan'] as $view => $text) {
+            $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => $view]))->assertOk()->assertSee($text);
+        }
 
         $monterrey = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'localidad' => 'Monterrey']))->viewData('totals');
         $this->assertSame([5, 2], [$monterrey['assigned'], $monterrey['people']]);
@@ -209,13 +219,15 @@ class ProgressReportTest extends TestCase
         $ana = $report->people()->firstWhere('employee_number', '1');
 
         // Las tarjetas de avance cuentan todo; cursos por persona y el ranking, solo los generales.
-        $default = $this->actingAs($this->admin)->get(route('progress.show', $report))->assertOk()
-            ->assertSee('solo cursos generales')->assertSee('Cursos específicos y presenciales')->assertSee('BL · presencial');
+        $default = $this->actingAs($this->admin)->get(route('progress.show', $report))->assertOk()->assertSee('solo cursos generales');
         $this->assertSame(8, $default->viewData('totals')['assigned']);
         $this->assertSame(6, $default->viewData('comparable')['assigned']);
-        $monterrey = $default->viewData('localities')->firstWhere('k', 'Monterrey');
+        $ranking = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => 'localidades']));
+        $monterrey = $ranking->viewData('localities')->firstWhere('k', 'Monterrey');
         $this->assertSame(3, $monterrey['assigned'] ?? null); // sin Corresponsal Cambiario
-        $specific = $default->viewData('specific');
+        $cursos = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => 'cursos']))
+            ->assertSee('Cursos específicos y presenciales')->assertSee('BL · presencial');
+        $specific = $cursos->viewData('specific');
         $this->assertSame(['NEG-OPE-007-EL-26-MX'], $specific->pluck('k')->all());
         $this->assertSame(['Cocina' => 1, 'Piso / Restaurantes' => 1], $specific[0]['areas']);
 
@@ -272,7 +284,7 @@ class ProgressReportTest extends TestCase
         $this->assertStringNotContainsString('Ana Pérez', $stored);
         $this->assertStringNotContainsString('Zoe', $stored);
 
-        $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'curso' => 'NRM-HIG-002-EL-26']))
+        $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => 'opiniones', 'curso' => 'NRM-HIG-002-EL-26']))
             ->assertOk()->assertSee('Lo que opinan')->assertSee('+25')->assertSee('respuestas por pregunta')->assertSee('Los ejemplos de cocina');
 
         // Otra encuesta del mismo curso la reemplaza; un título que no se reconoce pide elegir el curso.
@@ -336,6 +348,68 @@ class ProgressReportTest extends TestCase
         $version->update(['catalog_code' => 'NRM-HIG-001-EL-25']);
         $this->actingAs($this->admin)->get(route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']))
             ->assertSee('no cuenta para el seguimiento anual');
+    }
+
+    public function test_cut_url_uses_its_date_and_title_and_date_can_be_edited(): void
+    {
+        $report = $this->createCut('2026-10-12');
+        $this->assertSame('2026-10-12', $report->slug);
+        $this->assertStringEndsWith('/seguimiento/2026-10-12', route('progress.show', $report));
+        // El link anterior (número) lleva al de la fecha, con sus filtros.
+        $this->actingAs($this->admin)->get('/seguimiento/'.$report->id.'?vista=cursos')->assertStatus(301)->assertRedirect('/seguimiento/2026-10-12?vista=cursos');
+
+        $same = $this->createCut('2026-10-12');
+        $this->assertSame('2026-10-12-2', $same->slug);
+
+        $this->actingAs($this->admin)->put(route('progress.update', $report), ['title' => 'Capacitación 2026 · octubre', 'cut_date' => '2026-10-11'])
+            ->assertRedirect('/seguimiento/2026-10-11');
+        $this->assertSame(['Capacitación 2026 · octubre', '2026-10-11'], [$report->fresh()->title, $report->fresh()->slug]);
+
+        $this->actingAs($this->admin)->put(route('progress.update', $report->fresh()), ['title' => '', 'cut_date' => '2099-01-01'])
+            ->assertSessionHasErrors(['title', 'cut_date']);
+        $this->actingAs($this->admin)->get(route('progress.edit', $report->fresh()))->assertOk()->assertSee('/seguimiento/2026-10-11');
+    }
+
+    public function test_shared_links_show_one_locality_without_names_and_can_be_disabled(): void
+    {
+        $report = $this->createCut();
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Higiene 2026', [
+            ['1', 'Ana Pérez', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, 'Me gustó, atte. Ana Pérez'],
+        ])]);
+
+        auth()->logout();
+        $this->get(route('progress.shares', $report))->assertRedirect(route('login'));
+        $this->actingAs($this->admin)->post(route('progress.shares.store', $report), ['locality' => 'Monterrey'])->assertRedirect(route('progress.shares', $report));
+        $this->actingAs($this->admin)->post(route('progress.shares.store', $report), ['locality' => 'Monterrey']); // no duplica
+        $this->actingAs($this->admin)->post(route('progress.shares.store', $report), ['locality' => 'No existe'])->assertSessionHasErrors('locality');
+        $share = $report->shares()->sole();
+        $this->actingAs($this->admin)->get(route('progress.shares', $report))->assertOk()->assertSee($share->url());
+
+        auth()->logout();
+
+        // Sin sesión, fijo en Monterrey, sin nombres, sin colaboradores, sin pestaña de localidades, noindex.
+        $response = $this->get($share->url())->assertOk()->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
+            ->assertSee('Capacitación 2026 · Monterrey')->assertDontSee('Colaboradores')->assertDontSee('Localidades</a>', false)
+            ->assertDontSee('Ana Pérez')->assertDontSee('Localidades con menor avance');
+        $this->assertSame([5, 2], [$response->viewData('totals')['assigned'], $response->viewData('totals')['people']]);
+
+        // Aunque se pida otra localidad en la URL, se queda en la suya; las opiniones no muestran respuestas abiertas.
+        $this->assertSame(5, $this->get($share->url().'?localidad=Tijuana')->viewData('totals')['assigned']);
+        $this->get($share->url().'?vista=opiniones&curso=NRM-HIG-002-EL-26')->assertOk()->assertSee('respuestas por pregunta')
+            ->assertDontSee('atte. Ana')->assertDontSee('Agregar encuesta');
+        $this->get($share->url().'?vista=localidades')->assertOk()->assertDontSee('Ranking de localidades');
+
+        // Toda la empresa: sí compara localidades.
+        $company = $report->shares()->create(['locality' => null]);
+        $this->get($company->url().'?vista=localidades')->assertOk()->assertSee('Ranking de localidades')->assertDontSee('Ana Pérez');
+
+        // Desactivado: 404. "Apagar todo lo compartido" también los apaga.
+        $this->actingAs($this->admin)->delete(route('progress.shares.destroy', [$report, $share]));
+        auth()->logout();
+        $this->get($share->url())->assertNotFound();
+        $this->assertSame(1, TestEnvironment::sharedCounts()['reports']);
+        TestEnvironment::unshareAll();
+        $this->get($company->url())->assertNotFound();
     }
 
     public function test_the_fast_reader_reads_only_the_requested_columns(): void

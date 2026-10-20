@@ -210,6 +210,9 @@ return [
         'dashboard' => [
             'ranking_min_people' => 10,
             'failing_min_graded' => 20,
+            // "Requiere atención" (Resumen): cursos con al menos N asignados; puestos con al menos N personas.
+            'attention_min_assigned' => 20,
+            'position_min_people' => 20,
         ],
 
         // Personas por página en la consulta de colaboradores.

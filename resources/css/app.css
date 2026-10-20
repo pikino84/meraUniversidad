@@ -4923,3 +4923,265 @@ a.mera-version-card:focus-visible {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===================== SEGUIMIENTO: TABLERO REORGANIZADO (2026-10-20) =====================
+   Filtros compactos, 4 indicadores y una pestaña a la vez. */
+.mera-filterbar {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #dfe9e2;
+}
+
+.mera-filterbar-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.mera-filterbar-field {
+    display: flex;
+    flex: 1 1 160px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    margin: 0;
+    color: #5F6368;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mera-filterbar-field.is-year {
+    flex: 0 0 96px;
+}
+
+.mera-filterbar-field.is-wide {
+    flex: 2 1 240px;
+}
+
+.mera-filterbar-field .form-select {
+    min-height: 38px;
+    padding-block: 5px;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.mera-filterbar.is-auto .mera-filterbar-apply {
+    display: none;
+}
+
+.mera-filterbar-more {
+    margin-top: 8px;
+}
+
+.mera-filterbar-more > summary {
+    display: inline-block;
+    cursor: pointer;
+    color: #024D25;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mera-filterbar-more[open] > summary {
+    margin-bottom: 8px;
+}
+
+.mera-filterbar-toggle {
+    align-self: center;
+}
+
+.mera-filterbar-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #EEF2EF;
+}
+
+.mera-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.mera-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #dfe9e2;
+}
+
+.mera-kpi.is-main {
+    background: #024D25;
+    border-color: #024D25;
+}
+
+.mera-kpi-label {
+    color: #5F6368;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.mera-kpi-value {
+    color: #024D25;
+    font-size: 30px;
+    line-height: 1.15;
+}
+
+.mera-kpi-hint {
+    color: #5F6368;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.mera-kpi.is-main .mera-kpi-label,
+.mera-kpi.is-main .mera-kpi-value,
+.mera-kpi.is-main .mera-kpi-hint {
+    color: #fff;
+}
+
+.mera-track-help > summary {
+    display: inline-block;
+    cursor: pointer;
+    color: #024D25;
+    font-weight: 600;
+}
+
+.mera-track-help ul {
+    padding: 10px 14px 10px 30px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #dfe9e2;
+}
+
+/* Pestañas del seguimiento: en escritorio caben (sin barra); en pantallas angostas se desplazan solo
+   en horizontal. overflow-y: hidden evita la barra vertical que provocaba el margin-bottom: -1px de
+   cada pestaña (la línea activa que se encima en el borde). */
+.mera-section-tabs.is-scroll .mera-section-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+    .mera-section-tabs.is-scroll {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 1px;
+        scrollbar-width: none;
+    }
+
+    .mera-section-tabs.is-scroll::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.mera-track-bar.is-big {
+    height: 22px;
+    margin: 6px 0 12px;
+}
+
+.mera-track-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    font-size: 14px;
+}
+
+.mera-track-breakdown i {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    border-radius: 3px;
+    vertical-align: -1px;
+}
+
+.mera-track-breakdown small {
+    color: #5F6368;
+}
+
+.mera-sort {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.mera-sort-option {
+    padding: 3px 10px;
+    border-radius: 999px;
+    color: #024D25;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mera-sort-option.is-active {
+    background: #E3F0D0;
+}
+
+.mera-track-grades li {
+    grid-template-columns: minmax(0, 40%) minmax(0, 1fr) 96px;
+}
+
+.mera-track-warnings {
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: #FFF6DD;
+    color: #5C4300;
+    font-size: 14px;
+}
+
+@media (max-width: 991.98px) {
+    .mera-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .mera-filterbar-field {
+        flex: 1 1 calc(50% - 5px);
+    }
+
+    .mera-filterbar-field.is-wide {
+        flex: 1 1 100%;
+    }
+
+    .mera-kpi-value {
+        font-size: 24px;
+    }
+
+    .mera-section-tabs.is-scroll .mera-section-tab {
+        flex: 0 0 auto;
+    }
+}
+
+/* Links para compartir el seguimiento (§7.2.7) */
+.mera-share-new {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 520px;
+}
+
+.mera-share-new .form-select {
+    flex: 1 1 220px;
+}
+
+.mera-share-list {
+    display: grid;
+    gap: 10px;
+}
+
+.mera-share-who {
+    flex: 0 0 180px;
+}

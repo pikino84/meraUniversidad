@@ -247,6 +247,14 @@ class ProgressDashboard
             ->filter(fn ($r) => $r['people'] >= $min)->sortByDesc('pct_done')->values();
     }
 
+    /** Por puesto (solo generales por defecto, como las demás comparaciones), con al menos N personas. */
+    public function byPosition(): Collection
+    {
+        $min = (int) config('mera.progress.dashboard.position_min_people', 20);
+
+        return $this->groupBy($this->comparable(), 'pos')->filter(fn ($r) => $r['people'] >= $min)->values();
+    }
+
     public function byArea(): Collection
     {
         return $this->groupBy($this->comparable(['area']), 'area')->sortByDesc('pct_done')->values();

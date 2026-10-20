@@ -18,6 +18,38 @@ class ProgressReport extends Model
 
     protected $fillable = ['title', 'cut_date', 'summary', 'warnings', 'created_by', 'updated_by'];
 
+    protected static function booted(): void
+    {
+        // Link legible: la fecha de corte (/seguimiento/2026-10-12). Cambia si se edita la fecha.
+        static::saving(function (self $report) {
+            if ($report->slug === null || $report->isDirty('cut_date')) {
+                $report->slug = self::uniqueSlug($report->cut_date->format('Y-m-d'), $report->id);
+            }
+        });
+    }
+
+    public static function uniqueSlug(string $base, ?int $ignoreId = null): string
+    {
+        $slug = $base;
+        for ($i = 2; self::query()->where('slug', $slug)->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->exists(); $i++) {
+            $slug = "{$base}-{$i}";
+        }
+
+        return $slug;
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /** Acepta el link nuevo (fecha) y el anterior (número): /seguimiento/1 sigue funcionando. */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->where($field ?? 'slug', $value)->first()
+            ?? (ctype_digit((string) $value) ? $this->find((int) $value) : null);
+    }
+
     protected $casts = [
         'cut_date' => 'date',
         'summary' => 'array',
@@ -29,6 +61,7 @@ class ProgressReport extends Model
         return LogOptions::defaults()
             ->useLogName('seguimiento')
             ->logOnly(['title', 'cut_date'])
+            ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
 
@@ -45,6 +78,11 @@ class ProgressReport extends Model
     public function surveys(): HasMany
     {
         return $this->hasMany(ProgressReportSurvey::class);
+    }
+
+    public function shares(): HasMany
+    {
+        return $this->hasMany(ProgressReportShare::class);
     }
 
     public function creator(): BelongsTo

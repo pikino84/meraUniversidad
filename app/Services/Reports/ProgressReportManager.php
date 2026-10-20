@@ -181,7 +181,12 @@ class ProgressReportManager
         } finally {
             gc_collect_cycles(); // openspout en Windows: suelta el archivo antes de borrarlo
 
-            if (! File::deleteDirectory($dir) && is_dir($dir)) {
+            // En Windows el archivo puede seguir tomado unos milisegundos (antivirus, indexador): reintenta.
+            for ($try = 0; $try < 3 && is_dir($dir) && ! File::deleteDirectory($dir); $try++) {
+                usleep(150_000);
+            }
+
+            if (is_dir($dir)) {
                 Log::warning('No se pudo borrar la carpeta temporal del seguimiento (trae datos personales): bórrala a mano.', ['dir' => $dir]);
             }
         }

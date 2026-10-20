@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProgressReport;
 use App\Models\ProgressReportItem;
 use App\Models\ProgressReportPerson;
+use App\Models\ProgressReportShare;
 use App\Models\ProgressReportSurvey;
 use App\Services\Reports\ProgressCourseSummary;
 use App\Services\Reports\ProgressDashboard;
@@ -82,30 +83,159 @@ class ProgressReportController extends Controller
             ->with('success', 'Corte creado.'.($report->warnings ? ' Revisa los avisos.' : ''));
     }
 
-    public function show(Request $request, ProgressReport $report): View
+    /** Pestañas del tablero (?vista=): una a la vez, cada una calcula solo lo que muestra. */
+    public const VIEWS = [
+        'resumen' => 'Resumen',
+        'cursos' => 'Cursos',
+        'localidades' => 'Localidades',
+        'areas' => 'Áreas y puestos',
+        'evaluacion' => 'Evaluación',
+        'opiniones' => 'Opiniones',
+    ];
+
+    public function show(Request $request, ProgressReport $report): View|RedirectResponse
+    {
+        // Link anterior con número (/seguimiento/1): al link con la fecha, con los mismos filtros.
+        if ($request->route()->originalParameter('report') !== $report->slug) {
+            return redirect()->to(route('progress.show', $report).($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301);
+        }
+
+        return view('progress.show', $this->dashboardData($request, $report, null) + [
+            'shares' => $report->shares()->count(),
+        ]);
+    }
+
+    /**
+     * Link para compartir sin sesión (§7.2.7): mismo tablero, fijo en su localidad (si tiene), sin nombres,
+     * sin consulta de colaboradores ni respuestas abiertas, y sin comparar localidades. noindex.
+     */
+    public function shared(Request $request, string $token)
+    {
+        $share = ProgressReportShare::with('report')->where('token', $token)->firstOrFail();
+
+        if ($share->locality !== null) {
+            $request->query->set('localidad', $share->locality);
+        }
+
+        return response()
+            ->view('progress.show', $this->dashboardData($request, $share->report, $share))
+            ->header('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+
+    /** Datos del tablero para el panel ($share = null) o para un link compartido. */
+    private function dashboardData(Request $request, ProgressReport $report, ?ProgressReportShare $share): array
     {
         $dashboard = new ProgressDashboard($report, $request);
+        $views = self::VIEWS;
 
-        return view('progress.show', [
+        // Compartido por localidad: sin comparar localidades. Compartido en general: sí, pero sin nombres.
+        if ($share?->locality !== null) {
+            unset($views['localidades']);
+        }
+
+        $view = array_key_exists($request->query('vista'), $views) ? $request->query('vista') : 'resumen';
+        $sort = in_array($request->query('orden'), ['avance-asc', 'avance-desc', 'nombre'], true) ? $request->query('orden') : 'avance-asc';
+        $route = $share ? fn (array $query) => route('progress.shared', ['token' => $share->token] + $query) : fn (array $query) => route('progress.show', ['report' => $report] + $query);
+
+        $data = [
             'report' => $report,
             'd' => $dashboard,
+            'share' => $share,
+            'url' => $route,
             'filters' => $dashboard->filters,
             'options' => $dashboard->options(),
             'totals' => $dashboard->totals(),
             'comparable' => $dashboard->comparableTotals(),
-            'specific' => $dashboard->specificCourses(),
-            'courses' => $dashboard->byCourse(),
-            'localities' => $dashboard->byLocality(),
-            'areas' => $dashboard->byArea(),
-            'months' => $dashboard->byMonth(),
-            'bands' => $dashboard->gradeBands(),
-            'failing' => $dashboard->failingByLocality(),
-            // Encuestas (§6.1): la tabla compara cursos; con un curso elegido, su detalle.
-            'surveys' => $report->surveys()->orderBy('course_code')->get(),
-            'surveyCourses' => $this->manager->courseCandidates($report),
+            'view' => $view,
+            'views' => $views,
+            'sort' => $sort,
             // Con un curso elegido: sus versiones de carpeta (y desde ahí, sus cortes por curso).
-            'courseVersions' => $dashboard->filters['curso'] ? ProgressCourseSummary::versionsFor($dashboard->filters['curso']) : collect(),
+            'courseVersions' => ! $share && $dashboard->filters['curso'] ? ProgressCourseSummary::versionsFor($dashboard->filters['curso']) : collect(),
+        ];
+
+        $minAssigned = (int) config('mera.progress.dashboard.attention_min_assigned', 20);
+
+        return $data + match ($view) {
+            'resumen' => [
+                'courses' => $dashboard->byCourse(),
+                'attentionCourses' => $dashboard->byCourse()->filter(fn ($c) => $c['assigned'] >= $minAssigned)->sortBy('pct_done')->take(5)->values(),
+                'attentionLocalities' => $share?->locality !== null ? collect() : $dashboard->byLocality()->sortBy('pct_done')->take(5)->values(),
+                'months' => $dashboard->byMonth(),
+            ],
+            'cursos' => [
+                'courses' => $this->sortRows($dashboard->byCourse(), $sort),
+                'specific' => $dashboard->specificCourses(),
+            ],
+            'localidades' => [
+                'localities' => $dashboard->byLocality(),
+                'failing' => $dashboard->failingByLocality(),
+            ],
+            'areas' => [
+                'areas' => $dashboard->byArea(),
+                'positions' => $dashboard->byPosition()->sortBy('pct_done')->take(15)->values(),
+            ],
+            'evaluacion' => [
+                'bands' => $dashboard->gradeBands(),
+                'failing' => $share?->locality !== null ? collect() : $dashboard->failingByLocality(),
+                'courses' => $dashboard->byCourse()->filter(fn ($c) => $c['avg_grade'] !== null)->sortBy('avg_grade')->values(),
+            ],
+            'opiniones' => [
+                // Encuestas (§6.1): la tabla compara cursos; con un curso elegido, su detalle.
+                'surveys' => $report->surveys()->orderBy('course_code')->get(),
+                'surveyCourses' => $share ? [] : $this->manager->courseCandidates($report),
+            ],
+        };
+    }
+
+    /** Links para compartir del corte (§7.2.7). */
+    public function shares(ProgressReport $report): View
+    {
+        return view('progress.shares', [
+            'report' => $report,
+            'shares' => $report->shares()->orderByRaw('locality is not null')->orderBy('locality')->get(),
+            'localities' => DB::table('progress_report_people')->where('progress_report_id', $report->id)->distinct()->orderBy('locality')->pluck('locality'),
         ]);
+    }
+
+    public function storeShare(Request $request, ProgressReport $report): RedirectResponse
+    {
+        $localities = DB::table('progress_report_people')->where('progress_report_id', $report->id)->distinct()->pluck('locality')->all();
+        $data = $request->validate([
+            'locality' => ['nullable', 'string', function ($attribute, $value, $fail) use ($localities) {
+                if (filled($value) && ! in_array($value, $localities, true)) {
+                    $fail('Esa localidad no está en este corte.');
+                }
+            }],
+        ]);
+        $locality = filled($data['locality'] ?? null) ? $data['locality'] : null;
+
+        $share = $report->shares()->where('locality', $locality)->first()
+            ?? $report->shares()->create(['locality' => $locality, 'created_by' => $request->user()->id]);
+
+        activity('seguimiento')->causedBy($request->user())->performedOn($report)
+            ->withProperties(['localidad' => $share->label()])->log('Creó un link para compartir el seguimiento');
+
+        return redirect()->route('progress.shares', $report)->with('success', "Link de «{$share->label()}» listo: cópialo y compártelo.");
+    }
+
+    public function destroyShare(Request $request, ProgressReport $report, ProgressReportShare $share): RedirectResponse
+    {
+        abort_unless($share->progress_report_id === $report->id, 404);
+        $share->delete();
+
+        activity('seguimiento')->causedBy($request->user())->performedOn($report)
+            ->withProperties(['localidad' => $share->label()])->log('Desactivó un link del seguimiento');
+
+        return back()->with('success', "Link de «{$share->label()}» desactivado: ya no abre.");
+    }
+
+    private function sortRows($rows, string $sort)
+    {
+        return match ($sort) {
+            'avance-desc' => $rows->sortByDesc('pct_done')->values(),
+            'nombre' => $rows->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)->values(),
+            default => $rows->sortBy('pct_done')->values(),
+        };
     }
 
     /** Agrega (o reemplaza) la encuesta de satisfacción de un curso al corte. */
@@ -136,7 +266,7 @@ class ProgressReportController extends Controller
 
         $labels = (new ProgressDashboard($report, $request))->courseLabels();
 
-        return redirect()->route('progress.show', ['report' => $report, 'curso' => $survey->course_code])->withFragment('t-opinan')
+        return redirect()->route('progress.show', ['report' => $report, 'vista' => 'opiniones', 'curso' => $survey->course_code])
             ->with('success', 'Encuesta agregada a «'.($labels[$survey->course_code] ?? $survey->course_code).'»: '.number_format($survey->responses).' respuestas.'
                 .($request->filled('course_code') ? '' : ' El curso se reconoció por el título; si no es, elimínala y vuelve a subirla eligiendo el curso.'));
     }
@@ -228,6 +358,24 @@ class ProgressReportController extends Controller
             'history' => $history,
             'back' => url()->previous() !== url()->current() ? url()->previous() : route('progress.show', $report),
         ]);
+    }
+
+    /** Nombre y fecha de corte (las cifras no cambian: para recalcular, se crea otro corte). */
+    public function edit(ProgressReport $report): View
+    {
+        return view('progress.edit', ['report' => $report]);
+    }
+
+    public function update(Request $request, ProgressReport $report): RedirectResponse
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'cut_date' => ['required', 'date', 'before_or_equal:'.now(config('mera.display_timezone'))->toDateString()],
+        ], [], ['title' => 'nombre', 'cut_date' => 'fecha de corte']);
+
+        $report->update(['title' => trim($data['title']), 'cut_date' => $data['cut_date'], 'updated_by' => $request->user()->id]);
+
+        return redirect()->route('progress.show', $report)->with('success', 'Corte actualizado.');
     }
 
     public function destroy(ProgressReport $report): RedirectResponse

@@ -13,6 +13,7 @@ import { initSortableModules } from './modules/sortable-modules';
 import { initShowPasswords, initUnsavedWarning } from './modules/unsaved';
 import { initPanelTemplate } from './modules/panel-template';
 import { initReportForm } from './modules/report-form';
+import { initAutoSubmit } from './modules/auto-submit';
 
 window.Alpine = Alpine;
 window.swal = swal; // usado por vistas antiguas y por los módulos
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFiltersToggle();
     initPanelTemplate();
     initReportForm();
+    initAutoSubmit();
     initMobileMenu();
 });
 
