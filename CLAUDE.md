@@ -382,7 +382,12 @@ Lleva **migraciones aditivas** (`course_catalog`, su columna `scope`, las tablas
 > con ✅ aquí, con su commit.
 >
 > - [x] ✅ **1. Comparación estricta de ids → 404 en el servidor.** (antes ❌ bloqueaba producción)
->   - ✅ **Corregido el 2026-10-20** en el commit «Seguimiento: llaves como entero…» (rama `qa`; 199 pruebas en verde también en la consola del usuario). ⏳ Falta **volver a probarlo en QA** (pasos de abajo) antes de producción. Casts `integer` en las llaves de
+>   - ✅ **Verificado en QA (servidor) el 2026-10-20, 18:05, con `a35b3b1`:** 3 fichas individuales → 200 (con
+>     Imprimir); "Clasificar comentarios" (`/encuestas/1/temas`) → 200; link compartido de Veracruz: crear → abre
+>     sin sesión (200) → Desactivar → 404, sin links activos al final. También revisado en local (21 pantallas
+>     en 200, sin errores de JS). **No probado en el servidor:** eliminar una encuesta (habría que borrar la de
+>     Higiene y volverla a subir); lo cubre la prueba automática con ids como texto.
+>   - ✅ **Corregido el 2026-10-20** en el commit «Seguimiento: llaves como entero…» (rama `qa`; 199 pruebas en verde también en la consola del usuario). ✅ Vuelto a probar en QA (ver la línea "Verificado en QA" de arriba): **ya no bloquea producción**. Casts `integer` en las llaves de
 >     `ProgressReportPerson`, `ProgressReportShare`, `ProgressReportSurvey`, `ProgressReportItem`, `ProgressReport`,
 >     `CourseReport`, `Course.category_id` y `Category.parent_id` (los de carpetas, versiones y mercados ya los tenían).
 >     Prueba `test_routes_work_when_the_database_returns_ids_as_text` (sqlite con `PDO::ATTR_STRINGIFY_FETCHES`): da 404
