@@ -4,8 +4,8 @@
     <div class="card-body">
         <div class="mera-section-toolbar">
             <div>
-                <h2 id="reportes-version" class="h6 mb-1">Cortes de reporte</h2>
-                <small class="text-muted">Avance, evaluación y satisfacción a partir de los Excel de la plataforma de capacitación.</small>
+                <h2 id="reportes-version" class="h6 mb-1">Cortes del curso</h2>
+                <small class="text-muted">Reporte detallado de este curso (por localidad, área y puesto, con temas de los comentarios), a partir de sus 3 Excel. Se puede compartir o descargar.</small>
             </div>
             <a href="{{ route('course-groups.reports.create', [$group, 'version' => $version->id]) }}" class="btn mera-btn-primary btn-sm">
                 <i class="fas fa-plus" aria-hidden="true"></i> Nuevo corte

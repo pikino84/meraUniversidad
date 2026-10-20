@@ -103,6 +103,18 @@ completados (79.1 %), 572 sin iniciar, promedio 77.5 y 61.1 % con 80 o más. Con
   3. **No tocar el reporte por curso actual.** Cuando el seguimiento esté en producción, preguntar si el
      reporte por curso se sigue usando o si basta con el seguimiento + la encuesta. Esa es la decisión de
      "unificar", y se toma con el uso real.
+- **Decisión del usuario (2026-10-20): CONECTARLOS** (no unificar todavía, no dejarlos separados):
+  - La pestaña **Reportes** de cada versión de carpeta muestra arriba **"En el seguimiento anual"**: las cifras de
+    su curso en el **último corte** que lo trae (asignados, realizado, aprobado, sin iniciar y, si hay, la
+    encuesta), con link al tablero filtrado por ese curso. Debajo siguen los **"Cortes del curso"** (el reporte
+    detallado con sus 3 Excel, que se comparte y se descarga).
+  - El vínculo es el **código del catálogo de la versión** (`catalog_code`, en "Editar versión"). Sin código, la
+    tarjeta invita a agregarlo; si el curso no cuenta para el seguimiento o no está en ningún corte, lo dice.
+  - Al revés: el tablero del seguimiento filtrado por un curso enlaza a sus versiones de carpeta.
+  - Diferencia que hay que explicar a Capacitación: el corte por curso dice **"Completaron"** (= realizado); el
+    seguimiento separa **realizado** y **aprobado**.
+  - Unificar (dejar de subir los 3 Excel por curso) se decide con el uso real, cuando el seguimiento tenga link
+    para compartir y "Descargar HTML".
 - **Reuso obligatorio** (no duplicar):
   - lectura por streaming (`ReportWorkbookReader`);
   - las reglas de localidad y área, extraídas a una clase común (p. ej. `OrgMapper`), que usen ambos;
@@ -425,6 +437,8 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
     consulta de colaboradores por estado con búsqueda, paginada y **CSV** (queda en el historial); **ficha individual**
     imprimible con sus cursos y su avance en cortes anteriores.
   - Rendimiento del tablero: 1 consulta sin JOIN + cálculo en PHP (8.6 s → 1.5 s en local sin OPcache).
+- ✅ **Conexión con los reportes por curso (2026-10-20, sin commit):** `ProgressCourseSummary` (por `catalog_code`),
+  tarjeta "En el seguimiento anual" en la pestaña Reportes de la versión y links del tablero a las carpetas (§5).
 - ⏳ Pendiente: links por localidad sin nombres (§7.2.7), "Descargar HTML" (§7.2.8), comparación con el corte anterior
   (§7.2.2), temas de las respuestas abiertas por curso y medir el tiempo del corte en QA (§9).
 

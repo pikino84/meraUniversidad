@@ -19,6 +19,16 @@
     <a href="{{ route('progress.people', ['report' => $report] + $base) }}" class="btn btn-sm mera-btn-ghost"><i class="fas fa-users" aria-hidden="true"></i> Consulta de colaboradores</a>
 </x-folder-header>
 
+@if ($courseVersions->isNotEmpty())
+<p class="mera-track-scope-note small">
+    <i class="fas fa-folder-open" aria-hidden="true"></i> Este curso en las carpetas:
+    @foreach ($courseVersions as $v)
+    <a href="{{ route('course-groups.versions.show', [$v->group, $v, 'seccion' => 'reportes']) }}">{{ $v->group->name }} · {{ $v->label() }}</a>@if (! $loop->last), @endif
+    @endforeach
+    (ahí están sus cortes por curso).
+</p>
+@endif
+
 @if ($report->warnings)
 <details class="alert alert-warning mera-track-warnings">
     <summary><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{ count($report->warnings) }} {{ count($report->warnings) === 1 ? 'aviso' : 'avisos' }} de este corte</summary>

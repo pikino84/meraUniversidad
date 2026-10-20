@@ -123,7 +123,7 @@ class CourseReportTest extends TestCase
         $this->assertStringNotContainsString('"A"', json_encode($report->data));
 
         $this->get(route('course-groups.reports.show', [$this->group, $report]))->assertOk()->assertSee('Curso: Higiene');
-        $this->get(route('course-groups.versions.show', [$this->group, $this->version, 'seccion' => 'reportes']))->assertOk()->assertSee('13/10/2026')->assertSee('Cortes de reporte');
+        $this->get(route('course-groups.versions.show', [$this->group, $this->version, 'seccion' => 'reportes']))->assertOk()->assertSee('13/10/2026')->assertSee('Cortes del curso');
     }
 
     public function test_a_wrong_file_shows_a_clear_error_and_still_deletes_the_upload(): void

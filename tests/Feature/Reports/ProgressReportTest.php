@@ -3,6 +3,8 @@
 namespace Tests\Feature\Reports;
 
 use App\Models\CatalogCourse;
+use App\Models\CourseGroup;
+use App\Models\Market;
 use App\Models\ProgressReport;
 use App\Models\ProgressReportItem;
 use App\Models\User;
@@ -307,6 +309,33 @@ class ProgressReportTest extends TestCase
 
         // Favorable en TODAS las configuradas: A y D → 50 %.
         $this->assertEquals(50, $report->surveys()->sole()->indicator('satisfaction'));
+    }
+
+    public function test_course_versions_and_the_tracking_report_are_connected_by_catalog_code(): void
+    {
+        $report = $this->createCut();
+        $group = CourseGroup::create(['name' => 'Higiene']);
+        $market = Market::where('code', 'MX')->value('id');
+        $version = $group->versions()->create(['year' => 2026, 'market_id' => $market]);
+
+        // Sin código del catálogo: invita a agregarlo.
+        $this->actingAs($this->admin)->get(route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']))
+            ->assertOk()->assertSee('En el seguimiento anual')->assertSee('no tiene')->assertSee('código del catálogo');
+
+        // Con código: cifras del curso en el último corte y link al tablero filtrado.
+        $version->update(['catalog_code' => 'NRM-HIG-002-EL-26']);
+        $this->actingAs($this->admin)->get(route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']))
+            ->assertOk()->assertSee('Higiene 2026 · corte al 12/10/2026')->assertSee('33.3 %') // 1 aprobado de 3
+            ->assertSee(route('progress.show', ['report' => $report, 'curso' => 'NRM-HIG-002-EL-26', 'anio' => 2026]));
+
+        // Y al revés: el tablero filtrado por el curso enlaza a su carpeta.
+        $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'curso' => 'NRM-HIG-002-EL-26']))
+            ->assertSee('Este curso en las carpetas')->assertSee(route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']), false);
+
+        // Un curso que no cuenta para el seguimiento lo dice.
+        $version->update(['catalog_code' => 'NRM-HIG-001-EL-25']);
+        $this->actingAs($this->admin)->get(route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']))
+            ->assertSee('no cuenta para el seguimiento anual');
     }
 
     public function test_the_fast_reader_reads_only_the_requested_columns(): void

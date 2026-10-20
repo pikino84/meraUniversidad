@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CourseGroup;
 use App\Models\CourseGroupVersion;
 use App\Services\Courses\CourseGroupOrganizer;
+use App\Services\Reports\ProgressCourseSummary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,6 +77,8 @@ class CourseGroupVersionController extends Controller
                 ? $version->reports()->latest('cut_date')->latest('id')
                     ->get(['id', 'course_group_id', 'course_group_version_id', 'title', 'cut_date', 'summary', 'share_token', 'updated_at'])
                 : collect(),
+            // Su curso en el seguimiento anual (último corte), por el código del catálogo.
+            'tracking' => $section === 'reportes' ? ProgressCourseSummary::forVersion($version) : null,
         ]);
     }
 

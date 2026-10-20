@@ -6,6 +6,7 @@ use App\Models\ProgressReport;
 use App\Models\ProgressReportItem;
 use App\Models\ProgressReportPerson;
 use App\Models\ProgressReportSurvey;
+use App\Services\Reports\ProgressCourseSummary;
 use App\Services\Reports\ProgressDashboard;
 use App\Services\Reports\ProgressReportManager;
 use App\Services\Reports\ReportFormatException;
@@ -102,6 +103,8 @@ class ProgressReportController extends Controller
             // Encuestas (§6.1): la tabla compara cursos; con un curso elegido, su detalle.
             'surveys' => $report->surveys()->orderBy('course_code')->get(),
             'surveyCourses' => $this->manager->courseCandidates($report),
+            // Con un curso elegido: sus versiones de carpeta (y desde ahí, sus cortes por curso).
+            'courseVersions' => $dashboard->filters['curso'] ? ProgressCourseSummary::versionsFor($dashboard->filters['curso']) : collect(),
         ]);
     }
 

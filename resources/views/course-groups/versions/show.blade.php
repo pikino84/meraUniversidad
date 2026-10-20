@@ -142,6 +142,7 @@
 @endif
 
 @else
+@include('course-groups._tracking')
 @include('course-groups._reports')
 @endif
 @endsection
