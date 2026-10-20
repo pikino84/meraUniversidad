@@ -240,7 +240,7 @@ docs/wordpress/          Plantilla PHP del catálogo de meracorporation.com/curs
 - **`dev`**: **producción**. El servidor hace `git pull origin dev` en `~/cursos.meracorporation.com`. A `dev` solo llega lo que el usuario aprueba pasar desde `qa` (merge o fast-forward, **solo con autorización**, regla 1).
 - **`main`**: desactualizada; no se usa. No se pudo renombrar `dev` porque el usuario no es dueño del repo (`pikino84`).
 - Al terminar un cambio en `qa`: commit y push a `qa` (con autorización); para producción, pasar `qa` → `dev` (con autorización) y desplegar como indica esta sección.
-- **Entorno QA (desde el 2026-10-15):** `https://university.meracorporation.com` sirve la rama **`qa`** desde `~/qa.cursos.meracorporation.com` (`git worktree` del repo de producción; BD propia `merabl_cursos_qa`, copia de producción; `APP_ENV=staging`; `MAIL_MAILER=log`; sin archivos de cursos). Configuración, actualización rutinaria y reversa: **`docs/despliegue/QA_UNIVERSITY.md`**. **QA en `3b5fed8`** (2026-10-15; `noindex` verificado). ⚠ Nunca `git pull origin qa` en la carpeta de producción ni `git pull origin dev` en la de QA.
+- **Entorno QA (desde el 2026-10-15):** `https://university.meracorporation.com` sirve la rama **`qa`** desde `~/qa.cursos.meracorporation.com` (`git worktree` del repo de producción; BD propia `merabl_cursos_qa`, copia de producción; `APP_ENV=staging`; `MAIL_MAILER=log`; sin archivos de cursos). Configuración, actualización rutinaria y reversa: **`docs/despliegue/QA_UNIVERSITY.md`**. **QA en `d3f3a65`** (2026-10-20: versiones, seguimiento anual y URLs en español; 7 migraciones, `mera:versions-from-languages` con 11 versiones; build `d3f3a65` extraído y verificado, ⏳ falta el intercambio: QA aún sirve el build anterior). Pruebas en navegador: `docs/despliegue/PRUEBAS_QA_2026-10-20.md`. ⚠ Nunca `git pull origin qa` en la carpeta de producción ni `git pull origin dev` en la de QA.
 
 **Estado: ✅ producción en `da2b4d0`** (desplegado el 2026-10-15: reportes de curso; antes `be873ba`, `19dd31a`, `d33a001`, `856697e`, `858c681` y `97ce623`). Respaldos en el servidor: `~/backups_cursos/` (BD `bd_20261012_1743.sql`, `.env` previos, diff de cambios del servidor, commit anterior, inventario de cursos, crontab previo, build anterior, `.htaccess` previos y los 48 PHP de `public/pages/` en `pages_php_<fecha>/`).
 
@@ -376,6 +376,51 @@ Lleva **migraciones aditivas** (`course_catalog`, su columna `scope`, las tablas
 
 ## 6. Pendientes
 
+> ## 🔴 CORRECCIONES PENDIENTES — HACER ANTES DEL SIGUIENTE DESPLIEGUE (2026-10-20)
+> Salieron de las pruebas en QA del 2026-10-20 (detalle en §9, fila "Pruebas en QA con navegador").
+> **No desplegar a producción hasta cerrar la 1 y volver a probarla en QA.** Al terminar cada una, marcarla
+> con ✅ aquí, con su commit.
+>
+> - [x] ✅ **1. Comparación estricta de ids → 404 en el servidor.** (antes ❌ bloqueaba producción)
+>   - ✅ **Corregido el 2026-10-20** en el commit «Seguimiento: llaves como entero…» (rama `qa`; 199 pruebas en verde también en la consola del usuario). ⏳ Falta **volver a probarlo en QA** (pasos de abajo) antes de producción. Casts `integer` en las llaves de
+>     `ProgressReportPerson`, `ProgressReportShare`, `ProgressReportSurvey`, `ProgressReportItem`, `ProgressReport`,
+>     `CourseReport`, `Course.category_id` y `Category.parent_id` (los de carpetas, versiones y mercados ya los tenían).
+>     Prueba `test_routes_work_when_the_database_returns_ids_as_text` (sqlite con `PDO::ATTR_STRINGIFY_FETCHES`): da 404
+>     sin los casts y pasa con ellos. Además, toda la suite corrió con la BD devolviendo texto: 199 en verde, sin
+>     otras rutas afectadas. El tablero ya convertía a número lo que lee con `DB::table` (sus cifras no cambian).
+>   - **Dónde:** `app/Http/Controllers/ProgressReportController.php`, `abort_unless($x->progress_report_id === $report->id, 404)`
+>     (líneas ~276, 333, 359, 376 y 437).
+>   - **Por qué falla:** en MySQL del servidor `progress_report_id` llega como **texto** y `$report->id` como **entero**:
+>     `"5" === 5` es falso. En las pruebas (sqlite) ambos son enteros y no se detecta.
+>   - **Qué falla en QA:**
+>     - la **ficha individual** (`/seguimiento/<corte>/personas/<id>`);
+>     - **Clasificar comentarios** (`/encuestas/<id>/temas`) y guardar temas;
+>     - **eliminar una encuesta**;
+>     - **Desactivar un link compartido** (`DELETE /compartir/<id>` → 404 y el link **sigue activo**).
+>   - **Arreglo:**
+>     - usar `$report->is($x->report)` (o `(int)` en ambos lados), o cast `'progress_report_id' => 'integer'` en
+>       `ProgressReportPerson`, `ProgressReportShare` y `ProgressReportSurvey`;
+>     - **buscar el mismo patrón en todo `app/`** (`=== $…->id`, `!== $…->id`) y corregirlo igual;
+>     - **prueba** que simule el id como cadena (o que cubra las 4 rutas con el cast).
+>   - **Verificar en QA** después del `pull` y las cachés: abrir una ficha, "Clasificar comentarios", eliminar y
+>     volver a subir una encuesta, y crear → desactivar un link (debe dar 404 sin sesión).
+> - [ ] **2. ⚠ Equivalencias de códigos en el catálogo (hacer al desplegar en producción; también en QA).**
+>   - Los 5 códigos de 2026 se quedan así en la plataforma (decisión del usuario):
+>     `NEG-LID-001-BL-26`, `NEG-LID-003-BL-26`, `NEG-LID-006-BL-26`, `NEG-SRV-004-BL-26-MX`, `NEG-TEC-005-BL-26`.
+>   - En QA el catálogo se subió desde el panel **sin** alias. Por eso esos cursos salen con el código en vez del
+>     nombre y con el aviso "no están en el catálogo".
+>   - **Cargar** con `php artisan mera:catalog-import <xlsx> --aliases=docs/reportes/equivalencias_codigos.csv`.
+>   - **Revisar** si un corte ya creado toma los alias sin recalcular. Si no, agregar "Recalcular" o explicarlo en
+>     la guía de despliegue.
+> - [ ] **3. Ranking por porcentaje (esperando el valor de Capacitación).** "Del lugar 13 en adelante: aún sin
+>   cumplimiento" debe depender de un **% de avance**, no del lugar.
+>   - Cambiarlo en `config('mera.reports.dashboard')` (reporte por curso) y en el seguimiento, con su leyenda.
+>   - Se hace cuando Capacitación diga el %; no bloquea el despliegue.
+> - [ ] **4. Alcance General/Específico (esperando el catálogo de Capacitación).** Higiene AyB 2026 y Manipulación de
+>   Alimentos salen "Específico" por el respaldo con `Nivel` ("Cocina"), aunque llegan al 99 % del personal. Se
+>   corrige solo al subir el catálogo con la columna `Alcance`. No es código; no bloquea.
+
+
 **Nuevos alcances (pedidos el 2026-10-15; por implementar en `qa`, cada uno con su instructivo):**
 - **Carpetas por año y versión por país** (México · Latam · EUA, extensible; reemplaza la división Español/Inglés): `docs/carpetas/INSTRUCTIVO_VERSIONES.md`.
 - **Seguimiento de capacitación por año + reporte individual por persona** (referencia de Capacitación: `storage/app/reportes/referencia/seguimiento_2026_referencia.html`, no versionada porque trae nombres) desde el Excel "Reporte de progreso de capacitaciones" (todos los cursos), con catálogo de cursos y equivalencias de códigos: `docs/reportes/INSTRUCTIVO_REPORTE_PERSONAS.md` (Fase B opcional: reporte por curso con 1 Excel en vez de 3). Catálogo de referencia en `storage/app/reportes/referencia/Catalogo_MERA_v12.xlsx` (no versionado).
@@ -393,6 +438,12 @@ Lleva **migraciones aditivas** (`course_catalog`, su columna `scope`, las tablas
 - Verificado en navegador con servidor lento simulado: triple clic → **1 sola solicitud**; "Enviar link" muestra el loader; las búsquedas no.
 
 ### Para el correo que se va a redactar (pendiente)
+- **Respuestas del usuario (2026-10-20), al revisar el correo:**
+  - **Ranking "Del lugar 13 en adelante: aún sin cumplimiento" → debe ser porcentual**, no por lugar. Falta el % (se pregunta a Capacitación en el correo). Al tenerlo: cambiar `ranking_low_from` por un umbral de % en `config('mera.reports.dashboard')` y en el seguimiento, y actualizar la leyenda.
+  - **Los 5 códigos de 2026 NO se corrigen en la plataforma:** se quedan como están; la app los resuelve con los códigos alternos del catálogo (`aliases`). No pedirlo a Capacitación.
+  - **Sufijos de código para Latam/EUA:** no se piden. La app no los necesita: cada versión guarda su código en "Editar versión"; Capacitación puede usarlos si quiere.
+  - **Conexión directa (API) con la plataforma de capacitación:** sí se pide en el correo, para automatizar los reportes.
+  - Pendientes que quedan en el correo: catálogo con `Alcance`, % del ranking y la API.
 - **Reportes de curso (en producción desde el 2026-10-15; `docs/reportes/INSTRUCTIVO_REPORTES.md`):** preguntar también qué significa **"Del lugar 13 en adelante: aún sin cumplimiento"** en el ranking (viene fijo de la plantilla; hoy es `config('mera.reports.dashboard.ranking_low_from')`): ¿es una meta fija o debería depender de un % de avance? Además: al terminar, explicar el flujo (subir los 3 Excel por corte, actualizar un corte, link para compartir) y **preguntar por la conexión por API** con la plataforma de capacitación (MERA World/SuperCompany): si existe, con qué credenciales y quién la autoriza. Con API ya no habría que exportar ni subir los Excel en cada corte; mientras tanto se trabaja con los archivos.
 - **Categorías:** avisar que **se ocultaron** del panel y del catálogo `/cursos` (2026-10-14) y que los 5 módulos que tenían una quedaron **sin categoría**, libres para acomodarse solo en carpetas. Preguntar: **¿quieren esta funcionalidad?** Y si sí, **¿cómo funcionaría?** (p. ej. temas como Seguridad, Higiene o Liderazgo para agrupar **carpetas de curso**, tomados del código de MERA World: `NRM-HIG-…` → tipo Normativo, área Higiene). Se reactivan sin tocar código con `MERA_CATEGORIES_ENABLED=true` + `config:cache` (las 3 categorías siguen guardadas y el respaldo JSON permite devolver las asignaciones).
 
@@ -551,6 +602,9 @@ Fuente: https://meracorporation.com/media-kit/ y https://meracorporation.com/
 | 2026-10-20 | `9dafa88` subido a `qa` (tablero por pestañas, URL con fecha, links para compartir; autorizado). Corregida la barra vertical de las pestañas del tablero (solo desplazamiento horizontal en pantallas angostas). En `qa`, sin commit: **"Descargar HTML" del seguimiento** (§7.2.8): un archivo con los filtros actuales que abre sin servidor, con pestañas incrustadas, solo agregados (sin nombres, sin respuestas abiertas); 103 KB con el corte real. 196 pruebas en verde; revisado abriendo el archivo desde el disco (usuario temporal borrado). |
 | 2026-10-20 | `c24f9dd` subido a `qa` (Descargar HTML; autorizado). En `qa`, sin commit: **comparación con otro corte** en el seguimiento (§7.2.2): cambio en puntos en los indicadores, cursos y ranking de localidades contra el corte anterior (o el elegido, o ninguno), con los mismos filtros; también en links compartidos y descarga. 197 pruebas en verde; QA visual con un corte temporal (mismos Excel, fecha 15/09, dump previo) que se borró al terminar. |
 | 2026-10-20 | `a670279` subido a `qa` (comparación con otro corte; autorizado). En `qa`, sin commit: **temas de las respuestas abiertas de las encuestas** (catálogo del curso o base, propuesta por palabras clave, pantalla "Clasificar comentarios", barras en "Opiniones"; totales en compartido y descarga). Corregido: la pregunta "lo que más te gustó" se detectaba mal en Despega (tomaba "lo que más influyó"). Las pruebas ya no leen la configuración ni el archivo privado de Higiene. Encuestas del corte local recargadas para tener temas (dump previo). 198 pruebas en verde; QA visual (usuario temporal borrado). |
+| 2026-10-20 | `d3f3a65` subido a `qa` (temas de las encuestas; autorizado). **QA actualizado** (`3b5fed8` → `d3f3a65`): respaldos (`commit_anterior_qa_`, `bd_qa_20261020_1300.sql` de 1.3 MB, diff del escáner en `tests/` y `checkout`), `pull` fast-forward (144 archivos), `optimize:clear`, 7 migraciones aditivas, `mera:versions-from-languages --map=manipulacion-de-alimentos:LATAM` (revisado con `--dry-run`; 11 versiones; JSON `versiones_antes_20261020_170359.json`) y build `d3f3a65` (el ZIP no estaba en `public/` al primer intento: el procedimiento se detuvo sin tocar el build; se volvió a subir y el manifest extraído coincide; ✅ intercambio hecho el 2026-10-20 a las 15:35: build anterior en `~/backups_cursos/build_qa_<TS>`, `chmod`, cachés `config`/`route`/`view`; `build/manifest.json` sirve `app-DOUg8CUY.css` y no quedan archivos escribibles por todos). Verificado por `curl`: `/login` → 301 `/iniciar-sesion` con `noindex`. Dato para Capacitación: "Introducción a la Higiene 2026" solo tiene módulos en inglés (queda como versión EUA). Guion de pruebas en navegador: `docs/despliegue/PRUEBAS_QA_2026-10-20.md`. |
+| 2026-10-20 | Pruebas en QA (§6, "Correcciones pendientes"). **Corrección 1** en `qa` (commit y push autorizados): en el MySQL del servidor las llaves foráneas llegan como texto y `=== $report->id` daba 404 (ficha individual, clasificar comentarios, borrar encuesta, desactivar link). Casts `integer` en los modelos del seguimiento, `CourseReport`, `Course.category_id` y `Category.parent_id`; prueba que simula la BD con `PDO::ATTR_STRINGIFY_FETCHES` (falla sin los casts) y suite completa con texto: sin otras rutas afectadas. 199 pruebas en verde. |
+| 2026-10-20 | **Pruebas en QA con navegador** (guion `docs/despliegue/PRUEBAS_QA_2026-10-20.md`; Claude con la sesión del usuario; las subidas las hizo el usuario). ✅ URLs en español y 301 de las viejas; cintillo de pruebas; estilos del build `d3f3a65`. ✅ Carpetas: 11 en su año/versión (Seguridad 2026 México+EUA, Seguridad 2025 en 2025, Manipulación en Latam), página de versión con pestañas, `/versiones` (México 8, Latam 1, EUA 2), programa con 5 módulos, `/en/fundamentos-seguridad` → EUA, `/en/manipulacion-de-alimentos` 404 (sin EUA, correcto); **la confirmación de quitar/eliminar ya abre** (se canceló). ✅ Catálogo: 72 cursos (subido desde el panel). ✅ Corte 12/10: **cifras exactas** (3,300 personas, 58,405 asignaciones, 69.9 % realizado, 56.5 % aprobado, 86.7); 6 pestañas 200; CSV de reprobados 7,850 filas; Higiene 76.1 % de satisfacción; links compartidos (empresa y Veracruz) sin sesión, `noindex`, 0 de 399 nombres revisados, el de localidad no deja cambiar de localidad; "Descargar HTML" 104 KB, 6 pestañas, sin nombres; tarjeta "En el seguimiento anual" en la versión de Higiene; móvil sin desborde; "Apagar todo" → links 404. **Tiempo del corte en el servidor: ~1 minuto** (dato del usuario), sin 504 ni corte de LiteSpeed: se queda en la misma petición, sin cola. Está en el límite de ~60 s de §9 del instructivo: si los Excel crecen (más personas o cursos) y aparece un 504, pasar el armado a la cola. ❌ **BUG (bloquea producción): comparación estricta de ids** en `ProgressReportController` (líneas ~276, 333, 359, 376, 437: `$x->progress_report_id === $report->id`). En MySQL del servidor `progress_report_id` llega como texto y `$report->id` como entero → **404** en: **ficha individual** (`/seguimiento/<corte>/personas/<id>`), **Clasificar comentarios** (`/encuestas/<id>/temas`), guardar temas, eliminar encuesta y **Desactivar link compartido** (`DELETE /compartir/<id>` → 404, el link sigue activo). Con sqlite (pruebas) ambos son enteros y no se detecta. Arreglo sugerido: `$report->is($x->report)` o cast `'progress_report_id' => 'integer'` en `ProgressReportPerson`/`Share`/`Survey` (y revisar el mismo patrón en todo `app/`), más una prueba que simule el id como cadena. ⚠ Avisos: los 5 códigos de 2026 de la plataforma (`NEG-LID-001/003/006-BL-26`, `NEG-SRV-004-BL-26-MX`, `NEG-TEC-005-BL-26`) salen como "no están en el catálogo" y con su código en vez del nombre: el catálogo se subió desde el panel **sin** `equivalencias_codigos.csv`. Como el usuario decidió no corregirlos en la plataforma, en producción hay que cargar los alias (`mera:catalog-import <xlsx> --aliases=docs/reportes/equivalencias_codigos.csv`) y revisar si el corte debe recalcularse. ⚠ **Higiene AyB 2026 y Manipulación de Alimentos salen "Específico"** (respaldo con `Nivel` = Cocina), aunque llegan al 99 % del personal: quedan fuera de las comparaciones "generales" hasta que Capacitación envíe el catálogo con `Alcance`. Encuesta de Huracán no se subió (solo Higiene). Cortes y datos de prueba: se conserva el corte 12/10 en QA; links compartidos apagados. |
 
 ## 10. Carpetas de cursos: ALCANCE APROBADO (2026-10-13)
 

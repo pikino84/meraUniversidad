@@ -19,6 +19,10 @@ class CourseReport extends Model
     protected $fillable = ['title', 'cut_date', 'survey'];
 
     protected $casts = [
+        'course_group_id' => 'integer',
+        'course_group_version_id' => 'integer',
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
         'cut_date' => 'date',
         'data' => 'array',
         'summary' => 'array',

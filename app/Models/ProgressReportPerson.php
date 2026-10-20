@@ -15,6 +15,11 @@ class ProgressReportPerson extends Model
 
     protected $guarded = ['id'];
 
+    // Llaves como entero: en el MySQL del servidor pueden llegar como texto y `=== $report->id` fallaría.
+    protected $casts = [
+        'progress_report_id' => 'integer',
+    ];
+
     public function report(): BelongsTo
     {
         return $this->belongsTo(ProgressReport::class, 'progress_report_id');

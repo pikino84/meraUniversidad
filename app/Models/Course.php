@@ -34,6 +34,7 @@ class Course extends Model
     ];
 
     protected $casts = [
+        'category_id' => 'integer',
         'course_group_id' => 'integer',
         'course_group_version_id' => 'integer',
         'position' => 'integer',

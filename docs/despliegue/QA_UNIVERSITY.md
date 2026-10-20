@@ -4,7 +4,7 @@
 > backup antes de tocar datos (regla 2), build solo en local (regla 7), nada de commit/push sin permiso
 > (regla 1). Antes de seguir esta guía, leer las **lecciones de §5** (sobre todo 1, 2, 5 y 7).
 
-Creado: 2026-10-15. Estado: **por configurar.**
+Creado: 2026-10-15. Estado: **configurado**; en `d3f3a65` desde el 2026-10-20 (pruebas: `PRUEBAS_QA_2026-10-20.md`).
 
 ## Qué se arma
 

@@ -10,7 +10,11 @@ class ProgressReportSurvey extends Model
 {
     protected $guarded = ['id'];
 
+    // Llaves como entero: en el MySQL del servidor pueden llegar como texto y `=== $report->id` fallaría.
     protected $casts = [
+        'progress_report_id' => 'integer',
+        'catalog_course_id' => 'integer',
+        'created_by' => 'integer',
         'data' => 'array',
         'warnings' => 'array',
         'responses' => 'integer',

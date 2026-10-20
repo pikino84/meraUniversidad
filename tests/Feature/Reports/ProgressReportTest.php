@@ -533,4 +533,40 @@ class ProgressReportTest extends TestCase
         $this->assertSame([['n' => 'Ñandú "uno"', 'f' => '46037', 'num' => '12.5'], ['n' => 'Dos', 'f' => null, 'num' => '3']], $rows);
         $this->assertSame(27, FastSheetReader::columnIndex('AB12'));
     }
+
+    /**
+     * En el MySQL del servidor las llaves llegan como texto ("5") y el id del corte como entero: con
+     * `===` la ficha, clasificar, borrar encuesta y desactivar un link daban 404 (QA, 2026-10-20).
+     */
+    public function test_routes_work_when_the_database_returns_ids_as_text(): void
+    {
+        $report = $this->createCut();
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Higiene 2026', [
+            ['1', 'Ana', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, 'Los videos y los ejemplos'],
+            ['2', 'Beto', 'active', 'De acuerdo', 'No', 'Sí', 9, 'Todo'],
+        ])]);
+        $share = $report->shares()->create(['locality' => null]);
+        $pdo = DB::connection()->getPdo();
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
+
+        try {
+            $this->assertSame('string', gettype(DB::table('progress_report_shares')->value('progress_report_id')));
+            $survey = $report->surveys()->sole();
+            $ana = $report->people()->firstWhere('employee_number', '1');
+
+            $this->actingAs($this->admin)->get(route('progress.person', [$report, $ana]))->assertOk()->assertSee('Ana Pérez López');
+            $this->actingAs($this->admin)->get(route('progress.surveys.topics', [$report, $survey]))->assertOk();
+            $this->actingAs($this->admin)->patch(route('progress.surveys.classify', [$report, $survey]), ['shown' => [0], 'topics' => [0 => ['v02']]])
+                ->assertSessionHas('success');
+            $this->actingAs($this->admin)->delete(route('progress.shares.destroy', [$report, $share]))->assertRedirect();
+            $this->actingAs($this->admin)->delete(route('progress.surveys.destroy', [$report, $survey]))->assertRedirect();
+        } finally {
+            $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+        }
+
+        $this->assertModelMissing($share);
+        $this->assertModelMissing($survey);
+        auth()->logout();
+        $this->get($share->url())->assertNotFound();
+    }
 }

@@ -14,6 +14,12 @@ class ProgressReportShare extends Model
 {
     protected $fillable = ['progress_report_id', 'locality', 'token', 'created_by'];
 
+    // Llaves como entero: en el MySQL del servidor pueden llegar como texto y `=== $report->id` fallaría.
+    protected $casts = [
+        'progress_report_id' => 'integer',
+        'created_by' => 'integer',
+    ];
+
     protected static function booted(): void
     {
         static::creating(fn (self $share) => $share->token ??= Str::random(48));

@@ -51,6 +51,8 @@ class ProgressReport extends Model
     }
 
     protected $casts = [
+        'created_by' => 'integer',
+        'updated_by' => 'integer',
         'cut_date' => 'date',
         'summary' => 'array',
         'warnings' => 'array',

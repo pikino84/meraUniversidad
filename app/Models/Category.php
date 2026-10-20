@@ -28,6 +28,10 @@ class Category extends Model
 
     private static ?array $pathMemo = null;
 
+    protected $casts = [
+        'parent_id' => 'integer',
+    ];
+
     protected $fillable = [
         'name',
         'slug',

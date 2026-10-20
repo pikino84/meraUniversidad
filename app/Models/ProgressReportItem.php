@@ -43,6 +43,9 @@ class ProgressReportItem extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
+        'progress_report_id' => 'integer',
+        'progress_report_person_id' => 'integer',
+        'catalog_course_id' => 'integer',
         'year' => 'integer',
         'progress' => 'float',
         'grade' => 'float',
