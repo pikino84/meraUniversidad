@@ -34,6 +34,7 @@
     :subtitle="'Corte al '.$report->cut_date->translatedFormat('j \d\e F \d\e Y').' · '.number_format($t['people']).' personas · '.count($options['courses']).' cursos que cuentan'">
     <a href="{{ route('progress.people', ['report' => $report] + $base) }}" class="btn btn-sm mera-btn-ghost"><i class="fas fa-users" aria-hidden="true"></i> Colaboradores</a>
     <a href="{{ route('progress.shares', $report) }}" class="btn btn-sm mera-btn-ghost"><i class="fas fa-link" aria-hidden="true"></i> Compartir{{ $shares ? ' ('.$shares.')' : '' }}</a>
+    <a href="{{ route('progress.download', ['report' => $report] + $base) }}" class="btn btn-sm mera-btn-ghost" data-no-loader title="Un archivo que abre sin internet, con los filtros actuales y sin nombres"><i class="fas fa-download" aria-hidden="true"></i> Descargar</a>
     <a href="{{ route('progress.edit', $report) }}" class="btn btn-sm mera-btn-ghost"><i class="fas fa-pencil-alt" aria-hidden="true"></i> Editar</a>
 </x-folder-header>
 @endif

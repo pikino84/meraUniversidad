@@ -14,9 +14,11 @@ use App\Services\Reports\ReportFormatException;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -185,6 +187,46 @@ class ProgressReportController extends Controller
                 'surveyCourses' => $share ? [] : $this->manager->courseCandidates($report),
             ],
         };
+    }
+
+    /**
+     * "Descargar HTML" (§7.2.8): todo el tablero con los filtros actuales en un solo archivo que abre sin
+     * servidor. Solo agregados: sin nombres, sin consulta de colaboradores ni respuestas abiertas.
+     */
+    public function download(Request $request, ProgressReport $report): Response
+    {
+        $dashboard = new ProgressDashboard($report, $request);
+        $byLocality = $dashboard->filters['localidad'] === null;
+
+        $html = view('progress.standalone', [
+            'report' => $report,
+            'd' => $dashboard,
+            'filters' => $dashboard->filters,
+            'options' => $dashboard->options(),
+            'totals' => $dashboard->totals(),
+            'comparable' => $dashboard->comparableTotals(),
+            'courses' => $dashboard->byCourse()->sortBy('pct_done')->values(),
+            'specific' => $dashboard->specificCourses(),
+            'localities' => $byLocality ? $dashboard->byLocality() : collect(),
+            'failing' => $byLocality ? $dashboard->failingByLocality() : collect(),
+            'areas' => $dashboard->byArea(),
+            'positions' => $dashboard->byPosition()->sortBy('pct_done')->take(15)->values(),
+            'months' => $dashboard->byMonth(),
+            'bands' => $dashboard->gradeBands(),
+            'surveys' => $report->surveys()->orderBy('course_code')->get(),
+            'labels' => $dashboard->courseLabels(),
+        ])->render();
+
+        activity('seguimiento')->causedBy($request->user())->performedOn($report)
+            ->withProperties(['filtros' => array_filter($dashboard->filters)])->log('Descargó el tablero del seguimiento (HTML)');
+
+        $name = 'seguimiento-'.$report->slug.($dashboard->filters['localidad'] ? '-'.Str::slug($dashboard->filters['localidad']) : '');
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$name}.html\"",
+            'X-Robots-Tag' => 'noindex, nofollow',
+        ]);
     }
 
     /** Links para compartir del corte (§7.2.7). */

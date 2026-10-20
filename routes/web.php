@@ -103,6 +103,7 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
             Route::get('{report}/personas/{person}', [ProgressReportController::class, 'person'])->name('person');
             Route::post('{report}/encuestas', [ProgressReportController::class, 'storeSurvey'])->middleware('throttle:10,1')->name('surveys.store');
             Route::delete('{report}/encuestas/{survey}', [ProgressReportController::class, 'destroySurvey'])->name('surveys.destroy');
+            Route::get('{report}/descargar', [ProgressReportController::class, 'download'])->middleware('throttle:20,1')->name('download');
             Route::get('{report}/compartir', [ProgressReportController::class, 'shares'])->name('shares');
             Route::post('{report}/compartir', [ProgressReportController::class, 'storeShare'])->name('shares.store');
             Route::delete('{report}/compartir/{share}', [ProgressReportController::class, 'destroyShare'])->name('shares.destroy');

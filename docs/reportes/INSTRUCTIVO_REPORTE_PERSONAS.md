@@ -452,6 +452,10 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
   (`noindex`), sin nombres, sin consulta de colaboradores ni respuestas abiertas; las respuestas cerradas con menos de 3
   menciones se agrupan en "Otras respuestas"; el de una localidad queda fijo en ella (aunque se pida otra en la URL) y no
   muestra comparaciones entre localidades. Queda en el historial y "Apagar todo lo compartido" también los apaga.
-- ⏳ Pendiente: "Descargar HTML" (§7.2.8), comparación con el corte anterior (§7.2.2), temas de las respuestas abiertas
-  por curso y medir el tiempo del corte en QA (§9).
+- ✅ **§7.2.8 Descargar HTML (2026-10-20, sin commit):** botón "Descargar" del tablero (`/seguimiento/<fecha>/descargar`):
+  un solo archivo con los filtros actuales, estilos y pestañas incrustados (abre sin servidor; al imprimir se ven todas
+  las secciones). Solo agregados: sin nombres, sin consulta de colaboradores, sin respuestas abiertas ni links al panel.
+  Con el corte real pesa **103 KB** (el prototipo, 4.3 MB). Queda en el historial.
+- ⏳ Pendiente: comparación con el corte anterior (§7.2.2), temas de las respuestas abiertas por curso y medir el tiempo
+  del corte en QA (§9).
 

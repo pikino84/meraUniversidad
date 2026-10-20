@@ -412,6 +412,38 @@ class ProgressReportTest extends TestCase
         $this->get($company->url())->assertNotFound();
     }
 
+    public function test_the_dashboard_downloads_as_a_single_html_without_names(): void
+    {
+        config(['mera.progress.dashboard.ranking_min_people' => 1]);
+        $report = $this->createCut();
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Higiene 2026', [
+            ['1', 'Ana Pérez', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, 'Me gustó, atte. Ana Pérez'],
+        ])]);
+
+        $html = $this->actingAs($this->admin)->get(route('progress.download', $report))->assertOk()
+            ->assertHeader('Content-Disposition', 'attachment; filename="seguimiento-2026-10-12.html"')
+            ->getContent();
+
+        $this->assertStringContainsString('<style>', $html);
+        $this->assertStringNotContainsString('<link rel="stylesheet" href="http', str_replace('fonts.googleapis', '', $html));
+        foreach (['Realizado', '62.5 %', 'Cómo va cada curso', 'Ranking de localidades', 'Avance por área', 'Calificaciones', 'Lo que opinan', 'Higiene 2026'] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+        foreach (['Ana Pérez', 'Beto', 'atte.', 'No. empleado', '/seguimiento/'] as $text) {
+            $this->assertStringNotContainsString($text, $html); // sin nombres, sin respuestas abiertas, sin links al panel
+        }
+        $this->assertSame(1, Activity::where('description', 'like', 'Descargó el tablero%')->count());
+
+        // Con una localidad: su nombre en el archivo y sin comparar localidades.
+        $one = $this->actingAs($this->admin)->get(route('progress.download', ['report' => $report, 'localidad' => 'Monterrey']))
+            ->assertHeader('Content-Disposition', 'attachment; filename="seguimiento-2026-10-12-monterrey.html"')->getContent();
+        $this->assertStringContainsString('Capacitación 2026 · Monterrey', $one);
+        $this->assertStringNotContainsString('Ranking de localidades', $one);
+
+        auth()->logout();
+        $this->get(route('progress.download', $report))->assertRedirect(route('login'));
+    }
+
     public function test_the_fast_reader_reads_only_the_requested_columns(): void
     {
         $path = $this->makeXlsx([
