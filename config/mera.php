@@ -205,6 +205,16 @@ return [
             'NEG-CUL-004-EL-26' => ['has_evaluation' => false],   // Inducción a la Empresa
         ],
 
+        // Tablero: ranking con localidades de al menos N personas; "dónde reprueban más" con al menos
+        // N evaluaciones.
+        'dashboard' => [
+            'ranking_min_people' => 10,
+            'failing_min_graded' => 20,
+        ],
+
+        // Personas por página en la consulta de colaboradores.
+        'people_per_page' => 25,
+
         // Excel del catálogo: tamaño máximo (KB) y filas donde se buscan los encabezados.
         'catalog_max_upload_kb' => 5120,
         'catalog_header_scan' => 10,

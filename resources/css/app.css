@@ -4607,3 +4607,241 @@ a.mera-version-card:focus-visible {
         grid-column: 1 / -1;
     }
 }
+
+/* ===================== SEGUIMIENTO ANUAL (INSTRUCTIVO_REPORTE_PERSONAS.md) ===================== */
+.mera-track-filters {
+    display: grid;
+    grid-template-columns: 110px minmax(200px, 2fr) repeat(4, minmax(130px, 1fr)) auto;
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #dfe9e2;
+}
+
+.mera-track-filters .form-label {
+    margin-bottom: 4px;
+    color: #5F6368;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mera-track-filters .form-select {
+    min-height: 40px;
+    padding-block: 6px;
+    font-size: 14px;
+}
+
+.mera-track-filter-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.mera-track-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.mera-track-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #dfe9e2;
+}
+
+.mera-track-card span {
+    color: #5F6368;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.mera-track-card b {
+    color: #024D25;
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+.mera-track-card small {
+    color: #5F6368;
+    font-size: 12px;
+}
+
+.mera-track-card.is-main {
+    border-left: 4px solid #024D25;
+}
+
+.mera-track-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.mera-track-grid .card {
+    margin-bottom: 0;
+}
+
+.mera-track-title {
+    color: #024D25;
+    font-weight: 700;
+}
+
+.mera-track-bars,
+.mera-track-months {
+    display: grid;
+    gap: 8px;
+}
+
+.mera-track-bar-row,
+.mera-track-months li {
+    display: grid;
+    grid-template-columns: minmax(0, 38%) minmax(0, 1fr) 96px;
+    gap: 10px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.mera-track-months li {
+    grid-template-columns: 96px minmax(0, 1fr) 110px;
+}
+
+.mera-track-bar-label {
+    overflow-wrap: anywhere;
+}
+
+.mera-track-bar-label a {
+    color: #024D25;
+    font-weight: 600;
+}
+
+.mera-track-bar-label small {
+    display: block;
+    color: #5F6368;
+    font-size: 11px;
+}
+
+.mera-track-rank {
+    display: inline-block;
+    min-width: 20px;
+    margin-right: 4px;
+    color: #5F6368;
+}
+
+.mera-track-bar {
+    display: flex;
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #E6ECE8;
+}
+
+.mera-track-bar i,
+.mera-track-legend i {
+    display: block;
+}
+
+.is-passed { background: #024D25; }
+.is-failed { background: #E8A317; }
+.is-progress { background: #81CFF4; }
+.is-empty { background: #E6ECE8; }
+
+.mera-track-bar-value {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.mera-track-bar-value small {
+    color: #5F6368;
+    font-size: 11px;
+}
+
+.mera-track-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin-bottom: 14px;
+}
+
+.mera-track-legend i {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    border-radius: 3px;
+}
+
+.mera-track-warnings summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.mera-track-badge-failed {
+    background: #FDF1D8;
+    color: #7A4F00;
+}
+
+.mera-track-badge-failed .fa-circle {
+    color: #E8A317;
+}
+
+.mera-track-badge-progress {
+    background: #E5F5FD;
+    color: #0B5A7A;
+}
+
+.mera-track-badge-progress .fa-circle {
+    color: #81CFF4;
+}
+
+.mera-track-history li + li {
+    margin-top: 6px;
+}
+
+@media (max-width: 1399.98px) {
+    .mera-track-filters {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .mera-track-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .mera-track-filters {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mera-track-filter-wide,
+    .mera-track-filter-actions {
+        grid-column: 1 / -1;
+    }
+
+    .mera-track-bar-row {
+        grid-template-columns: 1fr 84px;
+    }
+
+    .mera-track-bar-row .mera-track-bar {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}
+
+@media print {
+    .mera-env-banner,
+    .pcoded-navbar,
+    .pcoded-header,
+    .mera-folder-header-actions,
+    .mera-crumbs {
+        display: none !important;
+    }
+}

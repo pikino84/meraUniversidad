@@ -16,7 +16,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->get('/profile');
+            ->get('/perfil');
 
         $response->assertOk();
     }
@@ -27,14 +27,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->patch('/perfil', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/perfil');
 
         $user->refresh();
 
@@ -49,14 +49,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->patch('/perfil', [
                 'name' => 'Test User',
                 'email' => $user->email,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/perfil');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
@@ -68,7 +68,7 @@ class ProfileTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->delete('/profile', ['password' => 'password']);
+        $response = $this->actingAs($user)->delete('/perfil', ['password' => 'password']);
 
         $this->assertContains($response->status(), [404, 405]);
         $this->assertNotNull($user->fresh());
@@ -77,7 +77,7 @@ class ProfileTest extends TestCase
 
     public function test_profile_page_has_no_delete_account_option(): void
     {
-        $this->actingAs(User::factory()->create())->get('/profile')
+        $this->actingAs(User::factory()->create())->get('/perfil')
             ->assertOk()
             ->assertDontSee('Eliminar cuenta')
             ->assertSee('Pídeselo a un administrador');

@@ -130,7 +130,7 @@ class AuditFixesTest extends TestCase
         // Menú plano por secciones (antes, un acordeón "Administración" escondía todo).
         $this->assertStringNotContainsString('pcoded-hasmenu', $html);
         $this->assertStringContainsString('mera-nav-label', $html);
-        $this->assertMatchesRegularExpression('#<li class="active">\s*<a href="[^"]+/users"\s+aria-current="page"#', $html);
+        $this->assertMatchesRegularExpression('#<li class="active">\s*<a href="[^"]+/usuarios"\s+aria-current="page"#', $html);
 
         // "Enviar link": título corto, el correo en el cuerpo y tono informativo.
         $this->assertStringContainsString('data-confirm="¿Enviar link para cambiar la contraseña?" data-confirm-strong="'.$other->email.'" data-confirm-tone="info"', $html);

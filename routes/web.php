@@ -14,6 +14,7 @@ use App\Http\Controllers\MarketController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
+use App\Http\Controllers\ProgressReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TestEnvironmentController;
 use App\Http\Controllers\TrashController;
@@ -27,13 +28,16 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-| Públicas:   /, /cursos (catálogo), /<programa> (config mera.programs), /<carpeta>[/en] (al final)
-| auth:       perfil propio (cualquier usuario autenticado)
-| panel:      super admin | admin  → dashboard, usuarios, categorías, cursos, carpetas de curso
-| super:      super admin          → roles, permisos, historial
+| Públicas:   /, /cursos (catálogo), /<programa> (config mera.programs), /<carpeta>/<año>/<versión> (al final)
+| auth:       /perfil (cualquier usuario autenticado)
+| panel:      super admin | admin  → /panel, /usuarios, /categorias, /modulos, /carpetas
+| super:      super admin          → /roles, /permisos, /historial, /versiones, /catalogo-cursos, /papelera
+| URLs SIEMPRE en español (pedido del usuario 2026-10-20); los nombres de ruta siguen en inglés. Las
+| URLs anteriores en inglés redirigen (301) al final del archivo. Excepción: /api/courses (contrato con
+| el WordPress del catálogo; no se cambia).
 */
 
-Route::redirect('/', '/login')->name('home');
+Route::redirect('/', '/iniciar-sesion')->name('home');
 
 Route::get('/cursos', [CatalogController::class, 'index'])->name('catalog.index');
 
@@ -47,23 +51,23 @@ $panelRoles = 'role:'.implode('|', User::PANEL_ROLES);
 
 Route::middleware('auth')->group(function () use ($panelRoles) {
     // Perfil propio: cualquier usuario autenticado puede cambiar sus datos y contraseña.
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
     // S25: sin auto-borrado de cuenta; la baja la hace un administrador desde Usuarios.
 
     Route::middleware($panelRoles)->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/panel', [DashboardController::class, 'index'])->name('dashboard');
 
-        Route::resource('users', UserController::class)->except('show');
-        Route::post('users/{user}/invite', [UserController::class, 'invite'])->middleware('throttle:10,1')->name('users.invite');
-        Route::resource('categories', CategoryController::class)->except('show');
-        Route::resource('courses', CourseController::class)->except('show');
+        Route::resource('usuarios', UserController::class)->except('show')->parameters(['usuarios' => 'user'])->names('users');
+        Route::post('usuarios/{user}/invitar', [UserController::class, 'invite'])->middleware('throttle:10,1')->name('users.invite');
+        Route::resource('categorias', CategoryController::class)->except('show')->parameters(['categorias' => 'category'])->names('categories');
+        Route::resource('modulos', CourseController::class)->except('show')->parameters(['modulos' => 'course'])->names('courses');
 
         // Carpetas de curso (CLAUDE.md §10): Curso → Año → Versión por país → Módulos en orden
         // (docs/carpetas/INSTRUCTIVO_VERSIONES.md).
-        Route::resource('course-groups', CourseGroupController::class);
-        Route::patch('course-groups/{courseGroup}/move', [CourseGroupController::class, 'move'])->name('course-groups.move');
-        Route::prefix('course-groups/{courseGroup}/versiones')->name('course-groups.versions.')->scopeBindings()->group(function () {
+        Route::resource('carpetas', CourseGroupController::class)->parameters(['carpetas' => 'course_group'])->names('course-groups');
+        Route::patch('carpetas/{courseGroup}/posicion', [CourseGroupController::class, 'move'])->name('course-groups.move');
+        Route::prefix('carpetas/{courseGroup}/versiones')->name('course-groups.versions.')->scopeBindings()->group(function () {
             Route::post('/', [CourseGroupVersionController::class, 'store'])->name('store');
             Route::get('{version}', [CourseGroupVersionController::class, 'show'])->name('show');
             Route::get('{version}/editar', [CourseGroupVersionController::class, 'edit'])->name('edit');
@@ -74,7 +78,7 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
         });
 
         // Reportes de curso por carpeta (docs/reportes/INSTRUCTIVO_REPORTES.md): super admin y admin.
-        Route::prefix('course-groups/{courseGroup}/reportes')->name('course-groups.reports.')->scopeBindings()->group(function () {
+        Route::prefix('carpetas/{courseGroup}/reportes')->name('course-groups.reports.')->scopeBindings()->group(function () {
             Route::get('nuevo', [CourseReportController::class, 'create'])->name('create');
             Route::post('/', [CourseReportController::class, 'store'])->middleware('throttle:10,1')->name('store');
             Route::get('{report}', [CourseReportController::class, 'show'])->name('show');
@@ -86,20 +90,32 @@ Route::middleware('auth')->group(function () use ($panelRoles) {
             Route::get('{report}/pendientes', [CourseReportController::class, 'pending'])->name('pending');
             Route::patch('{report}/pendientes', [CourseReportController::class, 'classify'])->name('classify');
         });
-        Route::post('courses/bulk-move', [CourseGroupController::class, 'bulkMove'])->name('courses.bulk-move');
-        Route::patch('courses/{course}/move', [CourseGroupController::class, 'moveModule'])->name('courses.move');
-        Route::delete('courses/{course}/group', [CourseGroupController::class, 'removeModule'])->name('courses.ungroup');
+        // Seguimiento anual por persona (docs/reportes/INSTRUCTIVO_REPORTE_PERSONAS.md): todos los cursos.
+        Route::prefix('seguimiento')->name('progress.')->group(function () {
+            Route::get('/', [ProgressReportController::class, 'index'])->name('index');
+            Route::get('nuevo', [ProgressReportController::class, 'create'])->name('create');
+            Route::post('/', [ProgressReportController::class, 'store'])->middleware('throttle:5,1')->name('store');
+            Route::get('{report}', [ProgressReportController::class, 'show'])->name('show');
+            Route::get('{report}/personas', [ProgressReportController::class, 'people'])->name('people');
+            Route::get('{report}/personas/descargar', [ProgressReportController::class, 'export'])->middleware('throttle:20,1')->name('export');
+            Route::get('{report}/personas/{person}', [ProgressReportController::class, 'person'])->name('person');
+            Route::delete('{report}', [ProgressReportController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::post('modulos/mover', [CourseGroupController::class, 'bulkMove'])->name('courses.bulk-move');
+        Route::patch('modulos/{course}/posicion', [CourseGroupController::class, 'moveModule'])->name('courses.move');
+        Route::delete('modulos/{course}/carpeta', [CourseGroupController::class, 'removeModule'])->name('courses.ungroup');
 
         // Solo fuera de producción (cintillo "Entorno de pruebas"): en producción responde 404.
         Route::post('entorno-pruebas/apagar-compartido', [TestEnvironmentController::class, 'unshare'])->name('test-environment.unshare');
 
         Route::middleware('role:'.User::ROLE_SUPER_ADMIN)->group(function () {
             Route::resource('roles', RoleController::class)->except('show');
-            Route::resource('permissions', PermissionController::class)->except('show');
-            Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity.logs.index');
+            Route::resource('permisos', PermissionController::class)->except('show')->parameters(['permisos' => 'permission'])->names('permissions');
+            Route::get('historial', [ActivityLogController::class, 'index'])->name('activity.logs.index');
             // Versiones por país (México, Latam, EUA…): catálogo editable (INSTRUCTIVO_VERSIONES.md §4).
             Route::resource('versiones', MarketController::class)->except('show')->parameters(['versiones' => 'market'])->names('markets');
-            Route::patch('versiones/{market}/move', [MarketController::class, 'move'])->name('markets.move');
+            Route::patch('versiones/{market}/posicion', [MarketController::class, 'move'])->name('markets.move');
             // Catálogo de cursos de Capacitación (INSTRUCTIVO_REPORTE_PERSONAS.md §6): carga desde Excel y ajustes.
             Route::get('catalogo-cursos', [CatalogCourseController::class, 'index'])->name('course-catalog.index');
             Route::post('catalogo-cursos/cargar', [CatalogCourseController::class, 'import'])->middleware('throttle:10,1')->name('course-catalog.import');
@@ -119,6 +135,14 @@ Route::get('reportes/compartido/{token}', [CourseReportController::class, 'share
     ->name('reports.shared');
 
 require __DIR__.'/auth.php';
+
+// URLs anteriores en inglés → 301 a su equivalente en español (marcadores, links de correos ya
+// enviados). Solo GET; antes de las páginas de carpeta para que ganen. Ver AppSupportegacypaths.
+foreach (\App\Support\LegacyPaths::MAP as $old => $new) {
+    Route::get($old.'/{rest?}', fn (\Illuminate\Http\Request $request, ?string $rest = null) => redirect(
+        \App\Support\LegacyPaths::translate($new, $rest).($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301,
+    ))->where('rest', '.*');
+}
 
 // Página pública de cada carpeta de curso, por versión (docs/carpetas/INSTRUCTIVO_VERSIONES.md §5).
 // El link sigue la ruta del panel (Carpeta → Año → Versión):

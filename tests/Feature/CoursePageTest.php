@@ -236,7 +236,7 @@ class CoursePageTest extends TestCase
 
     public function test_existing_routes_still_win_over_folder_pages(): void
     {
-        $this->get('/login')->assertOk()->assertSee('Iniciar sesión');
+        $this->get('/iniciar-sesion')->assertOk()->assertSee('Iniciar sesión');
         $this->get('/cursos')->assertOk();
         $this->get('/proceso-de-manipulacion-de-alimentos')->assertOk()->assertSee('Proceso de manipulación de alimentos');
     }

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Reports;
 
 use App\Services\Reports\CourseReportBuilder;
+use App\Services\Reports\OrgMapper;
 use App\Services\Reports\PersonnelDirectory;
 use App\Services\Reports\ReportFormatException;
 use App\Services\Reports\ReportWorkbookReader;
@@ -179,6 +180,6 @@ class CourseReportBuilderTest extends TestCase
         $this->assertSame('123', PersonnelDirectory::employeeNumber(' 123.0 '));
         $this->assertSame('A-7', PersonnelDirectory::employeeNumber('A-7'));
         $this->assertNull(PersonnelDirectory::employeeNumber(null));
-        $this->assertSame('Cajero(A) De Línea 2Do', PersonnelDirectory::titleCase('CAJERO(a) de línea 2do'));
+        $this->assertSame('Cajero(A) De Línea 2Do', OrgMapper::titleCase('CAJERO(a) de línea 2do'));
     }
 }

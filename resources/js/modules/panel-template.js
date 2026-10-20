@@ -6,6 +6,9 @@
  */
 export function initPanelTemplate() {
     initMobileCollapseIcon();
+
+    // Botones "Imprimir" (p. ej. la ficha individual del seguimiento): sin onclick en línea.
+    document.querySelectorAll('[data-print]').forEach((button) => button.addEventListener('click', () => window.print()));
 }
 
 /** Mismo comportamiento que la plantilla: el ícono del botón de menú alterna al abrir/cerrar. */

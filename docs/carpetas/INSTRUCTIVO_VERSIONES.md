@@ -45,6 +45,9 @@ NRM-SEG-005-EL-26-MX     Ruta-Sub-#-Modalidad-Año-País       (MX = solo Méxic
     trae el código de la versión.
   - **Reporte por persona:** permite pasar de una persona a la carpeta y la versión del curso
     (`docs/reportes/INSTRUCTIVO_REPORTE_PERSONAS.md`).
+- El catálogo tendrá además la columna **`Alcance`** (`General`/`Específico`, acordada el 2026-10-19). La
+  versión no la guarda: la muestra como etiqueta leyéndola del catálogo por su `catalog_code`
+  (`docs/reportes/INSTRUCTIVO_REPORTE_PERSONAS.md` §7.3).
 - Hoy el catálogo solo usa `GLOBAL` y `MX`. Las versiones Latam y EUA probablemente usarán sufijos nuevos
   (`-LATAM`/`-LA`, `-US`). **Confirmar con Capacitación** (§9) y guardar el sufijo en la versión.
 

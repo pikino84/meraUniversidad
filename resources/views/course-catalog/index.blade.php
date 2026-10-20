@@ -49,7 +49,7 @@
 </form>
 
 <div class="mera-results-bar">
-    <span>{{ $courses->count() }} de {{ $total }} cursos</span>
+    <span>{{ $courses->total() }} {{ $courses->total() === 1 ? 'curso' : 'cursos' }}@if ($courses->total() !== $total) de {{ $total }}@endif</span>
     @if (array_filter($filters))
     <a href="{{ route('course-catalog.index') }}" class="mera-filter-chip text-decoration-none"><i class="fas fa-times" aria-hidden="true"></i> Quitar filtros</a>
     @endif
@@ -115,4 +115,8 @@
         @endif
     </div>
 </div>
+
+@if ($courses->hasPages())
+<div class="mt-3">{{ $courses->links() }}</div>
+@endif
 @endsection

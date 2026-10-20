@@ -8,11 +8,11 @@ class ExampleTest extends TestCase
 {
     public function test_home_redirects_to_login(): void
     {
-        $this->get('/')->assertRedirect('/login');
+        $this->get('/')->assertRedirect('/iniciar-sesion');
     }
 
     public function test_login_page_is_reachable(): void
     {
-        $this->get('/login')->assertOk();
+        $this->get('/iniciar-sesion')->assertOk();
     }
 }

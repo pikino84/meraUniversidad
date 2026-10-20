@@ -175,15 +175,15 @@ La BD de QA es una copia con datos reales (usuarios y reportes). Opciones:
   `X-Robots-Tag: noindex, nofollow, noarchive` en toda respuesta de Laravel cuando `APP_ENV` no es
   `production` (QA es `staging`). Producción no cambia. Requiere tener ese commit en QA
   (`git pull origin qa` + `php artisan config:cache`). Verificar:
-  `curl -sI https://university.meracorporation.com/login | grep -i x-robots-tag`.
+  `curl -sI https://university.meracorporation.com/iniciar-sesion | grep -i x-robots-tag`.
   `robots.txt` se deja igual a propósito: con `Disallow`, Google no leería el `noindex`. Si
   `university.` ya aparece en Google, pedir la baja en Search Console (Retirada de URLs).
 
 ### 12. Verificar
-- `https://university.meracorporation.com/login` → muestra "Mera Universidad QA" y el certificado SSL
+- `https://university.meracorporation.com/iniciar-sesion` → muestra "Mera Universidad QA" y el certificado SSL
   es válido (si no, cPanel → SSL/TLS Status → ejecutar AutoSSL para `university.`).
-- `curl -sI https://university.meracorporation.com/login | head -5` → 200 (o 401 si se activó el paso 11).
-- `https://cursos.meracorporation.com/login` sigue igual y `git -C $PROD log --oneline -1` no cambió.
+- `curl -sI https://university.meracorporation.com/iniciar-sesion | head -5` → 200 (o 401 si se activó el paso 11).
+- `https://cursos.meracorporation.com/login` (o `/iniciar-sesion` si producción ya tiene las URLs en español) sigue igual y `git -C $PROD log --oneline -1` no cambió.
 - Iniciar sesión en QA con una cuenta propia (las contraseñas son las de producción al momento de la copia).
 - Carpeta de Higiene → Reportes → Nuevo corte con los Excel del 2026-10-14: deben salir las cifras de
   `docs/reportes/INSTRUCTIVO_REPORTES.md` §9, y `ls $QA/storage/app/tmp/report-uploads` debe quedar vacío.

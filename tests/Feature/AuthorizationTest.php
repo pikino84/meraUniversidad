@@ -99,7 +99,7 @@ class AuthorizationTest extends TestCase
     {
         $user = $this->userWithRole('user');
 
-        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+        $this->post('/iniciar-sesion', ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect(route('profile.edit'));
 
         $this->get(route('dashboard'))->assertForbidden();

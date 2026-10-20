@@ -17,7 +17,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/dashboard';
+    public const HOME = '/panel';
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
@@ -25,6 +25,9 @@ class RouteServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+
+        // URLs en español: /modulos/nuevo y /modulos/{id}/editar (no create/edit).
+        Route::resourceVerbs(['create' => 'nuevo', 'edit' => 'editar']);
 
         $this->routes(function () {
             Route::middleware('api')
@@ -42,7 +45,7 @@ class RouteServiceProvider extends ServiceProvider
     protected function configureRateLimiting(): void
     {
         RateLimiter::for('api', function (Request $request) {
-            //return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            // return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
     }

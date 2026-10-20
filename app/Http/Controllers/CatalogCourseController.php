@@ -8,6 +8,7 @@ use App\Services\Reports\ReportFormatException;
 use App\Support\Like;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Throwable;
@@ -32,7 +33,9 @@ class CatalogCourseController extends Controller
             ->when($filters['ruta'], fn ($q, $route) => $q->where('route', $route))
             ->tap(fn ($q) => Like::contains($q, ['code', 'short_title', 'title', 'aliases'], $filters['q']))
             ->ordered()
-            ->get();
+            ->paginate(10)
+            ->onEachSide(1)
+            ->withQueryString();
 
         return view('course-catalog.index', [
             'courses' => $courses,
@@ -45,10 +48,14 @@ class CatalogCourseController extends Controller
     public function import(Request $request, CourseCatalogImporter $importer): RedirectResponse
     {
         $request->validate([
-            'catalog' => ['required', 'file', 'mimes:xlsx', 'max:'.(int) config('mera.progress.catalog_max_upload_kb', 5120)],
+            // Por extensión y no con "mimes": un .xlsx es un ZIP y finfo puede rechazar uno válido.
+            'catalog' => ['required', 'file', 'max:'.(int) config('mera.progress.catalog_max_upload_kb', 5120), function ($attribute, $value, $fail) {
+                if ($value instanceof UploadedFile && strtolower($value->getClientOriginalExtension()) !== 'xlsx') {
+                    $fail('El catálogo debe ser un archivo de Excel (.xlsx).');
+                }
+            }],
         ], [
             'catalog.required' => 'Elige el Excel del catálogo.',
-            'catalog.mimes' => 'El catálogo debe ser un archivo .xlsx.',
         ]);
 
         try {

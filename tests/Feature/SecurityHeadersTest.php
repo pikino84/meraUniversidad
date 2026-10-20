@@ -28,7 +28,7 @@ class SecurityHeadersTest extends TestCase
     public static function pages(): array
     {
         return [
-            'login' => ['/login', 200],
+            'login' => ['/iniciar-sesion', 200],
             'catálogo' => ['/cursos', 200],
             'api' => ['/api/courses', 200],
             'no encontrado' => ['/no-existe-esta-pagina-xyz', 404],
@@ -52,7 +52,7 @@ class SecurityHeadersTest extends TestCase
 
     public function test_hsts_only_in_production_over_https(): void
     {
-        $this->get('/login')->assertHeaderMissing('Strict-Transport-Security');
+        $this->get('/iniciar-sesion')->assertHeaderMissing('Strict-Transport-Security');
     }
 
     public function test_public_api_is_rate_limited_and_caps_page_size(): void

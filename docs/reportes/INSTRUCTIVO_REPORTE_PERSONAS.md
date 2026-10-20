@@ -6,8 +6,10 @@
 > pruebas solo en sqlite, build solo en local, PHP 8.1). Antes de empezar, leer `CLAUDE.md` §0, §3 y §5,
 > `INSTRUCTIVO_REPORTES.md` §4–§7 y este documento completo.
 
-Creado: 2026-10-15 (revisado el mismo día con la referencia de Capacitación). §10 respondido el 2026-10-19
-(queda abierto: exportaciones de encuestas de otros cursos). Estado: **por implementar**
+Creado: 2026-10-15 (revisado el mismo día con la referencia de Capacitación). §10 respondido el 2026-10-19.
+El mismo día por la tarde llegaron 5 encuestas más (§6.1) y se acordó la división **General / Específico**
+con la columna `Alcance` del catálogo (§7.3). Estado: **en implementación** (catálogo, corte, tablero, colaboradores y ficha
+listos en local; falta §7.3, encuestas por curso, links por localidad y descarga; avance en §12)
 (rama `qa`, verificar en `university.meracorporation.com`).
 
 ---
@@ -133,6 +135,52 @@ completados (79.1 %), 572 sin iniciar, promedio 77.5 y 61.1 % con 80 o más. Con
   `config/report_surveys.php`, y hoy solo existe la de Higiene. Si un curso no tiene encuesta, su sección
   "Lo que opinan" no se muestra.
 
+### 6.1 Encuestas recibidas (2026-10-19, respuesta 6 de §10)
+Copias en `storage/app/reportes/referencia/encuestas/` (**no versionadas: traen nombres**).
+
+| Encuesta (archivo) | Curso (se identifica por el título) | Respuestas (activos) | Recomienda | NPS |
+|---|---|---|---|---|
+| Protocolo de Huracán 2026 | `NRM-EMG-002-EL-26` | 1,182 (1,081) | 98 % | +80 |
+| Tus áreas, tu seguridad: uso y conservación | `NRM-SEG-009-EL-26` | 1,286 (1,128) | 98 % | +81 |
+| Orientación a Resultados | `CMP-OPE-003-EL-26` | 1,238 (1,130) | 98 % | +78 |
+| Despega con MERA 2026 | `NEG-CUL-003-EL-26` | 1,721 (1,485) | 98 % | +79 |
+| Salas VIP Lounge by MERA | `NEG-OPE-006-EL-26` (Inducción Concierge Salas VIP; **el único dudoso**) | 24 (24) | 96 % | +83 |
+
+NPS = % que puso 9–10 menos % que puso 0–6.
+
+**Común a todas** (mismo formato que la de Higiene):
+- 10 columnas fijas (cuestionario, fecha, No. Empleado, colaborador, estatus `active`/`deleted`, departamento,
+  puesto, centro, entidad, resultado), una columna de bienvenida y otra de cierre (vacías), y las preguntas.
+- Sin columnas resaltadas.
+- ⚠ **Las respuestas traen espacios al final** (`'Mucho  '`, `'Sí '`): recortar siempre antes de comparar.
+
+**Lo que cambia por curso:**
+- Las cerradas (6–9 Likert) cambian de texto y de opciones: "Mucho/Algo/Poco/Nada", "Sí, totalmente/Sí,
+  parcialmente/No", "Totalmente/En su mayoría/Parcialmente/No", "Muy satisfecho(a)…".
+- **Despega con MERA es de cultura y pertenencia:** identificación con la cultura (escala de 5), tiempo que se
+  visualiza en MERA, qué le falta para integrarse, antigüedad y abiertas largas. No encaja en "favorable en las
+  8 preguntas": necesita su propia vista con estas distribuciones.
+- Abiertas: "lo más valioso / lo que más te gustó", "qué mejorarías", "situación real que te gustaría incluir"
+  (Salas VIP) y comentarios.
+
+**Diseño:**
+1. **Indicadores comunes sin configurar nada:** % que recomienda (Sí/No), **NPS** (0–10) y % con problemas
+   técnicos. Van en "Lo que opinan" y en una tabla **"Satisfacción por curso"** para comparar cursos.
+2. **Configuración por encuesta** en `config/report_surveys.php`, como Higiene (base común + lo propio de cada
+   curso): preguntas cerradas → respuestas favorables, y abiertas → catálogo de temas. La carga avisa qué
+   columnas no reconoció.
+3. **Modo "sin configurar":** sin configuración, se muestran los indicadores comunes y la distribución de cada
+   pregunta cerrada (detectada por tener ≤ 6 respuestas distintas), sin "favorable". Ninguna encuesta se queda
+   fuera.
+4. **El curso de cada encuesta se propone solo:** al subirla, la app compara el título del archivo o del
+   cuestionario (`Encuesta de Satisfacción - <título>`) con los títulos del catálogo y el usuario confirma o
+   cambia en un selector. Hace falta saberlo para mostrar la encuesta dentro de su curso (como la referencia
+   con Higiene), para poner su nombre en la comparación y para validar que quien respondió tenga el curso en el
+   corte. **No** es una tarea para Capacitación.
+5. **Temas de las abiertas:** igual que Higiene (palabras clave + corrección manual). Hasta tener el catálogo
+   de temas de cada curso, se muestran "por clasificar".
+6. **Respuestas vs realizados:** avisar si un encuestado no tiene el curso en el corte de progreso.
+
 ## 7. Vistas: replicar la referencia + mejoras
 
 ### 7.1 Igual que la referencia (§2)
@@ -175,6 +223,54 @@ config (`mera.progress.dashboard`), como hoy `mera.reports.dashboard`.
    Debe pesar del orden de cientos de KB, no 4 MB.
 9. **Nombre de los cursos** desde el catálogo (título corto), con su código del catálogo y el de la plataforma
    en el tooltip. Cursos con calificación pero sin `evaluacion` marcada: se avisa.
+
+### 7.3 Cursos **generales** y **específicos** (acordado con Capacitación, 2026-10-19)
+**Problema que planteó Capacitación:** hay cursos que no son para todos: los BL (presenciales con actividades
+en la plataforma) y también varios EL para ciertas áreas o puestos. Si se suman todos, las localidades o áreas
+que los reciben "parecen" tomar más cursos y más horas.
+
+**Lo que dicen los datos** (corte 2026-10-12, 35 cursos de la referencia, 3,312 personas):
+- **No es solo BL.** 13 cursos llegan a > 90 % de las personas, y los demás son específicos:
+  - BL: Manipulación PREVERISK 32 %, Liderazgo Positivo 22 %, Gestión de Personal 8 %, Coaching 2 %…;
+  - EL: Corresponsal Cambiario MX 44 %, Negociación 26 %, Alérgenos 24 %, Planeación 21 %, Inteligencia
+    Emocional 18 %…
+- Distorsionan **las cifras absolutas por localidad:**
+  - cursos por persona: 15.1–18.7 con todos, 14.2–15.9 solo con generales;
+  - horas por persona: 18.3–25.0 con todos, 17.2–18.9 solo con generales.
+- El **% de avance** casi no cambia (1–4 puntos; Oaxaca de 19 % a 12 %), porque es sobre lo asignado. Los BL se
+  completan casi siempre (88–100 %).
+
+**Decisión:**
+1. **Columna nueva `Alcance` en el Excel del catálogo**, con valores `General` o `Específico`. La llena
+   Capacitación **tanto en la tabla de nomenclaturas como en la tabla con la información completa de los
+   cursos**. Es la **única fuente**.
+2. **En la app** (sobre el paso 2 ya hecho, §12):
+   - Migración aditiva: `course_catalog.scope` (`general` / `specific`, nullable).
+   - `CourseCatalogImporter` busca la columna **por encabezado** (`Alcance`, sin acentos ni mayúsculas) en
+     **cualquier hoja** que tenga las columnas del curso (código o Ruta/Sub/#/Mod/Año/País). Si el mismo curso
+     trae alcances distintos en dos hojas, **gana la tabla de nomenclaturas** y se avisa.
+   - **Excepción a "no pisar lo del panel":** `scope` **sí se actualiza en cada importación**, porque su fuente
+     es el Excel. En la pantalla del catálogo se **muestra pero no se edita**, para que no haya dos versiones de
+     la verdad.
+   - Si viene vacía (o el catálogo es viejo, sin la columna): respaldo con `Nivel` ("Todo MERA" = General; lo
+     demás = Específico) y la importación **avisa** qué cursos lo tomaron así. Caso a revisar: Manipulación de
+     Alimentos EL 2026 (`NRM-HIG-005`) dice "Cocina", pero está asignado al 99.5 %.
+   - **No confundir con `in_tracking`** ("Cuenta"): ese decide si el curso entra al seguimiento; `scope` decide
+     cómo se compara.
+3. **Tablero:**
+   - **Las comparaciones entre localidades, áreas y puestos usan solo los generales** por defecto: ranking,
+     avance por área, cursos y horas por persona, y dónde reprueban más. El interruptor "Incluir cursos
+     específicos" recalcula con todos, y la tarjeta lo indica.
+   - Etiquetas: "Cursos por persona (generales)" y "Horas por persona (generales)". El % de avance siempre es
+     "de sus cursos asignados".
+   - **Nueva sección "Cursos específicos y presenciales":** por curso, a quién va (áreas y puestos con
+     asignados), % realizado y aprobado, sin iniciar, y modalidad EL/BL. Sin ranking entre localidades; si se
+     filtra uno, el ranking solo incluye a las localidades que lo tienen.
+   - "Cómo va cada curso" lleva etiquetas "Específico" y "BL".
+   - Nota en la sección: en un BL, el avance mide las **actividades en línea**, no la asistencia presencial.
+4. **Ficha individual:** cursos separados en "Generales" y "Específicos de su puesto o área".
+5. **Versiones de carpeta:** muestran la etiqueta General/Específico leyéndola del catálogo por su
+   `catalog_code` (no se guarda en la versión).
 
 ## 8. Datos personales y seguridad (no negociable)
 - Nombre y avance por persona: **solo administradores** (roles del reporte por curso; confirmar en §10),
@@ -284,5 +380,32 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
     buscar (también por código de la plataforma) y ajustar mínima, evaluación, si cuenta y códigos alternos.
   - `CatalogCourse::resolve()` (código o alterno), `codeFromName()`, `done()` (realizado) y `passes()` (aprobado).
   - Pruebas: `tests/Feature/Reports/CourseCatalogTest.php` (Excel sintético con la misma estructura).
-- ⏳ Paso 3: extraer `OrgMapper` sin cambiar cifras del reporte por curso.
+- ⏳ **Nuevo (2026-10-19):** columna `Alcance` → `course_catalog.scope` (§7.3): migración aditiva, importador
+  (cualquier hoja, por encabezado, siempre actualiza) y vista de solo lectura en el catálogo. Encuestas de
+  5 cursos más (§6.1).
+- ✅ **Paso 3 — `OrgMapper` (2026-10-19):** reglas de localidad/área/puesto en una clase; `PersonnelDirectory` la usa.
+  `mera:report-verify` con los Excel reales de Higiene: **coincide fila por fila** (sin cambios en el reporte por curso).
+- ✅ **Pasos 4-6 — Corte, tablero y ficha (2026-10-19, sin commit):**
+  - Migración aditiva `2026_10_20_000001_create_progress_reports_tables` (`progress_reports`, `progress_report_people`,
+    `progress_report_items`). Sin RFC, CURP, nómina ni dirección.
+  - `FastSheetReader` (XMLReader directo sobre el .xlsx): el Excel de progreso (74,574 filas) se lee en **~13 s**; con
+    openspout tardaba ~143 s. Mismas cifras con ambos lectores.
+  - `ProgressReportBuilder`: localidad/área/puesto del **reporte de personal** (bajas y unidades excluidas fuera, con aviso),
+    estado por asignación (aprobado / reprobado / en curso / sin iniciar) con las reglas del catálogo, códigos fuera del
+    catálogo con aviso (solo de 2026 en adelante). `ProgressReportManager`: Excel en carpeta temporal privada y borrados
+    siempre, inserción por lotes, se conservan los últimos 6 cortes.
+  - **Medición con los Excel reales (12-oct + personal 14-oct), 2026, 37 cursos:** 58,405 asignaciones, 3,300 personas,
+    al 100 % 40,984 (70.2 %), realizado 40,851 (69.9 %), aprobado 33,001 (56.5 %), reprobado 7,850, en curso 1,993,
+    sin iniciar 15,561, promedio 86.7 (n = 40,649). Contra §9 (58,598 / 3,312 / 41,095 / 15,636 / 86.7) la diferencia son
+    las 11 bajas (222 asignaciones) que ahora se excluyen. Higiene 2026: 3,299 / 2,612 realizados / 1,596 aprobados.
+    Liderazgo Positivo 2026: 509 realizados (prototipo: 511). Armado completo en memoria: ~34 s.
+  - Pantallas (`/seguimiento`, admin y super admin): lista de cortes, nuevo corte (2 Excel; fecha del nombre del
+    archivo), tablero con filtros (año, curso, ruta, localidad, área, centro de trabajo; en la URL): tarjetas, cómo va cada
+    curso, ranking de localidades (≥ 10 personas), avance por área, mes a mes, evaluación por rangos y dónde reprueban más;
+    consulta de colaboradores por estado con búsqueda, paginada y **CSV** (queda en el historial); **ficha individual**
+    imprimible con sus cursos y su avance en cortes anteriores.
+  - Rendimiento del tablero: 1 consulta sin JOIN + cálculo en PHP (8.6 s → 1.5 s en local sin OPcache).
+- ⏳ Pendiente: encuesta por curso dentro del corte (Capacitación mandó 5 exportaciones el 2026-10-19; las preguntas
+  cambian en algunos cursos), links por localidad sin nombres (§7.2.7), "Descargar HTML" (§7.2.8), comparación con el
+  corte anterior (§7.2.2) y medir el tiempo del corte en QA (§9).
 
