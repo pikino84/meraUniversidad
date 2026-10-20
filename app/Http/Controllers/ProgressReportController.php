@@ -324,6 +324,53 @@ class ProgressReportController extends Controller
                 .($request->filled('course_code') ? '' : ' El curso se reconoció por el título; si no es, elimínala y vuelve a subirla eligiendo el curso.'));
     }
 
+    /**
+     * Clasificar comentarios de una encuesta (§6.1.5): el sistema propuso temas por palabras clave; aquí se
+     * revisan y corrigen. Pestañas: por revisar (por defecto), sin tema y todos.
+     */
+    public function surveyTopics(Request $request, ProgressReport $report, ProgressReportSurvey $survey): View
+    {
+        abort_unless($survey->progress_report_id === $report->id && isset($survey->data['topics']), 404);
+
+        $filter = in_array($request->query('ver'), ['por-revisar', 'sin-tema', 'todos'], true) ? $request->query('ver') : 'por-revisar';
+        $answers = collect($survey->data['topics']['answers'])
+            ->filter(fn ($a) => match ($filter) {
+                'por-revisar' => ! $a['r'],
+                'sin-tema' => $a['c'] === [],
+                default => true,
+            });
+
+        $perPage = 25;
+        $page = max(1, (int) $request->query('page', 1));
+
+        return view('progress.survey-topics', [
+            'report' => $report,
+            'survey' => $survey,
+            'filter' => $filter,
+            'catalog' => collect($survey->data['topics']['catalog']),
+            'rows' => new \Illuminate\Pagination\LengthAwarePaginator($answers->slice(($page - 1) * $perPage, $perPage, true), $answers->count(), $perPage, $page, ['path' => $request->url(), 'query' => $request->query()]),
+            'summary' => $survey->topicSummary(),
+            'label' => (new ProgressDashboard($report, $request))->courseLabels()[$survey->course_code] ?? $survey->course_code,
+        ]);
+    }
+
+    public function classifySurvey(Request $request, ProgressReport $report, ProgressReportSurvey $survey): RedirectResponse
+    {
+        abort_unless($survey->progress_report_id === $report->id && isset($survey->data['topics']), 404);
+
+        $data = $request->validate([
+            'shown' => ['required', 'array', 'max:100'],
+            'shown.*' => ['integer', 'min:0'],
+            'topics' => ['array'],
+            'topics.*' => ['array'],
+            'topics.*.*' => ['string', 'max:20'],
+        ]);
+
+        $saved = $this->manager->classifySurvey($survey, $data['shown'], $data['topics'] ?? []);
+
+        return back()->with('success', $saved === 1 ? '1 comentario revisado.' : "{$saved} comentarios revisados.");
+    }
+
     public function destroySurvey(ProgressReport $report, ProgressReportSurvey $survey): RedirectResponse
     {
         abort_unless($survey->progress_report_id === $report->id, 404);

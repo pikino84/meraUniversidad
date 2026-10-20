@@ -5236,3 +5236,29 @@ a.mera-version-card:focus-visible {
 .mera-compare-form.is-auto .mera-filterbar-apply {
     display: none;
 }
+
+/* Clasificar comentarios de encuestas (§6.1.5) */
+.mera-topic-list {
+    display: grid;
+    gap: 10px;
+}
+
+.mera-topic-list .card {
+    margin-bottom: 0;
+}
+
+.mera-topic-answer + .mera-topic-answer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #EEF2EF;
+}
+
+.mera-topic-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.mera-topic-options .mera-tag-check span {
+    font-size: 12px;
+}

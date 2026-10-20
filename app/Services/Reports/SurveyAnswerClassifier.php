@@ -54,6 +54,14 @@ class SurveyAnswerClassifier
         return $codes;
     }
 
+    /** ¿La respuesta dice algo? En "qué mejorarías", "nada" o "todo bien" no cuentan. */
+    public static function meaningful(mixed $text, bool $improve = false): bool
+    {
+        $plain = self::plain($text);
+
+        return ! in_array($plain, self::EMPTY_ANSWERS, true) && ! ($improve && in_array($plain, self::NOTHING_TO_IMPROVE, true));
+    }
+
     /** Texto comparable: sin acentos, minúsculas, solo letras/números y espacios simples. */
     public static function plain(mixed $text): string
     {

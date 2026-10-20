@@ -215,6 +215,30 @@ return [
             'position_min_people' => 20,
         ],
 
+        // Temas de las respuestas abiertas de las encuestas (§6.1.5): catálogo BASE para los cursos que no
+        // tienen el suyo en config/report_surveys.php. [código, valora|mejora, texto, palabras clave
+        // (sin acentos, en minúsculas)]. Las palabras clave PROPONEN el tema; se corrige en "Clasificar".
+        'survey_topics' => [
+            ['v01', 'valora', 'Explicaciones claras y fáciles de entender', ['clar', 'facil de entender', 'entendible', 'explica', 'sencill']],
+            ['v02', 'valora', 'Videos, animaciones e imágenes', ['video', 'animacion', 'visual', 'imagen', 'infografi', 'grafic']],
+            ['v03', 'valora', 'Ejemplos y casos reales', ['ejemplo', 'caso', 'situacion']],
+            ['v04', 'valora', 'Actividades, juegos y ejercicios', ['actividad', 'juego', 'dinamic', 'ejercicio', 'interactiv', 'retroaliment']],
+            ['v05', 'valora', 'Útil y aplicable al trabajo', ['util', 'aplic', 'en mi trabajo', 'en el trabajo', 'dia a dia', 'vida diaria', 'practic']],
+            ['v06', 'valora', 'Aprendizaje y refresco de conocimientos', ['aprend', 'conocimiento', 'refresc', 'record', 'nuevo']],
+            ['v07', 'valora', 'Contenido e información', ['informacion', 'contenido', 'temas', 'completo']],
+            ['v08', 'valora', 'Ágil y entretenido', ['corto', 'rapido', 'breve', 'ameno', 'entretenido', 'divertid']],
+            ['v_todo', 'valora', 'Todo en general', []],
+            ['m01', 'mejora', 'Más ejemplos y casos reales', ['mas ejemplos', 'casos reales', 'mas casos', 'mas practic']],
+            ['m02', 'mejora', 'Más dinámico e interactivo', ['dinamic', 'interactiv', 'aburrid', 'mas actividades', 'mas juegos']],
+            ['m03', 'mejora', 'Más corto o con menos texto', ['muy largo', 'mas corto', 'extenso', 'menos texto', 'tardado', 'mucho texto', 'largo']],
+            ['m04', 'mejora', 'Problemas técnicos o de acceso', ['no cargaba', 'no carga', 'se traba', 'error', 'lento', 'falla', 'plataforma', 'conexion', 'internet', 'audio', 'sonido']],
+            ['m05', 'mejora', 'Evaluación: preguntas más claras', ['pregunta', 'evaluacion', 'examen', 'confus']],
+            ['m06', 'mejora', 'Letra, imágenes o videos más claros', ['letra', 'tamano', 'calidad', 'borroso', 'se ve']],
+            ['m07', 'mejora', 'Adaptarlo al área o puesto', ['mi area', 'mi puesto', 'por area', 'por puesto', 'administrativ']],
+            ['m08', 'mejora', 'Más contenido o profundidad', ['mas informacion', 'mas contenido', 'mas temas', 'profund', 'mas detalle']],
+            ['m09', 'mejora', 'Más capacitación y seguimiento', ['mas cursos', 'seguimiento', 'mas seguido', 'reforz', 'presencial']],
+        ],
+
         // Personas por página en la consulta de colaboradores.
         'people_per_page' => 25,
 

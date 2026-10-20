@@ -43,6 +43,8 @@ class ProgressReportTest extends TestCase
         Role::findOrCreate(User::ROLE_ADMIN, 'web');
         $this->admin = tap(User::factory()->create())->assignRole(User::ROLE_ADMIN);
         config(['mera.reports.temp_root' => sys_get_temp_dir().DIRECTORY_SEPARATOR.'mera-progress-'.uniqid()]);
+        // Aislado de la configuración real de Higiene (y de su archivo privado de clasificación previa).
+        config(['report_surveys.higiene.course_codes' => []]);
 
         foreach ([
             ['NRM-HIG-002-EL-26', 'Normativo', 'HIG', 2, 2026, 'Higiene 2026', 80, true, true],
@@ -475,6 +477,46 @@ class ProgressReportTest extends TestCase
         $html = $this->actingAs($this->admin)->get(route('progress.download', $new))->getContent();
         $this->assertStringContainsString('Cambios contra el corte del', $html);
         $this->assertStringContainsString('62.5 pts', $html);
+    }
+
+    public function test_open_answers_get_topics_that_can_be_corrected(): void
+    {
+        $report = $this->createCut();
+        $this->actingAs($this->admin)->post(route('progress.surveys.store', $report), ['encuesta' => $this->survey('Encuesta de Satisfacción - Higiene 2026', [
+            ['1', 'Ana', 'active', 'Muy de acuerdo', 'No', 'Sí', 10, 'Los videos y los ejemplos'],
+            ['2', 'Beto', 'active', 'De acuerdo', 'No', 'Sí', 9, 'Todo'],
+            ['3', 'Caro', 'active', 'De acuerdo', 'No', 'Sí', 9, 'La maestra Lupita'],
+            ['4', 'Dani', 'active', 'De acuerdo', 'No', 'Sí', 9, 'nada'],
+        ])]);
+        $survey = $report->surveys()->sole();
+
+        // Catálogo base (en las pruebas Higiene no usa su configuración): propuesta por palabras clave.
+        $summary = $survey->topicSummary();
+        $this->assertSame(3, $summary['liked_n']); // "nada" no cuenta
+        $this->assertSame(['v02', 'v03', 'v_todo'], collect($summary['valora'])->pluck('code')->sort()->values()->all());
+        $this->assertSame([1, 3], [$summary['unclassified'], $summary['unreviewed']]);
+
+        $this->actingAs($this->admin)->get(route('progress.show', ['report' => $report, 'vista' => 'opiniones', 'curso' => 'NRM-HIG-002-EL-26']))
+            ->assertSee('Lo que más valoran')->assertSee('Videos, animaciones e imágenes')->assertSee('Clasificar comentarios');
+
+        $page = $this->actingAs($this->admin)->get(route('progress.surveys.topics', [$report, $survey]))->assertOk()
+            ->assertSee('«La maestra Lupita»', false)->assertSee('3 revisados');
+
+        // Corrección: "La maestra Lupita" → explicaciones claras; los 3 quedan revisados.
+        $this->actingAs($this->admin)->patch(route('progress.surveys.classify', [$report, $survey]), [
+            'shown' => [0, 1, 2],
+            'topics' => [0 => ['v02', 'v03'], 1 => ['v_todo'], 2 => ['v01', 'no-existe']],
+        ])->assertSessionHas('success', '3 comentarios revisados.');
+
+        $summary = $survey->fresh()->topicSummary();
+        $this->assertSame([0, 0], [$summary['unclassified'], $summary['unreviewed']]);
+        $this->assertSame(['v01'], $survey->fresh()->data['topics']['answers'][2]['c']);
+
+        // Compartido: los temas como totales, sin los comentarios.
+        $share = $report->shares()->create(['locality' => null]);
+        auth()->logout();
+        $this->get($share->url().'?vista=opiniones&curso=NRM-HIG-002-EL-26')->assertOk()
+            ->assertSee('Lo que más valoran')->assertDontSee('Lupita')->assertDontSee('Clasificar comentarios');
     }
 
     public function test_the_fast_reader_reads_only_the_requested_columns(): void

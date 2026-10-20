@@ -124,6 +124,34 @@ class ProgressReportManager
     }
 
     /**
+     * Guarda los temas revisados a mano de los comentarios mostrados (índices de data.topics.answers) y los
+     * marca como revisados. Solo acepta temas del catálogo de la encuesta.
+     *
+     * @param  list<int>  $shown
+     * @param  array<int, list<string>>  $topics
+     */
+    public function classifySurvey(ProgressReportSurvey $survey, array $shown, array $topics): int
+    {
+        $data = $survey->data;
+        $valid = array_column($data['topics']['catalog'], 0);
+        $saved = 0;
+
+        foreach ($shown as $index) {
+            if (! isset($data['topics']['answers'][$index])) {
+                continue;
+            }
+
+            $data['topics']['answers'][$index]['c'] = array_values(array_intersect($valid, (array) ($topics[$index] ?? [])));
+            $data['topics']['answers'][$index]['r'] = true;
+            $saved++;
+        }
+
+        $survey->forceFill(['data' => $data])->save();
+
+        return $saved;
+    }
+
+    /**
      * Cursos del corte para proponer el de una encuesta: código => título y nombre corto.
      *
      * @return array<string,string>

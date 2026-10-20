@@ -89,6 +89,36 @@
             </div>
             @endforeach
         </div>
+        @if ($topicSummary = $current->topicSummary())
+        <div class="mera-track-grid mt-3">
+            @foreach (['valora' => ['Lo que más valoran', $topicSummary['liked_n']], 'mejora' => ['Qué piden mejorar', $topicSummary['improve_n']]] as $type => [$heading, $base])
+            <div class="mera-survey-question">
+                <p class="small fw-semibold mb-1">{{ $heading }}</p>
+                <p class="small text-muted mb-2">% de las {{ number_format($base) }} personas que escribieron algo{{ $type === 'mejora' ? ' (sin contar «nada» o «todo bien»)' : '' }}.</p>
+                @if ($topicSummary[$type] === [])
+                <p class="small text-muted mb-0">Sin temas todavía.</p>
+                @else
+                <ol class="mera-track-months mera-track-grades list-unstyled mb-0">
+                    @foreach (array_slice($topicSummary[$type], 0, 8) as $topic)
+                    <li>
+                        <span class="mera-track-month" title="{{ $topic['label'] }}">{{ $topic['label'] }}</span>
+                        <span class="mera-track-bar"><i class="{{ $type === 'valora' ? 'is-passed' : 'is-failed' }}" style="width: {{ min(100, $topic['pct']) }}%"></i></span>
+                        <span class="mera-track-bar-value"><b>{{ round($topic['pct']) }} %</b> <small>{{ number_format($topic['n']) }}</small></span>
+                    </li>
+                    @endforeach
+                </ol>
+                @endif
+            </div>
+            @endforeach
+        </div>
+        @unless ($share)
+        <p class="small mt-2 mb-0">
+            {{ number_format($topicSummary['unclassified']) }} comentarios sin tema · {{ number_format($topicSummary['unreviewed']) }} por revisar ·
+            <a href="{{ route('progress.surveys.topics', [$report, $current]) }}">Clasificar comentarios</a>
+        </p>
+        @endunless
+        @endif
+
         {{-- Respuestas abiertas: solo en el panel (pueden traer nombres escritos por quien respondió). --}}
         @foreach ($share ? [] : ($current->data['open'] ?? []) as $q)
         <details class="mera-survey-open mt-2">

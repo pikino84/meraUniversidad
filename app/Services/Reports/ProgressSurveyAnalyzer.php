@@ -41,6 +41,7 @@ class ProgressSurveyAnalyzer
         $title = null;
         $answers = [];      // pregunta => lista de respuestas (texto recortado)
         $employees = [];
+        $rowEmployees = []; // No. de empleado por fila, solo en memoria (clasificación previa de Higiene)
         $responses = 0;
         $active = 0;
 
@@ -49,7 +50,9 @@ class ProgressSurveyAnalyzer
             $title ??= ReportWorkbookReader::clean($this->value($row, 'cuestionario'));
             $active += Str::lower(trim((string) $this->value($row, 'estatus colaborador'))) === 'deleted' ? 0 : 1;
 
-            if ($num = PersonnelDirectory::employeeNumber($this->value($row, 'no. empleado'))) {
+            $num = PersonnelDirectory::employeeNumber($this->value($row, 'no. empleado'));
+            $rowEmployees[] = $num;
+            if ($num) {
                 $employees[] = $num;
             }
 
@@ -113,13 +116,14 @@ class ProgressSurveyAnalyzer
         }
 
         [$satisfaction, $configWarnings] = $this->configuredSatisfaction($courseCode, $answers, $responses);
+        $topics = $this->topics($courseCode, $answers, $rowEmployees);
 
         return [
             'title' => (string) $title,
             'responses' => $responses,
             'active' => $active,
             'employees' => array_values(array_unique($employees)),
-            'data' => ['indicators' => $indicators + ['satisfaction' => $satisfaction], 'closed' => $closed, 'open' => $open],
+            'data' => ['indicators' => $indicators + ['satisfaction' => $satisfaction], 'closed' => $closed, 'open' => $open, 'topics' => $topics],
             'warnings' => $configWarnings,
         ];
     }
@@ -241,6 +245,75 @@ class ProgressSurveyAnalyzer
         }
 
         return [round($favorable / $responses * 100, 1), []];
+    }
+
+    /**
+     * Temas de "lo que más te gustó" y "qué mejorarías" (§6.1.5): catálogo del curso si está configurado
+     * (Higiene, con su clasificación previa por persona) o el catálogo base. Las palabras clave PROPONEN;
+     * en "Clasificar comentarios" se corrige. Se guarda el texto y sus temas, nunca quién respondió.
+     *
+     * @return array{catalog: list<array{0:string,1:string,2:string}>, answers: list<array>, liked_n: int, improve_n: int}|null
+     */
+    private function topics(?string $courseCode, array $answers, array $rowEmployees): ?array
+    {
+        $config = collect(config('report_surveys'))->first(fn ($s) => $courseCode && in_array($courseCode, $s['course_codes'] ?? [], true));
+        $catalog = $config['catalog'] ?? (array) config('mera.progress.survey_topics');
+        // El fragmento más específico manda (Despega tiene "lo que más influyó…" antes de "lo que más te gustó").
+        $find = function (array $fragments) use ($answers): ?string {
+            foreach (array_filter($fragments) as $fragment) {
+                foreach (array_keys($answers) as $question) {
+                    if (str_contains(Str::lower(Str::ascii($question)), Str::lower(Str::ascii($fragment)))) {
+                        return $question;
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        $likedQ = $find([$config['liked_question'] ?? null, 'mas te gusto', 'mas valioso', 'lo que mas']);
+        $improveQ = $find([$config['improve_question'] ?? null, 'mejorarias', 'que mejorar']);
+
+        if (! $likedQ && ! $improveQ) {
+            return null;
+        }
+
+        $precoded = $config ? CourseReportBuilder::precoded($config['precoded_file'] ?? null) : [];
+        $classifier = new SurveyAnswerClassifier($catalog);
+        $codes = array_column($catalog, 0);
+        $list = [];
+        $likedN = 0;
+        $improveN = 0;
+
+        foreach ($rowEmployees as $i => $num) {
+            $liked = $likedQ ? ($answers[$likedQ][$i] ?? '') : '';
+            $improve = $improveQ ? ($answers[$improveQ][$i] ?? '') : '';
+            $likedOk = SurveyAnswerClassifier::meaningful($liked);
+            $improveOk = SurveyAnswerClassifier::meaningful($improve, true);
+
+            if (! $likedOk && ! $improveOk) {
+                continue;
+            }
+
+            $likedN += (int) $likedOk;
+            $improveN += (int) $improveOk;
+            $reviewed = $num !== null && isset($precoded[$num]);
+            $marks = $reviewed ? $precoded[$num] : $classifier->classify($liked, $improve);
+
+            $list[] = [
+                'l' => $likedOk ? mb_substr($liked, 0, self::MAX_ANSWER_LENGTH) : '',
+                'i' => $improveOk ? mb_substr($improve, 0, self::MAX_ANSWER_LENGTH) : '',
+                'c' => array_values(array_filter($codes, fn ($code) => ! empty($marks[$code]))),
+                'r' => $reviewed,
+            ];
+        }
+
+        return [
+            'catalog' => array_map(fn ($t) => [$t[0], $t[1], $t[2]], $catalog),
+            'answers' => $list,
+            'liked_n' => $likedN,
+            'improve_n' => $improveN,
+        ];
     }
 
     private function value(array $row, string $header): mixed

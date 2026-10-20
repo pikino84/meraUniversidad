@@ -156,7 +156,7 @@ class CourseReportBuilder
             ['v_respondio'],
         );
 
-        $precoded = $this->precoded($survey['precoded_file'] ?? null);
+        $precoded = self::precoded($survey['precoded_file'] ?? null);
         $classifier = new SurveyAnswerClassifier($survey['catalog']);
         $inactive = config('mera.reports.inactive');
 
@@ -211,7 +211,7 @@ class CourseReportBuilder
      *
      * @return array<string, array<string,int>>
      */
-    private function precoded(?string $file): array
+    public static function precoded(?string $file): array
     {
         if (! $file || ! is_file($file)) {
             return [];

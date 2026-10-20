@@ -32,4 +32,38 @@ class ProgressReportSurvey extends Model
     {
         return $this->data['indicators'][$key] ?? null;
     }
+
+    /**
+     * Temas por tipo (valora / mejora) con su número de menciones y su % sobre quienes respondieron esa
+     * pregunta, el más mencionado primero; más los comentarios sin tema.
+     *
+     * @return array{valora: list<array>, mejora: list<array>, liked_n: int, improve_n: int, unclassified: int, unreviewed: int}|null
+     */
+    public function topicSummary(): ?array
+    {
+        $topics = $this->data['topics'] ?? null;
+
+        if (! $topics) {
+            return null;
+        }
+
+        $counts = array_count_values(array_merge(...array_map(fn ($a) => $a['c'], $topics['answers'] ?: [['c' => []]])));
+        $out = ['valora' => [], 'mejora' => [], 'liked_n' => $topics['liked_n'], 'improve_n' => $topics['improve_n']];
+
+        foreach ($topics['catalog'] as [$code, $type, $label]) {
+            $n = $counts[$code] ?? 0;
+            $base = $type === 'valora' ? $topics['liked_n'] : $topics['improve_n'];
+            if ($n > 0) {
+                $out[$type][] = ['code' => $code, 'label' => $label, 'n' => $n, 'pct' => $base ? round($n / $base * 100, 1) : 0];
+            }
+        }
+
+        usort($out['valora'], fn ($a, $b) => $b['n'] <=> $a['n']);
+        usort($out['mejora'], fn ($a, $b) => $b['n'] <=> $a['n']);
+
+        return $out + [
+            'unclassified' => count(array_filter($topics['answers'], fn ($a) => $a['c'] === [])),
+            'unreviewed' => count(array_filter($topics['answers'], fn ($a) => ! $a['r'])),
+        ];
+    }
 }

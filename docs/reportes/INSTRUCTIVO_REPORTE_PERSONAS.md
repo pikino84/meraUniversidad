@@ -460,5 +460,15 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
   mismos filtros (`?comparar=<fecha>` para elegir otro; `?comparar=no` para quitarla). Puntos de cambio en los 4
   indicadores (en "Sin iniciar", bajar es bueno), en "Cómo va cada curso" y en el ranking de localidades. También en los
   links compartidos y en la descarga. Solo compara si el otro corte tiene el mismo año.
-- ⏳ Pendiente: temas de las respuestas abiertas por curso y medir el tiempo del corte en QA (§9).
+- ✅ **§6.1.5 Temas de las respuestas abiertas (2026-10-20, sin commit):** "lo que más te gustó" y "qué mejorarías" se
+  clasifican al subir la encuesta: con el catálogo del curso si está configurado (Higiene, con su clasificación previa por
+  persona, todo revisado) o con el **catálogo base** (`config('mera.progress.survey_topics')`: 8 temas de lo que valoran y
+  9 de lo que piden mejorar). Se guarda el texto y sus temas, nunca quién respondió. En "Opiniones": "Lo que más valoran"
+  y "Qué piden mejorar" (% de quienes escribieron algo; "nada"/"todo bien" no cuentan) y la pantalla **"Clasificar
+  comentarios"** (por revisar / sin tema / todos; guardar marca la página como revisada). En links compartidos y en la
+  descarga solo los totales. Con las encuestas reales, el catálogo base deja sin tema ~25 % de los comentarios (Huracán 278
+  de 1,052; Despega 517 de 1,647): los temas propios de cada curso (p. ej. "cómo prevenirse ante un huracán") se agregan
+  en `config/report_surveys.php` cuando Capacitación los defina.
+- ⏳ Pendiente: medir el tiempo del corte en QA (§9) y, cuando Capacitación lo pida, catálogos de temas propios por curso
+  y una vista propia para Despega con MERA (cultura y pertenencia).
 
