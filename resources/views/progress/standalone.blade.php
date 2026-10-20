@@ -28,6 +28,7 @@
         'opiniones' => $surveys->isNotEmpty() ? 'Opiniones' : null,
     ]);
     $pct = fn ($v) => $v === null ? '—' : rtrim(rtrim(number_format($v, 1), '0'), '.').' %';
+    $k = $deltas['kpi'] ?? [];
 @endphp
 <!doctype html>
 <html lang="es">
@@ -84,6 +85,10 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { padding: 8px; background: #024D25; color: #fff; text-align: left; font-size: 12px; }
 td { padding: 8px; border-bottom: 1px solid #E6ECE8; vertical-align: top; }
 .foot { margin-top: 1.5rem; font-size: .8rem; color: #5d6b63; }
+.mera-delta { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; vertical-align: middle; white-space: nowrap; }
+.mera-delta.is-up { background: #E3F0D0; color: #1B5E20; } .mera-delta.is-down { background: #FDECEC; color: #B71C1C; } .mera-delta.is-same { background: #EEF2EF; color: #5F6368; }
+.kpi.is-main .mera-delta.is-up { background: rgba(255,255,255,.2); color: #fff; }
+.mera-track-bar-value .mera-delta { padding: 0 5px; font-size: 10px; }
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; }
 @media (max-width: 800px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid { grid-template-columns: 1fr; } .mera-track-bar-row { grid-template-columns: 1fr 84px; } .mera-track-bar-row .mera-track-bar { grid-column: 1 / -1; grid-row: 2; } }
 @media print { .tabs { display: none; } section[data-tab] { display: block !important; } }
@@ -102,15 +107,18 @@ td { padding: 8px; border-bottom: 1px solid #E6ECE8; vertical-align: top; }
         @endif
     </header>
 
+    @if ($compare)
+    <p class="applied">Cambios contra el corte del <b>{{ $compare->cut_date->format('d/m/Y') }}</b> ({{ $compare->title }}), con los mismos filtros.</p>
+    @endif
     @if ($applied->isNotEmpty())
     <p class="applied">Filtros: @foreach ($applied as $name => $value)<b>{{ $name }}:</b> {{ $value }}@if (! $loop->last) · @endif @endforeach</p>
     @endif
 
     <section class="kpis" aria-label="Indicadores">
-        <div class="kpi is-main"><span>Realizado</span><b>{{ $t['pct_done'] }} %</b><small>{{ number_format($t['done']) }} de {{ number_format($t['assigned']) }} cursos asignados</small></div>
-        <div class="kpi"><span>Aprobado</span><b>{{ $t['pct_passed'] }} %</b><small>{{ number_format($t['passed']) }} · {{ number_format($t['failed']) }} reprobados</small></div>
-        <div class="kpi"><span>Sin iniciar</span><b>{{ $t['pct_not_started'] }} %</b><small>{{ number_format($t['not_started']) }} · {{ number_format($t['in_progress']) }} en curso</small></div>
-        <div class="kpi"><span>Calificación promedio</span><b>{{ $t['avg_grade'] ?? '—' }}</b><small>{{ $c['courses_per_person'] }} cursos y {{ $c['hours_real_per_person'] }} de {{ $c['hours_per_person'] }} h por persona{{ $onlyGenerals ? ' (generales)' : '' }}</small></div>
+        <div class="kpi is-main"><span>Realizado</span><b>{{ $t['pct_done'] }} % @include('progress._delta', ['value' => $k['pct_done'] ?? null])</b><small>{{ number_format($t['done']) }} de {{ number_format($t['assigned']) }} cursos asignados</small></div>
+        <div class="kpi"><span>Aprobado</span><b>{{ $t['pct_passed'] }} % @include('progress._delta', ['value' => $k['pct_passed'] ?? null])</b><small>{{ number_format($t['passed']) }} · {{ number_format($t['failed']) }} reprobados</small></div>
+        <div class="kpi"><span>Sin iniciar</span><b>{{ $t['pct_not_started'] }} % @include('progress._delta', ['value' => $k['pct_not_started'] ?? null, 'inverse' => true])</b><small>{{ number_format($t['not_started']) }} · {{ number_format($t['in_progress']) }} en curso</small></div>
+        <div class="kpi"><span>Calificación promedio</span><b>{{ $t['avg_grade'] ?? '—' }} @include('progress._delta', ['value' => $k['avg_grade'] ?? null, 'unit' => ''])</b><small>{{ $c['courses_per_person'] }} cursos y {{ $c['hours_real_per_person'] }} de {{ $c['hours_per_person'] }} h por persona{{ $onlyGenerals ? ' (generales)' : '' }}</small></div>
     </section>
 
     <ul class="tabs" role="tablist" data-tabs hidden>
@@ -145,7 +153,7 @@ td { padding: 8px; border-bottom: 1px solid #E6ECE8; vertical-align: top; }
         <div class="card">
             <h2>Cómo va cada curso (de menor a mayor avance)</h2>
             <ul class="legend"><li><i class="is-passed"></i>Aprobado</li><li><i class="is-failed"></i>Reprobado</li><li><i class="is-progress"></i>En curso</li><li><i class="is-empty"></i>Sin iniciar</li><li>· el número es el % realizado</li></ul>
-            @include('progress._bars', ['rows' => $courses])
+            @include('progress._bars', ['rows' => $courses, 'deltas' => $deltas['courses'] ?? []])
         </div>
         @if ($specific->isNotEmpty())
         <div class="card">
@@ -173,7 +181,7 @@ td { padding: 8px; border-bottom: 1px solid #E6ECE8; vertical-align: top; }
             <div class="card">
                 <h2>Ranking de localidades</h2>
                 <p class="muted">Con al menos {{ config('mera.progress.dashboard.ranking_min_people') }} personas, por % realizado{{ $onlyGenerals ? ' en cursos generales' : '' }}.</p>
-                @include('progress._bars', ['rows' => $localities, 'numbered' => true])
+                @include('progress._bars', ['rows' => $localities, 'numbered' => true, 'deltas' => $deltas['localities'] ?? []])
             </div>
             <div class="card">
                 <h2>Dónde reprueban más</h2>

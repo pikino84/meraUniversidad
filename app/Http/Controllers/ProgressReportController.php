@@ -139,10 +139,18 @@ class ProgressReportController extends Controller
         $sort = in_array($request->query('orden'), ['avance-asc', 'avance-desc', 'nombre'], true) ? $request->query('orden') : 'avance-asc';
         $route = $share ? fn (array $query) => route('progress.shared', ['token' => $share->token] + $query) : fn (array $query) => route('progress.show', ['report' => $report] + $query);
 
+        // Comparación con otro corte (§7.2.2), con los mismos filtros. Las filas (cursos, localidades) solo
+        // en las pestañas que las muestran.
+        $compare = ProgressDashboard::comparisonFor($report, $request->query('comparar'), $dashboard->filters['anio']);
+        $deltas = $compare ? $dashboard->deltasAgainst(new ProgressDashboard($compare, $request), in_array($view, ['cursos', 'localidades'], true)) : null;
+
         $data = [
             'report' => $report,
             'd' => $dashboard,
             'share' => $share,
+            'compare' => $compare,
+            'deltas' => $deltas,
+            'compareOptions' => $share ? collect() : ProgressReport::query()->whereKeyNot($report->id)->orderByDesc('cut_date')->get(['id', 'slug', 'title', 'cut_date']),
             'url' => $route,
             'filters' => $dashboard->filters,
             'options' => $dashboard->options(),
@@ -197,6 +205,7 @@ class ProgressReportController extends Controller
     {
         $dashboard = new ProgressDashboard($report, $request);
         $byLocality = $dashboard->filters['localidad'] === null;
+        $compare = ProgressDashboard::comparisonFor($report, $request->query('comparar'), $dashboard->filters['anio']);
 
         $html = view('progress.standalone', [
             'report' => $report,
@@ -215,6 +224,8 @@ class ProgressReportController extends Controller
             'bands' => $dashboard->gradeBands(),
             'surveys' => $report->surveys()->orderBy('course_code')->get(),
             'labels' => $dashboard->courseLabels(),
+            'compare' => $compare,
+            'deltas' => $compare ? $dashboard->deltasAgainst(new ProgressDashboard($compare, $request)) : null,
         ])->render();
 
         activity('seguimiento')->causedBy($request->user())->performedOn($report)

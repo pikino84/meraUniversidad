@@ -6,7 +6,8 @@
 @php
     // Tablero del seguimiento anual, rediseñado (2026-10-20): filtros compactos, 4 indicadores y una
     // pestaña a la vez (?vista=). Los links conservan filtros y pestaña.
-    $base = array_filter($filters);
+    $base = array_filter($filters) + array_filter(['comparar' => request('comparar')]);
+    $k = $deltas['kpi'] ?? [];
     if ($share && $share->locality !== null) {
         unset($base['localidad']); // fija en el link compartido: no viaja en la URL
     }
@@ -58,7 +59,7 @@
 </div></div>
 @else
 
-@include('progress._filters', ['action' => $url([]), 'filters' => $filters, 'options' => $options, 'extra' => ['vista' => $view, 'orden' => $view === 'cursos' ? $sort : null], 'lockedLocality' => $share?->locality])
+@include('progress._filters', ['action' => $url([]), 'filters' => $filters, 'options' => $options, 'extra' => ['vista' => $view, 'orden' => $view === 'cursos' ? $sort : null, 'comparar' => request('comparar')], 'lockedLocality' => $share?->locality])
 
 @if ($courseVersions->isNotEmpty())
 <p class="mera-track-scope-note small">
@@ -74,25 +75,49 @@
 <section class="mera-kpis" aria-label="Indicadores">
     <div class="mera-kpi is-main">
         <span class="mera-kpi-label">Realizado</span>
-        <b class="mera-kpi-value">{{ $t['pct_done'] }} %</b>
+        <b class="mera-kpi-value">{{ $t['pct_done'] }} % @include('progress._delta', ['value' => $k['pct_done'] ?? null])</b>
         <span class="mera-kpi-hint">{{ number_format($t['done']) }} de {{ number_format($t['assigned']) }} cursos asignados, vistos completos y con evaluación</span>
     </div>
     <div class="mera-kpi">
         <span class="mera-kpi-label">Aprobado</span>
-        <b class="mera-kpi-value">{{ $t['pct_passed'] }} %</b>
+        <b class="mera-kpi-value">{{ $t['pct_passed'] }} % @include('progress._delta', ['value' => $k['pct_passed'] ?? null])</b>
         <span class="mera-kpi-hint">{{ number_format($t['passed']) }} con la calificación mínima · {{ number_format($t['failed']) }} reprobados</span>
     </div>
     <div class="mera-kpi">
         <span class="mera-kpi-label">Sin iniciar</span>
-        <b class="mera-kpi-value">{{ $t['pct_not_started'] }} %</b>
+        <b class="mera-kpi-value">{{ $t['pct_not_started'] }} % @include('progress._delta', ['value' => $k['pct_not_started'] ?? null, 'inverse' => true])</b>
         <span class="mera-kpi-hint">{{ number_format($t['not_started']) }} sin empezar · {{ number_format($t['in_progress']) }} en curso</span>
     </div>
     <div class="mera-kpi">
         <span class="mera-kpi-label">Calificación promedio</span>
-        <b class="mera-kpi-value">{{ $t['avg_grade'] ?? '—' }}</b>
+        <b class="mera-kpi-value">{{ $t['avg_grade'] ?? '—' }} @include('progress._delta', ['value' => $k['avg_grade'] ?? null, 'unit' => ''])</b>
         <span class="mera-kpi-hint">{{ $c['courses_per_person'] }} cursos y {{ $c['hours_real_per_person'] }} de {{ $c['hours_per_person'] }} h por persona{{ $onlyGenerals ? ' (generales)' : '' }}</span>
     </div>
 </section>
+
+<div class="mera-compare small">
+    @if ($compare)
+    <span>Cambios contra el corte del <b>{{ $compare->cut_date->format('d/m/Y') }}</b> ({{ $compare->title }}), con los mismos filtros.</span>
+    @elseif (! $share && $compareOptions->isEmpty())
+    <span class="text-muted">Cuando haya otro corte, aquí se verá cuánto subió o bajó cada cifra.</span>
+    @elseif (! $share)
+    <span class="text-muted">Sin comparación.</span>
+    @endif
+    @if (! $share && $compareOptions->isNotEmpty())
+    <form method="GET" action="{{ $url([]) }}" data-auto-submit class="mera-compare-form">
+        @foreach (array_filter($filters) + ['vista' => $view] as $name => $value)<input type="hidden" name="{{ $name }}" value="{{ $value }}">@endforeach
+        <label for="comparar" class="visually-hidden">Comparar con</label>
+        <select id="comparar" name="comparar" class="form-select form-select-sm mera-input">
+            <option value="">Corte anterior</option>
+            @foreach ($compareOptions as $option)
+            <option value="{{ $option->slug }}" @selected(request('comparar') === $option->slug)>{{ $option->cut_date->format('d/m/Y') }} · {{ $option->title }}</option>
+            @endforeach
+            <option value="no" @selected(request('comparar') === 'no')>No comparar</option>
+        </select>
+        <button type="submit" class="btn btn-sm mera-btn-ghost mera-filterbar-apply">Comparar</button>
+    </form>
+    @endif
+</div>
 
 <details class="mera-track-help small mb-3">
     <summary>¿Cómo se calcula?</summary>

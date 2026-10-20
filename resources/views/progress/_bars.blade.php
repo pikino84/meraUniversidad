@@ -24,7 +24,10 @@
             <i class="is-failed" style="width: {{ $r['failed'] / $a * 100 }}%"></i>
             <i class="is-progress" style="width: {{ $r['in_progress'] / $a * 100 }}%"></i>
         </span>
-        <span class="mera-track-bar-value"><b>{{ round($r['pct_done']) }} %</b> <small>{{ round($r['pct_passed']) }} % aprob.</small></span>
+        <span class="mera-track-bar-value">
+            <b>{{ round($r['pct_done']) }} %</b> <small>{{ round($r['pct_passed']) }} % aprob.</small>
+            @isset($deltas[$r['k'] ?? ''])@include('progress._delta', ['value' => $deltas[$r['k']]])@endisset
+        </span>
     </li>
     @endforeach
 </ol>

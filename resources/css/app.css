@@ -5185,3 +5185,54 @@ a.mera-version-card:focus-visible {
 .mera-share-who {
     flex: 0 0 180px;
 }
+
+/* Comparación con otro corte (§7.2.2) */
+.mera-delta {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.mera-delta.is-up { background: #E3F0D0; color: #1B5E20; }
+.mera-delta.is-down { background: #FDECEC; color: #B71C1C; }
+.mera-delta.is-same { background: #EEF2EF; color: #5F6368; }
+
+.mera-kpi.is-main .mera-delta.is-up { background: rgba(255, 255, 255, .2); color: #fff; }
+.mera-kpi.is-main .mera-delta.is-down { background: #FDECEC; color: #B71C1C; }
+
+.mera-track-bar-value .mera-delta {
+    margin-left: 2px;
+    padding: 0 5px;
+    font-size: 10px;
+}
+
+.mera-compare {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin-bottom: 6px;
+    color: #33433A;
+}
+
+.mera-compare-form {
+    display: flex;
+    gap: 6px;
+}
+
+.mera-compare-form .form-select {
+    min-width: 220px;
+    min-height: 34px;
+    font-size: 13px;
+}
+
+.mera-compare-form.is-auto .mera-filterbar-apply {
+    display: none;
+}

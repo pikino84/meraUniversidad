@@ -456,6 +456,9 @@ en la URL, "Ver más", CSV, escritorio y 375 px.
   un solo archivo con los filtros actuales, estilos y pestañas incrustados (abre sin servidor; al imprimir se ven todas
   las secciones). Solo agregados: sin nombres, sin consulta de colaboradores, sin respuestas abiertas ni links al panel.
   Con el corte real pesa **103 KB** (el prototipo, 4.3 MB). Queda en el historial.
-- ⏳ Pendiente: comparación con el corte anterior (§7.2.2), temas de las respuestas abiertas por curso y medir el tiempo
-  del corte en QA (§9).
+- ✅ **§7.2.2 Comparación con otro corte (2026-10-20, sin commit):** por defecto contra el corte inmediato anterior, con los
+  mismos filtros (`?comparar=<fecha>` para elegir otro; `?comparar=no` para quitarla). Puntos de cambio en los 4
+  indicadores (en "Sin iniciar", bajar es bueno), en "Cómo va cada curso" y en el ranking de localidades. También en los
+  links compartidos y en la descarga. Solo compara si el otro corte tiene el mismo año.
+- ⏳ Pendiente: temas de las respuestas abiertas por curso y medir el tiempo del corte en QA (§9).
 

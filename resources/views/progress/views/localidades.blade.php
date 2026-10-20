@@ -5,7 +5,7 @@
             <h2 id="l-ranking" class="h6 mera-track-title mb-1">Ranking de localidades</h2>
             <p class="small text-muted">Con al menos {{ config('mera.progress.dashboard.ranking_min_people') }} personas, por % realizado{{ $onlyGenerals ? ' en cursos generales' : '' }}. Toca una para filtrar todo el tablero.</p>
             @include('progress._legend')
-            @include('progress._bars', ['rows' => $localities, 'numbered' => true, 'link' => $filters['localidad'] ? null : fn ($l) => $with(['localidad' => $l])])
+            @include('progress._bars', ['rows' => $localities, 'numbered' => true, 'deltas' => $deltas['localities'] ?? [], 'link' => $filters['localidad'] ? null : fn ($l) => $with(['localidad' => $l])])
         </div>
     </section>
 

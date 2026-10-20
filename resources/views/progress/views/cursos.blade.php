@@ -13,7 +13,7 @@
                 @endforeach
             </nav>
         </div>
-        @include('progress._bars', ['rows' => $courses, 'link' => $filters['curso'] ? null : fn ($code) => $with(['curso' => $code])])
+        @include('progress._bars', ['rows' => $courses, 'deltas' => $deltas['courses'] ?? [], 'link' => $filters['curso'] ? null : fn ($code) => $with(['curso' => $code])])
     </div>
 </section>
 

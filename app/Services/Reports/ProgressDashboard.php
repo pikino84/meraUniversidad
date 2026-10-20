@@ -51,6 +51,61 @@ class ProgressDashboard
         ];
     }
 
+    /**
+     * Corte con el que se compara (§7.2.2): el que pide la URL (?comparar=<fecha>), o el inmediato anterior;
+     * null con ?comparar=no o si no hay. Solo si tiene el mismo año que se está viendo.
+     */
+    public static function comparisonFor(ProgressReport $report, ?string $requested, ?int $year): ?ProgressReport
+    {
+        if ($requested === 'no') {
+            return null;
+        }
+
+        $other = $requested
+            ? ProgressReport::where('slug', $requested)->whereKeyNot($report->id)->first()
+            : ProgressReport::query()->whereKeyNot($report->id)
+                ->where(fn ($q) => $q->where('cut_date', '<', $report->cut_date)
+                    ->orWhere(fn ($w) => $w->where('cut_date', $report->cut_date)->where('id', '<', $report->id)))
+                ->orderByDesc('cut_date')->orderByDesc('id')->first();
+
+        if (! $other || ! $year) {
+            return null;
+        }
+
+        $hasYear = DB::table('progress_report_items')->where('progress_report_id', $other->id)->where('year', $year)->exists();
+
+        return $hasYear ? $other : null;
+    }
+
+    /**
+     * Cambio en puntos entre este tablero y el de otro corte con los mismos filtros.
+     *
+     * @return array{kpi: array<string,?float>, courses: array<string,float>, localities: array<string,float>}
+     */
+    public function deltasAgainst(self $previous, bool $rows = true): array
+    {
+        $now = $this->totals();
+        $before = $previous->totals();
+        $diff = fn ($a, $b) => $a === null || $b === null ? null : round($a - $b, 1);
+
+        $byKey = fn (Collection $current, Collection $old) => $current->mapWithKeys(function ($r) use ($old) {
+            $match = $old->firstWhere('k', $r['k']);
+
+            return $match ? [$r['k'] => round($r['pct_done'] - $match['pct_done'], 1)] : [];
+        })->all();
+
+        return [
+            'kpi' => [
+                'pct_done' => $diff($now['pct_done'], $before['pct_done']),
+                'pct_passed' => $diff($now['pct_passed'], $before['pct_passed']),
+                'pct_not_started' => $diff($now['pct_not_started'], $before['pct_not_started']),
+                'avg_grade' => $diff($now['avg_grade'], $before['avg_grade']),
+            ],
+            'courses' => $rows ? $byKey($this->byCourse(), $previous->byCourse()) : [],
+            'localities' => $rows ? $byKey($this->byLocality(), $previous->byLocality()) : [],
+        ];
+    }
+
     /** Años del corte que cuentan (desde mera.progress.tracking_from_year), el más reciente primero. */
     public function years(): array
     {

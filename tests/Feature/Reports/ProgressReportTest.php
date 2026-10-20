@@ -444,6 +444,39 @@ class ProgressReportTest extends TestCase
         $this->get(route('progress.download', $report))->assertRedirect(route('login'));
     }
 
+    public function test_the_dashboard_compares_with_the_previous_cut(): void
+    {
+        config(['mera.progress.dashboard.ranking_min_people' => 1]);
+        $old = $this->createCut('2026-09-01');
+        // En el corte anterior nadie había empezado.
+        ProgressReportItem::where('progress_report_id', $old->id)->update(['status' => ProgressReportItem::STATUS_NOT_STARTED, 'grade' => null]);
+        $new = $this->createCut('2026-10-12');
+
+        // Por defecto, contra el corte inmediato anterior y con los mismos filtros.
+        $response = $this->actingAs($this->admin)->get(route('progress.show', $new))->assertOk()->assertSee('Cambios contra el corte del')->assertSee('01/09/2026');
+        $this->assertSame($old->id, $response->viewData('compare')->id);
+        $this->assertSame(['pct_done' => 62.5, 'pct_passed' => 37.5, 'pct_not_started' => -87.5, 'avg_grade' => null], $response->viewData('deltas')['kpi']);
+        $response->assertSee('▲', false)->assertSee('62.5 pts');
+
+        $monterrey = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $new, 'vista' => 'localidades']))->viewData('deltas')['localities'];
+        $this->assertSame(80.0, $monterrey['Monterrey']); // 4 de 5 realizados en Monterrey; antes, 0
+
+        $courses = $this->actingAs($this->admin)->get(route('progress.show', ['report' => $new, 'vista' => 'cursos']))->viewData('deltas')['courses'];
+        $this->assertEqualsWithDelta(66.7, $courses['NRM-HIG-002-EL-26'], 0.05); // Higiene: 2 de 3 realizados
+
+        // Sin comparación, o contra un corte posterior elegido.
+        $this->assertNull($this->actingAs($this->admin)->get(route('progress.show', ['report' => $new, 'comparar' => 'no']))->viewData('compare'));
+        $this->assertSame($new->id, $this->actingAs($this->admin)->get(route('progress.show', ['report' => $old, 'comparar' => $new->slug]))->viewData('compare')->id);
+
+        // El corte más antiguo no tiene anterior: lo dice.
+        $this->actingAs($this->admin)->get(route('progress.show', $old))->assertSee('Sin comparación');
+
+        // La descarga lleva los mismos cambios.
+        $html = $this->actingAs($this->admin)->get(route('progress.download', $new))->getContent();
+        $this->assertStringContainsString('Cambios contra el corte del', $html);
+        $this->assertStringContainsString('62.5 pts', $html);
+    }
+
     public function test_the_fast_reader_reads_only_the_requested_columns(): void
     {
         $path = $this->makeXlsx([
