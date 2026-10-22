@@ -98,6 +98,30 @@ class ProgressSurveyAnalyzer
                 continue;
             }
 
+            // "¿Cómo calificarías el curso en general?" (0–10, Respeto que Construye): NO es NPS; promedio.
+            if (str_contains($q, 'calificarias') && $this->allNumeric($filled)) {
+                $indicators['rating_avg'] = round(array_sum(array_map('intval', $filled)) / count($filled), 1);
+                $indicators['rating_n'] = count($filled);
+
+                continue;
+            }
+
+            // "¿Recomendarías…?" escrita a mano (abierta): Sí / No / sin respuesta clara (fuera del %).
+            if (str_contains($q, 'recomendar') && ! $this->isClosed($filled, $distinct)) {
+                $groups = ['Sí' => 0, 'No' => 0, 'Sin respuesta clara' => 0];
+                foreach ($filled as $answer) {
+                    $groups[match (SurveyAnswerClassifier::yesNo($answer)) {
+                        true => 'Sí', false => 'No', null => 'Sin respuesta clara'
+                    }]++;
+                }
+                if ($groups['Sí'] + $groups['No']) {
+                    $indicators['recommend'] = round($groups['Sí'] / ($groups['Sí'] + $groups['No']) * 100, 1);
+                }
+                $closed[] = ['question' => $question, 'answers' => array_filter($groups), 'n' => count($filled)];
+
+                continue;
+            }
+
             if ($this->isClosed($filled, $distinct)) {
                 $yes = $this->yesShare($distinct);
 
@@ -228,23 +252,31 @@ class ProgressSurveyAnalyzer
             $question ? $columns[] = [$question, $ok] : $missing[] = $fragment;
         }
 
-        if ($missing) {
-            return [null, ['La configuración de la encuesta no encontró estas preguntas: '.implode(', ', $missing).'.']];
+        // Como el reporte por curso: lo que falta se omite con aviso y se calcula con lo demás.
+        $warnings = $missing ? ['La encuesta no trae '.(count($missing) === 1 ? 'la pregunta' : 'las preguntas').' «'.implode('», «', $missing).'»: '
+            .($columns ? 'la satisfacción se calcula con las otras '.count($columns).'.' : 'no se calcula la satisfacción.')] : [];
+
+        if ($columns === []) {
+            return [null, $warnings];
         }
 
+        // Igual que el reporte por curso: 'yes' = Sí/No escrito a mano; sin respuesta clara, fuera del %.
         $favorable = 0;
+        $rated = 0;
         for ($i = 0; $i < $responses; $i++) {
             $all = true;
+            $clear = true;
             foreach ($columns as [$question, $ok]) {
-                if (! in_array($answers[$question][$i] ?? '', $ok, true)) {
-                    $all = false;
-                    break;
-                }
+                $answer = $answers[$question][$i] ?? '';
+                $yes = $ok === 'yes' ? SurveyAnswerClassifier::yesNo($answer) : in_array($answer, $ok, true);
+                $clear = $clear && $yes !== null;
+                $all = $all && $yes === true;
             }
-            $favorable += (int) $all;
+            $rated += (int) $clear;
+            $favorable += (int) ($clear && $all);
         }
 
-        return [round($favorable / $responses * 100, 1), []];
+        return [$rated ? round($favorable / $rated * 100, 1) : null, $warnings];
     }
 
     /**
@@ -271,8 +303,8 @@ class ProgressSurveyAnalyzer
             return null;
         };
 
-        $likedQ = $find([$config['liked_question'] ?? null, 'mas te gusto', 'mas valioso', 'lo que mas']);
-        $improveQ = $find([$config['improve_question'] ?? null, 'mejorarias', 'que mejorar']);
+        $likedQ = $find([$config['liked_question'] ?? null, 'mas te gusto', 'te gusto mas', 'mas valioso', 'lo que mas']);
+        $improveQ = $find([$config['improve_question'] ?? null, 'mejorarias', 'que mejorar', 'podriamos mejorar']);
 
         if (! $likedQ && ! $improveQ) {
             return null;

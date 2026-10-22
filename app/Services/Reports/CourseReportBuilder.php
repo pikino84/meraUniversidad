@@ -159,18 +159,17 @@ class CourseReportBuilder
     }
 
     /**
-     * Columnas indispensables de cualquier encuesta de satisfacción de MERA: sin ellas no es el archivo
-     * correcto y el corte se detiene. Las preguntas favorables de cada curso cambian y son opcionales.
+     * Únicas columnas obligatorias: las de la plataforma, que traen todas las encuestas. Las preguntas
+     * cambian por curso (Respeto que Construye no trae la escala 0–10, 2026-10-22): ninguna pregunta
+     * detiene el corte; si falta, su indicador no se calcula y se avisa.
      */
     private const REQUIRED_SURVEY_COLUMNS = [
         'num' => ['No. Empleado'],
         'est' => ['Estatus colaborador'],
-        'rec' => ['Recomendarías', false],
-        'nps' => ['escala del 0 al 10', false],
     ];
 
     /** Fragmentos de respaldo de las preguntas abiertas, en orden de prioridad (cambian por curso). */
-    private const LIKED_FRAGMENTS = ['más te gustó', 'más valioso'];
+    private const LIKED_FRAGMENTS = ['más te gustó', 'te gustó más', 'más valioso'];
 
     private const IMPROVE_FRAGMENTS = ['mejorarías', 'podríamos mejorar'];
 
@@ -201,6 +200,11 @@ class CourseReportBuilder
                 $columns[$key] = [$fragment, false];
             }
         }
+        // Segunda pregunta de "lo que valoran" (p. ej. "¿Qué tema te pareció más útil?"): se suma al texto.
+        $extra = $survey['liked_extra_question'] ?? null;
+        if ($extra && ReportWorkbookReader::findColumn($headers, $extra) !== null) {
+            $columns['liked2'] = [$extra, false];
+        }
 
         $codeColumns = array_merge(
             array_values(array_filter(array_column($survey['catalog'], 0), fn ($c) => str_starts_with($c, 'm'))),
@@ -215,9 +219,13 @@ class CourseReportBuilder
         $rows = [];
         $pending = [];
         $allFavorable = 0;
+        $rated = 0; // respuestas con todas las preguntas claras (base de la satisfacción)
 
         foreach ($this->reader->rows($path, $label, $columns) as $row) {
-            $row += ['liked' => null, 'improve' => null];
+            $row += ['liked' => null, 'improve' => null, 'liked2' => null];
+            if (SurveyAnswerClassifier::meaningful($row['liked2'])) {
+                $row['liked'] = trim(ReportWorkbookReader::clean($row['liked']).' · '.ReportWorkbookReader::clean($row['liked2']), ' ·');
+            }
             $num = PersonnelDirectory::employeeNumber($row['num']);
             $person = $personnel->find($num);
             $deleted = strtolower(trim(is_scalar($row['est']) ? (string) $row['est'] : '')) === 'deleted';
@@ -226,15 +234,21 @@ class CourseReportBuilder
                 ? [$inactive, $inactive]
                 : [$person['localidad'] ?? $inactive, $person['area']];
 
+            // 'yes' = Sí/No escrito a mano: sin respuesta clara queda en null (fuera del %).
             $flags = [];
             foreach ($favorable as [$key, , $ok]) {
-                $flags[] = (int) in_array(ReportWorkbookReader::clean($row[$key]), $ok, true);
+                $flags[] = $ok === 'yes'
+                    ? (($yes = SurveyAnswerClassifier::yesNo($row[$key])) === null ? null : (int) $yes)
+                    : (int) in_array(ReportWorkbookReader::clean($row[$key]), $ok, true);
             }
-            $allFavorable += (int) ($flags && array_sum($flags) === count($flags));
+            if ($flags && ! in_array(null, $flags, true)) {
+                $rated++;
+                $allFavorable += (int) (array_sum($flags) === count($flags));
+            }
 
             if ($num !== null && isset($precoded[$num])) {
                 $codes = $precoded[$num];
-            } elseif (! isset($columns['liked']) && ! isset($columns['improve'])) {
+            } elseif (! isset($columns['liked']) && ! isset($columns['improve']) && ! isset($columns['liked2'])) {
                 $codes = []; // la encuesta no trae preguntas abiertas
             } else {
                 $codes = $classifier->classify($row['liked'], $row['improve']);
@@ -257,7 +271,7 @@ class CourseReportBuilder
         return [
             ['columns' => array_merge(['localidad', 'area'], array_column($favorable, 0), $codeColumns), 'rows' => $rows],
             $pending,
-            ['respuestas' => $total, 'satisfaccion' => $total && $favorable ? round($allFavorable / $total * 100, 2) : null],
+            ['respuestas' => $total, 'satisfaccion' => $rated ? round($allFavorable / $rated * 100, 2) : null],
             // Etiqueta null: cuenta para la satisfacción pero no lleva barra propia (p. ej. "recomienda" en Higiene).
             array_map(fn ($q) => [$q[0], $q[3] ?? null], $favorable),
         ];

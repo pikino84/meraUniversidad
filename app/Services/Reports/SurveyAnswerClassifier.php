@@ -62,6 +62,23 @@ class SurveyAnswerClassifier
         return ! in_array($plain, self::EMPTY_ANSWERS, true) && ! ($improve && in_array($plain, self::NOTHING_TO_IMPROVE, true));
     }
 
+    /**
+     * Sí/No escrito a mano ("¿Recomendarías…?" abierta en Respeto que Construye, 2026-10-22): por la
+     * primera palabra. true = sí ("si", "sii", "sip", "claro", "por supuesto"…), false = no ("no",
+     * "nop"), null = sin respuesta clara (".", "tal vez", "sin comentarios", "so"…): fuera del %.
+     */
+    public static function yesNo(mixed $text): ?bool
+    {
+        $plain = self::plain($text);
+        $yes = '/^(s+i+p?|claro|por ?supuesto|definitivamente|totalmente|absolutamente|completamente|sin duda|obvio|desde luego|siempre|100|ps si)\b/';
+
+        if (preg_match($yes, $plain)) {
+            return true;
+        }
+
+        return preg_match('/^(no|nop|nope)\b/', $plain) ? false : null;
+    }
+
     /** Texto comparable: sin acentos, minúsculas, solo letras/números y espacios simples. */
     public static function plain(mixed $text): string
     {

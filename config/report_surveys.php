@@ -13,6 +13,9 @@
 |   tablero (null = cuenta para la satisfacción, sin barra propia)]. La respuesta se compara TAL CUAL
 |   (solo sin "*" y con espacios colapsados), como el script. Una pregunta que la encuesta no trae se
 |   omite con aviso: la satisfacción se calcula con las demás (antes detenía el corte, 2026-10-21).
+|   Respuestas favorables = 'yes' para un Sí/No escrito a mano (SurveyAnswerClassifier::yesNo: "si",
+|   "claro", "por supuesto"… = sí; "no" = no; lo demás queda fuera del %).
+| - liked_extra_question (opcional): otra pregunta abierta de "lo que valoran"; se suma a la principal.
 | - title: fragmento de la columna "Cuestionario" que identifica la encuesta (sin acentos ni mayúsculas).
 | - catalog (opcional): sin él se usa el catálogo base de temas (config mera.progress.survey_topics).
 | - catalog: temas de "lo que más valoran" (v..) y "qué piden mejorar" (m..), en el orden del
@@ -98,13 +101,36 @@ return [
         'improve_question' => 'Qué mejorarías',
     ],
 
+    // Hostigamiento y Acoso 2026 (2026-10-22): la encuesta se llama «Respeto que Construye», no trae
+    // la escala 0–10 (trae «¿Cómo calificarías el curso en general?») y «Recomendarías» es abierta.
+    'respeto' => [
+        'name' => 'Respeto que Construye (Hostigamiento y Acoso)',
+        'title' => 'Respeto que Construye',
+        'course_codes' => ['NRM-SEG-004-EL-26'],
+
+        'favorable' => [
+            ['f_utilidad', 'temas tratados son útiles', ['Muy de acuerdo', 'De acuerdo'], 'Les sirve para su trabajo'],
+            ['f_respeto', 'fomentar el respeto', ['Sí, completamente'], 'Saben fomentar el respeto'],
+            ['f_ejemplos', 'ejemplos y casos presentados', ['Muy claros y aplicables'], 'Ejemplos claros'],
+            ['f_herramientas', 'herramientas prácticas', ['Sí, muchas'], 'Aprendieron herramientas'],
+            ['f_capaz', 'capaz de aplicar', ['Si', 'Sí'], 'Se sienten capaces de aplicarlo'],
+            ['f_facil', 'fácil fue acceder', ['Muy fácil', 'Fácil'], 'Fue fácil de usar'],
+            ['f_recursos', 'Los recursos', ['Muy útiles', 'Útiles'], 'Recursos útiles'],
+            ['f_recomienda', 'Recomendarías', 'yes', null],
+        ],
+
+        'liked_question' => 'te gustó más',
+        'liked_extra_question' => 'más útil o impactante',
+        'improve_question' => 'podríamos mejorar',
+    ],
+
     // Cualquier otro curso: solo lo que traen todas las encuestas de MERA. Satisfacción = % que
-    // recomienda el curso. Va al final: es el respaldo de "Automática".
+    // recomienda el curso (cerrada o escrita a mano). Va al final: es el respaldo de "Automática".
     'general' => [
         'name' => 'General (cualquier curso)',
 
         'favorable' => [
-            ['f_recomienda', 'Recomendarías', ['Si', 'Sí'], 'Recomiendan el curso'],
+            ['f_recomienda', 'Recomendarías', 'yes', 'Recomiendan el curso'],
         ],
     ],
 

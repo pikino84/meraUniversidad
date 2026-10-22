@@ -235,7 +235,7 @@ td { padding: 8px; border-bottom: 1px solid #E6ECE8; vertical-align: top; }
                         <td>{{ $labels[$s->course_code] ?? $s->course_code }}</td>
                         <td>{{ number_format($s->responses) }}</td>
                         <td>{{ $pct($s->indicator('recommend')) }}</td>
-                        <td>{{ $s->indicator('nps') === null ? '—' : sprintf('%+d', $s->indicator('nps')) }}</td>
+                        <td>@include('progress._nps', ['s' => $s])</td>
                         <td>{{ $pct($s->indicator('tech_problems')) }}</td>
                         <td>{{ $pct($s->indicator('satisfaction')) }}</td>
                     </tr>

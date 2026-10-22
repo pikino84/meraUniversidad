@@ -7,8 +7,10 @@ use App\Models\CourseGroup;
 use App\Models\Market;
 use App\Models\ProgressReport;
 use App\Models\ProgressReportItem;
+use App\Models\ProgressReportSurvey;
 use App\Models\User;
 use App\Services\Reports\FastSheetReader;
+use App\Services\Reports\ProgressSurveyAnalyzer;
 use App\Support\TestEnvironment;
 use DateTime;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -568,5 +570,34 @@ class ProgressReportTest extends TestCase
         $this->assertModelMissing($survey);
         auth()->logout();
         $this->get($share->url())->assertNotFound();
+    }
+
+    /**
+     * Respeto que Construye (2026-10-22): «Recomendarías» escrita a mano y calificación general 0–10 en
+     * lugar del NPS. El % recomienda deja fuera lo que no es claro; la calificación no se llama NPS.
+     */
+    public function test_open_recommendation_and_course_rating_without_nps(): void
+    {
+        $rows = [['Cuestionario', 'No. Empleado', 'Estatus colaborador', '¿Te sientes capaz de aplicar lo aprendido en tu trabajo?', '¿Cómo calificarías el curso en general?', '¿Qué te gustó más del curso?', '¿Recomendarías este curso a otros colaboradores?']];
+        foreach ([['Si', 10, 'Todo', 'Claro que si'], ['Si', 9, 'Los ejemplos', 'sii'], ['Parcialmente', 8, 'Nada', 'No'], ['Si', 7, 'El tema', '.']] as $i => [$capaz, $score, $liked, $recommend]) {
+            $rows[] = ['Encuesta de satisfacción - Respeto que Construye 2026', (string) ($i + 1), 'active', $capaz, $score, $liked, $recommend];
+        }
+        $path = $this->makeXlsx($rows, 'respeto.xlsx');
+
+        $result = app(ProgressSurveyAnalyzer::class)->analyze($path, 'NRM-SEG-004-EL-26');
+        $indicators = $result['data']['indicators'];
+
+        $this->assertSame(66.7, $indicators['recommend']); // 2 de 3 claras; "." fuera
+        $this->assertNull($indicators['nps']);
+        $this->assertSame(8.5, $indicators['rating_avg']);
+        $this->assertSame(66.7, $indicators['satisfaction']); // capaz + recomienda, sin la "."
+        $recommend = collect($result['data']['closed'])->firstWhere('question', '¿Recomendarías este curso a otros colaboradores?');
+        $this->assertSame(['Sí' => 2, 'No' => 1, 'Sin respuesta clara' => 1], $recommend['answers']);
+        $this->assertNotContains('¿Recomendarías este curso a otros colaboradores?', array_column($result['data']['open'], 'question'));
+        $this->assertSame(['Todo', 'Los ejemplos', 'El tema'], array_column($result['data']['topics']['answers'], 'l'));
+
+        $html = view('progress._nps', ['s' => new ProgressReportSurvey(['data' => $result['data']])])->render();
+        $this->assertStringContainsString('8.5 / 10', $html);
+        $this->assertStringContainsString('calificación del curso', $html);
     }
 }

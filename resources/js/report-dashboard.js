@@ -70,7 +70,10 @@ function init() {
     const QS = raw?.preguntas ? data('preguntas').map((r) => [r.clave, r.etiqueta]) : [['f_utilidad', 'Les sirve para su trabajo'], ['f_riesgos', 'Entienden los riesgos'], ['f_ejemplos', 'Ejemplos claros'], ['f_herramientas', 'Aprendieron herramientas'], ['f_capaz', 'Se sienten capaces de aplicarlo'], ['f_facil', 'Fue fácil de usar'], ['f_recursos', 'Recursos útiles'], ['f_recomienda', null]];
     const Q = QS.filter(([, label]) => label);
     const FK = QS.map(([key]) => key);
+    // null = Sí/No escrito a mano sin respuesta clara: esa respuesta queda fuera del % (2026-10-22).
+    const clear = (r) => FK.every((k) => r[k] !== null);
     const allOk = (r) => FK.every((k) => num(r[k]) === 1);
+    const satShare = (rows) => { const c = rows.filter(clear); return c.length ? c.filter(allOk).length / c.length : null; };
     const STATE = { ok: ['Va bien', '#55B882'], warn: ['Atención', '#E5A823'], bad: ['Necesita apoyo', 'var(--cds-chart-status-critical)'] };
     const state = (bajo) => (bajo >= T.needs_support_from ? 'bad' : (bajo < T.ok_below ? 'ok' : 'warn'));
     const tip = $('lx-tip');
@@ -195,7 +198,7 @@ function init() {
         const sin = sum(sel, 'sin_iniciar');
         const calN = sum(sel, 'calif_n');
         const ok80 = sum(sel, 'b80');
-        const rec = nE && FK.length ? encF.filter(allOk).length / nE : null;
+        const rec = nE && FK.length ? satShare(encF) : null;
         $('k-asig').textContent = fmt(asig);
         $('k-comp').textContent = asig ? pct(comp / asig) : '—';
         $('k-comp-s').textContent = fmt(comp) + ' de ' + fmt(asig) + ' personas';
@@ -338,11 +341,15 @@ function init() {
 
         // Satisfacción
         $('lx-sat-note').textContent = nE ? 'Porcentaje de respuestas favorables. ' + fmt(nE) + ' respuestas.' : 'No hay respuestas de encuesta con estos filtros.';
-        barRows($('lx-sat'), Q.map(([k, l]) => ({ label: l, value: d3sum(encF, (r) => num(r[k])), text: nE ? pct(d3sum(encF, (r) => num(r[k])) / nE) : '—' })).sort((a, b) => b.value - a.value), nE, '');
+        barRows($('lx-sat'), Q.map(([k, l]) => {
+            const answered = encF.filter((r) => r[k] !== null);
+            const share = answered.length ? d3sum(answered, (r) => num(r[k])) / answered.length : 0;
+            return { label: l, value: share, text: answered.length ? pct(share) : '—' };
+        }).sort((a, b) => b.value - a.value), 1, '');
 
         // Satisfacción por localidad
         const encA = enc.filter((r) => (!area || r.area === area) && r.localidad !== 'Ya no activo');
-        const SL = !FK.length ? [] : rollups(encA, (g) => ({ n: g.length, a: g.filter(allOk).length }), (r) => r.localidad)
+        const SL = !FK.length ? [] : rollups(encA.filter(clear), (g) => ({ n: g.length, a: g.filter(allOk).length }), (r) => r.localidad)
             .map(([k, v]) => ({ k, ...v, p: v.a / v.n })).filter((v) => v.n >= T.satisfaction_min_answers).sort((a, b) => b.p - a.p);
         barRows($('lx-sat-loc'), SL.map((v) => ({ label: v.k + ' (' + fmt(v.n) + ')', value: v.p, text: pct(v.p) })), 1, '');
         if (!SL.length) $('lx-sat-loc').append(div('lx-sub', `Sin localidades con ${T.satisfaction_min_answers} respuestas o más.`));

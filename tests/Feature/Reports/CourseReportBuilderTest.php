@@ -8,6 +8,7 @@ use App\Services\Reports\OrgMapper;
 use App\Services\Reports\PersonnelDirectory;
 use App\Services\Reports\ReportFormatException;
 use App\Services\Reports\ReportWorkbookReader;
+use App\Services\Reports\SurveyAnswerClassifier;
 use DateTimeImmutable;
 use Tests\Concerns\BuildsSpreadsheets;
 use Tests\TestCase;
@@ -164,15 +165,74 @@ class CourseReportBuilderTest extends TestCase
         $this->assertSame([], $data['pending']);
     }
 
-    public function test_a_file_without_the_essential_survey_columns_is_rejected(): void
+    public function test_a_file_without_the_platform_columns_is_rejected(): void
     {
         $personnel = $this->makeXlsx([self::PERSONNEL_HEADER]);
-        $survey = $this->makeXlsx([['No. Empleado', 'Estatus colaborador', 'Otra pregunta']]);
+        $survey = $this->makeXlsx([['Colaborador', 'Estatus colaborador', '¿Recomendarías este curso?']]);
 
         $this->expectException(ReportFormatException::class);
-        $this->expectExceptionMessage('Falta la columna «Recomendarías» en el archivo «encuesta de satisfacción»');
+        $this->expectExceptionMessage('Falta la columna «No. Empleado» en el archivo «encuesta de satisfacción»');
 
         $this->builder->build($personnel, $this->makeXlsx([self::ENROLLMENT_HEADER]), $survey, $this->survey());
+    }
+
+    /** Ninguna pregunta detiene el corte (2026-10-22): sin ninguna favorable, no hay satisfacción y se avisa. */
+    public function test_a_survey_without_any_known_question_still_builds(): void
+    {
+        $personnel = $this->makeXlsx([self::PERSONNEL_HEADER, [1, 'A', 'x', 'Bajio', 'Cocina', 'chef', 'y']]);
+        $survey = $this->makeXlsx([['No. Empleado', 'Estatus colaborador', 'Otra pregunta'], [1, 'active', 'algo']]);
+
+        $data = $this->builder->build($personnel, $this->makeXlsx([self::ENROLLMENT_HEADER]), $survey, config('report_surveys.general'));
+
+        $this->assertSame(1, $data['summary']['respuestas']);
+        $this->assertNull($data['summary']['satisfaccion']);
+        $this->assertStringContainsString('no se calcula la satisfacción', implode(' ', $data['warnings']));
+        $this->assertSame([], $data['preguntas']['rows']);
+    }
+
+    /**
+     * Respeto que Construye (Hostigamiento y Acoso, 2026-10-22): sin escala 0–10, «Recomendarías» abierta
+     * (fuera del % lo que no es claro) y dos preguntas de "lo que valoran".
+     */
+    public function test_an_open_recommendation_is_normalized_and_unclear_answers_are_left_out(): void
+    {
+        $personnel = $this->makeXlsx([self::PERSONNEL_HEADER, [1, 'A', 'x', 'Bajio', 'Cocina', 'chef', 'y']]);
+        $header = ['Cuestionario', 'No. Empleado', 'Estatus colaborador'];
+        foreach (config('report_surveys.respeto.favorable') as [, $fragment]) {
+            $header[] = "¿Pregunta: {$fragment}?";
+        }
+        array_push($header, '¿Cómo calificarías el curso en general?', '¿Qué te gustó más del curso?', '¿Qué tema del curso te pareció más útil o impactante?', '¿Qué parte del curso crees que podríamos mejorar?');
+        $ok = ['De acuerdo', 'Sí, completamente', 'Muy claros y aplicables', 'Sí, muchas', 'Si', 'Fácil', 'Útiles'];
+        $survey = $this->makeXlsx([
+            $header,
+            array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 1, 'active'], $ok, ['Claro que si', 10, 'Los videos', 'El acoso', 'Nada']),
+            array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 2, 'active'], $ok, ['nop', 9, '', '', '']),
+            array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 3, 'deleted'], $ok, ['.', 8, '', '', '']),
+        ]);
+
+        $key = CourseReportManager::surveyFor(null, $this->builder->surveyTitle($survey));
+        $data = $this->builder->build($personnel, $this->makeXlsx([self::ENROLLMENT_HEADER]), $survey, config("report_surveys.{$key}"));
+
+        $this->assertSame('respeto', $key);
+        $this->assertSame(3, $data['summary']['respuestas']);
+        $this->assertSame(50.0, $data['summary']['satisfaccion']); // "." no cuenta: 1 de 2
+        $recommend = array_search('f_recomienda', $data['encuesta']['columns'], true);
+        $this->assertSame([1, 0, null], array_column($data['encuesta']['rows'], $recommend));
+        $this->assertSame('Los videos · El acoso', $data['pending'][0]['liked']);
+        $this->assertSame([], array_filter($data['warnings'], fn ($w) => str_contains($w, 'no trae')));
+    }
+
+    public function test_free_text_yes_and_no_answers(): void
+    {
+        foreach (['Si', 'sii', 'Sip', 'Claro que si', 'porsupuesto', 'Sí.', 'Definitivamente si', 'siempre', '100%'] as $yes) {
+            $this->assertTrue(SurveyAnswerClassifier::yesNo($yes), $yes);
+        }
+        foreach (['No', 'nop', 'no lo creo'] as $no) {
+            $this->assertFalse(SurveyAnswerClassifier::yesNo($no), $no);
+        }
+        foreach (['.', 'tal vez', 'sin comentarios', 'so', 'n', 'nada', 'N/A', 'nopal', ''] as $unclear) {
+            $this->assertNull(SurveyAnswerClassifier::yesNo($unclear), $unclear);
+        }
     }
 
     /**

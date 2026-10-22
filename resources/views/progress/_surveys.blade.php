@@ -40,7 +40,7 @@
                         </td>
                         <td data-label="Respuestas" class="mera-nowrap">{{ number_format($s->responses) }}<small class="d-block text-muted">{{ number_format($s->active) }} activos</small></td>
                         <td data-label="Recomienda">{{ $pct($s->indicator('recommend')) }}</td>
-                        <td data-label="NPS">{{ $s->indicator('nps') === null ? '—' : sprintf('%+d', $s->indicator('nps')) }}</td>
+                        <td data-label="NPS">@include('progress._nps', ['s' => $s])</td>
                         <td data-label="Problemas técnicos">{{ $pct($s->indicator('tech_problems')) }}</td>
                         <td data-label="Satisfacción">{{ $pct($s->indicator('satisfaction')) }}@if ($s->indicator('satisfaction') === null)<small class="d-block text-muted">sin configurar</small>@endif</td>
                         @unless ($share)
