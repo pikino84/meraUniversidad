@@ -13,6 +13,8 @@ use DateTimeInterface;
  *
  * Resultado (nada de datos personales: solo agregados y banderas 0/1 por respuesta):
  *  - cubo, inicio_mes, encuesta, catalogo: {columns: [...], rows: [[...]]} (contrato con el JS, §7)
+ *  - preguntas: las preguntas favorables que SÍ trae la encuesta ({clave, etiqueta}); el JS calcula la
+ *    satisfacción con ellas (los cortes anteriores, sin esta tabla, usan las 8 de Higiene)
  *  - pending: respuestas abiertas sin clasificación previa, con la propuesta por palabras clave,
  *    para corregirlas en pantalla. Se guarda el texto, sin número de empleado ni nombre.
  *  - warnings: avisos para el usuario.
@@ -38,7 +40,8 @@ class CourseReportBuilder
         $personnel = PersonnelDirectory::fromWorkbook($this->reader, $personnelPath);
 
         [$cube, $months] = $this->cube($enrollmentsPath, $personnel, $warnings);
-        [$responses, $pending, $summarySurvey] = $this->survey($surveyPath, $personnel, $survey, $warnings);
+        $survey['catalog'] ??= (array) config('mera.progress.survey_topics'); // sin catálogo propio: el base
+        [$responses, $pending, $summarySurvey, $questions] = $this->survey($surveyPath, $personnel, $survey, $warnings);
 
         $catalog = array_map(fn ($t) => [$t[0], $t[1], $t[2]], $survey['catalog']);
 
@@ -47,10 +50,26 @@ class CourseReportBuilder
             'inicio_mes' => ['columns' => ['localidad', 'area', 'mes', 'n'], 'rows' => $months],
             'encuesta' => $responses,
             'catalogo' => ['columns' => ['codigo', 'tipo', 'etiqueta'], 'rows' => $catalog],
+            'preguntas' => ['columns' => ['clave', 'etiqueta'], 'rows' => $questions],
             'pending' => $pending,
             'warnings' => $warnings,
             'summary' => $this->summary($cube) + $summarySurvey,
         ];
+    }
+
+    /** Título de la encuesta (columna "Cuestionario" de la primera respuesta), o null si no la trae. */
+    public function surveyTitle(string $path): ?string
+    {
+        $label = 'encuesta de satisfacción';
+        if (ReportWorkbookReader::findColumn($this->reader->headers($path, $label), 'Cuestionario', true) === null) {
+            return null;
+        }
+
+        foreach ($this->reader->rows($path, $label, ['title' => ['Cuestionario']]) as $row) {
+            return ReportWorkbookReader::clean($row['title']);
+        }
+
+        return null;
     }
 
     /** @return array{0: list<list<mixed>>, 1: list<list<mixed>>} */
@@ -139,16 +158,49 @@ class CourseReportBuilder
         return [$cubeRows, $monthRows];
     }
 
-    /** @return array{0: array, 1: list<array>, 2: array} */
+    /**
+     * Columnas indispensables de cualquier encuesta de satisfacción de MERA: sin ellas no es el archivo
+     * correcto y el corte se detiene. Las preguntas favorables de cada curso cambian y son opcionales.
+     */
+    private const REQUIRED_SURVEY_COLUMNS = [
+        'num' => ['No. Empleado'],
+        'est' => ['Estatus colaborador'],
+        'rec' => ['Recomendarías', false],
+        'nps' => ['escala del 0 al 10', false],
+    ];
+
+    /** Fragmentos de respaldo de las preguntas abiertas, en orden de prioridad (cambian por curso). */
+    private const LIKED_FRAGMENTS = ['más te gustó', 'más valioso'];
+
+    private const IMPROVE_FRAGMENTS = ['mejorarías', 'podríamos mejorar'];
+
+    /** @return array{0: array, 1: list<array>, 2: array, 3: list<array{0:string,1:?string}>} */
     private function survey(string $path, PersonnelDirectory $personnel, array $survey, array &$warnings): array
     {
-        $favorable = $survey['favorable'];
-        $columns = ['num' => ['No. Empleado'], 'est' => ['Estatus colaborador']];
+        $label = 'encuesta de satisfacción';
+        $headers = $this->reader->headers($path, $label);
+
+        // Preguntas favorables: las que no vienen se omiten con aviso (antes detenían el corte, 2026-10-21).
+        $favorable = [];
+        $missing = [];
+        foreach ($survey['favorable'] as $question) {
+            ReportWorkbookReader::findColumn($headers, $question[1]) === null ? $missing[] = $question[1] : $favorable[] = $question;
+        }
+        if ($missing) {
+            $warnings[] = 'La encuesta no trae '.(count($missing) === 1 ? 'la pregunta' : 'las preguntas').' «'.implode('», «', $missing).'»: '
+                .($favorable ? 'la satisfacción se calcula con las otras '.count($favorable).'.' : 'no se calcula la satisfacción.');
+        }
+
+        $columns = self::REQUIRED_SURVEY_COLUMNS;
         foreach ($favorable as [$key, $fragment]) {
             $columns[$key] = [$fragment, false];
         }
-        $columns['liked'] = [$survey['liked_question'], false];
-        $columns['improve'] = [$survey['improve_question'], false];
+        foreach (['liked' => [$survey['liked_question'] ?? null, ...self::LIKED_FRAGMENTS], 'improve' => [$survey['improve_question'] ?? null, ...self::IMPROVE_FRAGMENTS]] as $key => $fragments) {
+            $fragment = collect($fragments)->filter()->first(fn ($f) => ReportWorkbookReader::findColumn($headers, $f) !== null);
+            if ($fragment) {
+                $columns[$key] = [$fragment, false];
+            }
+        }
 
         $codeColumns = array_merge(
             array_values(array_filter(array_column($survey['catalog'], 0), fn ($c) => str_starts_with($c, 'm'))),
@@ -164,7 +216,8 @@ class CourseReportBuilder
         $pending = [];
         $allFavorable = 0;
 
-        foreach ($this->reader->rows($path, 'encuesta de satisfacción', $columns) as $row) {
+        foreach ($this->reader->rows($path, $label, $columns) as $row) {
+            $row += ['liked' => null, 'improve' => null];
             $num = PersonnelDirectory::employeeNumber($row['num']);
             $person = $personnel->find($num);
             $deleted = strtolower(trim(is_scalar($row['est']) ? (string) $row['est'] : '')) === 'deleted';
@@ -177,10 +230,12 @@ class CourseReportBuilder
             foreach ($favorable as [$key, , $ok]) {
                 $flags[] = (int) in_array(ReportWorkbookReader::clean($row[$key]), $ok, true);
             }
-            $allFavorable += (int) (array_sum($flags) === count($flags));
+            $allFavorable += (int) ($flags && array_sum($flags) === count($flags));
 
             if ($num !== null && isset($precoded[$num])) {
                 $codes = $precoded[$num];
+            } elseif (! isset($columns['liked']) && ! isset($columns['improve'])) {
+                $codes = []; // la encuesta no trae preguntas abiertas
             } else {
                 $codes = $classifier->classify($row['liked'], $row['improve']);
                 $pending[] = [
@@ -202,7 +257,9 @@ class CourseReportBuilder
         return [
             ['columns' => array_merge(['localidad', 'area'], array_column($favorable, 0), $codeColumns), 'rows' => $rows],
             $pending,
-            ['respuestas' => $total, 'satisfaccion' => $total ? round($allFavorable / $total * 100, 2) : null],
+            ['respuestas' => $total, 'satisfaccion' => $total && $favorable ? round($allFavorable / $total * 100, 2) : null],
+            // Etiqueta null: cuenta para la satisfacción pero no lleva barra propia (p. ej. "recomienda" en Higiene).
+            array_map(fn ($q) => [$q[0], $q[3] ?? null], $favorable),
         ];
     }
 

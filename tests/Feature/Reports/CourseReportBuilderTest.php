@@ -3,6 +3,7 @@
 namespace Tests\Feature\Reports;
 
 use App\Services\Reports\CourseReportBuilder;
+use App\Services\Reports\CourseReportManager;
 use App\Services\Reports\OrgMapper;
 use App\Services\Reports\PersonnelDirectory;
 use App\Services\Reports\ReportFormatException;
@@ -45,6 +46,7 @@ class CourseReportBuilderTest extends TestCase
         }
         $header[] = '¿Qué fue lo que más te gustó del curso?';
         $header[] = '¿Qué mejorarías del curso?';
+        $header[] = 'En una escala del 0 al 10, ¿qué tan probable es que recomiendes este curso?';
 
         return $this->makeXlsx(array_merge([$header], $rows), 'encuesta.xlsx');
     }
@@ -162,15 +164,71 @@ class CourseReportBuilderTest extends TestCase
         $this->assertSame([], $data['pending']);
     }
 
-    public function test_a_missing_survey_question_is_reported_by_name(): void
+    public function test_a_file_without_the_essential_survey_columns_is_rejected(): void
     {
         $personnel = $this->makeXlsx([self::PERSONNEL_HEADER]);
         $survey = $this->makeXlsx([['No. Empleado', 'Estatus colaborador', 'Otra pregunta']]);
 
         $this->expectException(ReportFormatException::class);
-        $this->expectExceptionMessage('Falta la columna «temas tratados son útiles» en el archivo «encuesta de satisfacción»');
+        $this->expectExceptionMessage('Falta la columna «Recomendarías» en el archivo «encuesta de satisfacción»');
 
         $this->builder->build($personnel, $this->makeXlsx([self::ENROLLMENT_HEADER]), $survey, $this->survey());
+    }
+
+    /**
+     * 2026-10-21: con la encuesta de Fundamentos de Seguridad (sin "riesgos invisibles") el corte se
+     * detenía. Ahora la pregunta que falta se omite con aviso y la satisfacción usa las otras 7.
+     */
+    public function test_a_missing_favorable_question_is_skipped_with_a_warning(): void
+    {
+        $personnel = $this->makeXlsx([self::PERSONNEL_HEADER, [1, 'A', 'x', 'Bajio', 'Cocina', 'chef', 'y']]);
+        $header = ['No. Empleado', 'Estatus colaborador'];
+        foreach (config('report_surveys.higiene.favorable') as [$key, $fragment]) {
+            $header[] = $key === 'f_riesgos' ? '¿El curso te ayudó a comprender mejor los fundamentos?' : "¿Pregunta: {$fragment}?";
+        }
+        $header[] = 'En una escala del 0 al 10, ¿qué tan probable es que recomiendes este curso?';
+        $survey = $this->makeXlsx([
+            $header,
+            [1, 'active', 'De acuerdo', 'No', 'Muy claros y aplicables', 'Sí, muchas', 'Sí', 'Fácil', 'Útiles', 'Si', 10],
+            [2, 'active', 'De acuerdo', 'Sí', 'Muy claros y aplicables', 'Sí, muchas', 'Sí', 'Fácil', 'Útiles', 'No', 3],
+        ]);
+
+        $data = $this->builder->build($personnel, $this->makeXlsx([self::ENROLLMENT_HEADER]), $survey, $this->survey());
+
+        $this->assertStringContainsString('no trae la pregunta «riesgos invisibles»: la satisfacción se calcula con las otras 7', implode(' ', $data['warnings']));
+        $this->assertNotContains('f_riesgos', $data['encuesta']['columns']);
+        $this->assertSame(50.0, $data['summary']['satisfaccion']); // la respuesta "No" en riesgos ya no cuenta
+        $this->assertSame(['f_utilidad', 'Les sirve para su trabajo'], $data['preguntas']['rows'][0]);
+        $this->assertSame(['f_recomienda', null], end($data['preguntas']['rows']));
+        $this->assertSame([], $data['pending']); // sin preguntas abiertas no hay nada que clasificar
+    }
+
+    public function test_the_general_survey_uses_the_base_topics_and_recommendation(): void
+    {
+        $personnel = $this->makeXlsx([self::PERSONNEL_HEADER, [1, 'A', 'x', 'Bajio', 'Cocina', 'chef', 'y']]);
+        $survey = $this->makeXlsx([
+            ['No. Empleado', 'Estatus colaborador', '¿Recomendarías este curso a un(a) compañero(a)?', 'En una escala del 0 al 10, ¿qué tan probable es…?', '¿Qué fue lo más valioso del curso?', '¿Qué podríamos mejorar para que este curso sea más útil?'],
+            [1, 'active', 'Sí', 9, 'Los videos', 'Más ejemplos'],
+            [2, 'active', 'No', 2, '', ''],
+        ]);
+
+        $data = $this->builder->build($personnel, $this->makeXlsx([self::ENROLLMENT_HEADER]), $survey, config('report_surveys.general'));
+
+        $this->assertSame([], $data['warnings'] ? array_filter($data['warnings'], fn ($w) => str_contains($w, 'no trae')) : []);
+        $this->assertSame(50.0, $data['summary']['satisfaccion']);
+        $this->assertSame([['f_recomienda', 'Recomiendan el curso']], $data['preguntas']['rows']);
+        $this->assertSame(array_column(config('mera.progress.survey_topics'), 0), array_column($data['catalogo']['rows'], 0));
+        $this->assertSame('Los videos', $data['pending'][0]['liked']);
+    }
+
+    public function test_the_survey_configuration_is_chosen_by_course_code_or_title(): void
+    {
+        $this->assertSame('seguridad', CourseReportManager::surveyFor('NRM-SEG-002-EL-26', null));
+        $this->assertSame('higiene', CourseReportManager::surveyFor('NRM-HIG-002-EL-26', 'Encuesta de Satisfacción - Fundamentos de Seguridad'));
+        $this->assertSame('seguridad', CourseReportManager::surveyFor(null, 'Encuesta de Satisfacción - Fundamentos de Seguridad '));
+        $this->assertSame('higiene', CourseReportManager::surveyFor('NEG-XXX-001-EL-26', 'Encuesta de satisfacción - Introducción a la Higiene y Procedimientos 2026'));
+        $this->assertSame('general', CourseReportManager::surveyFor('NRM-EMG-002-EL-26', 'Encuesta de Satisfacción - Protocolo de Huracán 2026'));
+        $this->assertSame('general', CourseReportManager::surveyFor(null, null));
     }
 
     public function test_employee_numbers_and_title_case_match_python(): void

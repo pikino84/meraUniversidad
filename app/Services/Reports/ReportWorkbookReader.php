@@ -89,6 +89,58 @@ class ReportWorkbookReader
     }
 
     /**
+     * Encabezados de la hoja 1 (primera fila), ya limpios. Sirve para saber qué preguntas trae una
+     * encuesta antes de leerla: las que faltan se omiten en lugar de detener el corte.
+     *
+     * @return list<string>
+     *
+     * @throws ReportFormatException
+     */
+    public function headers(string $path, string $label): array
+    {
+        $reader = new Reader;
+
+        try {
+            $reader->open($path);
+        } catch (Throwable $e) {
+            throw new ReportFormatException("No se pudo abrir el archivo «{$label}». Verifica que sea un .xlsx válido.", 0, $e);
+        }
+
+        try {
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    return array_map(fn ($h) => self::clean($h), $row->toArray());
+                }
+                break;
+            }
+        } finally {
+            $reader->close();
+        }
+
+        throw new ReportFormatException("El archivo «{$label}» está vacío (no tiene encabezados).");
+    }
+
+    /**
+     * Posición de la primera columna que coincide con el texto (exacto o como fragmento, sin acentos
+     * ni mayúsculas), o null. $headers puede venir limpio o ya normalizado.
+     *
+     * @param  list<string>  $headers
+     */
+    public static function findColumn(array $headers, string $text, bool $exact = false): ?int
+    {
+        $needle = self::normalize(self::clean($text));
+
+        foreach ($headers as $i => $header) {
+            $header = self::normalize($header);
+            if ($exact ? $header === $needle : ($needle !== '' && str_contains($header, $needle))) {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Texto del encabezado/celda sin "*" y con los espacios colapsados (limpiar() del script).
      */
     public static function clean(mixed $value): string
@@ -130,15 +182,7 @@ class ReportWorkbookReader
 
         foreach ($columns as $key => $spec) {
             [$text, $exact] = [$spec[0], $spec[1] ?? true];
-            $needle = self::normalize(self::clean($text));
-            $found = null;
-
-            foreach ($normalized as $i => $header) {
-                if ($exact ? $header === $needle : ($needle !== '' && str_contains($header, $needle))) {
-                    $found = $i;
-                    break; // primera coincidencia
-                }
-            }
+            $found = self::findColumn($normalized, $text, $exact);
 
             if ($found === null) {
                 throw new ReportFormatException("Falta la columna «{$text}» en el archivo «{$label}». Revisa que sea el archivo correcto.");

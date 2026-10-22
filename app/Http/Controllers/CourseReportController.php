@@ -57,7 +57,8 @@ class CourseReportController extends Controller
         }
 
         return redirect()->route('course-groups.reports.show', [$courseGroup, $report])
-            ->with('success', 'Corte creado.'.($report->warnings ? ' Revisa los avisos.' : ''));
+            ->with('success', 'Corte creado con la encuesta «'.config("report_surveys.{$report->survey}.name", $report->survey).'».'
+                .($report->warnings ? ' Revisa los avisos.' : ''));
     }
 
     public function show(CourseGroup $courseGroup, CourseReport $report): View
@@ -196,10 +197,11 @@ class CourseReportController extends Controller
         return $group->versions()->with('market')->ordered()->get();
     }
 
-    /** @return array<string,string> clave => nombre */
+    /** @return array<string,string> clave => nombre ("Automática" primero: elige por el curso de la versión) */
     private function surveys(): array
     {
-        return collect(config('report_surveys'))->map(fn ($s, $key) => $s['name'] ?? $key)->all();
+        return [CourseReportManager::AUTO_SURVEY => 'Automática (según el curso)']
+            + collect(config('report_surveys'))->map(fn ($s, $key) => $s['name'] ?? $key)->all();
     }
 
     /** Códigos propuestos (los que hoy tiene la fila) para cada comentario pendiente. */

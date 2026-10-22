@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Reports;
 
 use App\Models\CourseReport;
+use App\Services\Reports\CourseReportManager;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -63,7 +64,7 @@ class CourseReportRequest extends FormRequest
         ];
 
         if ($creating) {
-            $rules['survey'] = ['required', 'string', Rule::in(array_keys(config('report_surveys')))];
+            $rules['survey'] = ['required', 'string', Rule::in([CourseReportManager::AUTO_SURVEY, ...array_keys(config('report_surveys'))])];
         }
 
         foreach (array_keys(self::FILES) as $key) {

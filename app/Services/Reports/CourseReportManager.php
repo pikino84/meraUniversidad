@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Models\CourseGroup;
+use App\Models\CourseGroupVersion;
 use App\Models\CourseReport;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,34 @@ use Illuminate\Support\Str;
  */
 class CourseReportManager
 {
+    /** Valor del selector "Encuesta" que elige la configuración sola (surveyFor). */
+    public const AUTO_SURVEY = 'auto';
+
     public function __construct(private readonly CourseReportBuilder $builder) {}
+
+    /**
+     * Configuración de encuesta para un corte: la del curso de la versión (course_codes), luego la
+     * del título de la columna "Cuestionario" (title) y, si ninguna coincide, "general".
+     */
+    public static function surveyFor(?string $courseCode, ?string $title): string
+    {
+        $surveys = (array) config('report_surveys');
+
+        foreach ($surveys as $key => $survey) {
+            if ($courseCode && in_array($courseCode, $survey['course_codes'] ?? [], true)) {
+                return $key;
+            }
+        }
+
+        $plain = ReportWorkbookReader::normalize(ReportWorkbookReader::clean($title));
+        foreach ($surveys as $key => $survey) {
+            if ($plain !== '' && ! empty($survey['title']) && str_contains($plain, ReportWorkbookReader::normalize($survey['title']))) {
+                return $key;
+            }
+        }
+
+        return array_key_exists('general', $surveys) ? 'general' : (string) array_key_first($surveys);
+    }
 
     /**
      * @param  array{personal: UploadedFile, inscripciones: UploadedFile, encuesta: UploadedFile}  $files
@@ -28,7 +56,9 @@ class CourseReportManager
      */
     public function create(CourseGroup $group, string $title, string $cutDate, string $surveyKey, array $files, ?int $userId, ?int $versionId = null): CourseReport
     {
-        $data = $this->buildFrom($files, $surveyKey);
+        $courseCode = $versionId ? CourseGroupVersion::query()->whereKey($versionId)->value('catalog_code') : null;
+        $data = $this->buildFrom($files, $surveyKey, $courseCode);
+        $surveyKey = $data['survey_key'];
 
         return DB::transaction(function () use ($group, $title, $cutDate, $surveyKey, $data, $userId, $versionId) {
             $report = new CourseReport(['title' => $title, 'cut_date' => $cutDate, 'survey' => $surveyKey]);
@@ -123,11 +153,9 @@ class CourseReportManager
     /**
      * @return array<string, mixed>
      */
-    private function buildFrom(array $files, string $surveyKey): array
+    private function buildFrom(array $files, string $surveyKey, ?string $courseCode = null): array
     {
-        $survey = config("report_surveys.{$surveyKey}");
-
-        if (! $survey) {
+        if ($surveyKey !== self::AUTO_SURVEY && ! config("report_surveys.{$surveyKey}")) {
             throw new ReportFormatException('La encuesta configurada para este reporte no existe.');
         }
 
@@ -140,7 +168,12 @@ class CourseReportManager
                 $paths[$key] = $files[$key]->move($dir, "{$key}.xlsx")->getPathname();
             }
 
-            return $this->builder->build($paths['personal'], $paths['inscripciones'], $paths['encuesta'], $survey);
+            if ($surveyKey === self::AUTO_SURVEY) {
+                $surveyKey = self::surveyFor($courseCode, $this->builder->surveyTitle($paths['encuesta']));
+            }
+
+            return $this->builder->build($paths['personal'], $paths['inscripciones'], $paths['encuesta'], config("report_surveys.{$surveyKey}"))
+                + ['survey_key' => $surveyKey];
         } finally {
             // openspout solo cierra el XML de la hoja al recorrerla completa: si un error corta la
             // lectura (p. ej. falta una columna), el archivo sigue abierto hasta que se liberan sus
@@ -156,7 +189,7 @@ class CourseReportManager
     private function fill(CourseReport $report, array $data): void
     {
         $report->forceFill([
-            'data' => array_intersect_key($data, array_flip(['cubo', 'inicio_mes', 'encuesta', 'catalogo'])),
+            'data' => array_intersect_key($data, array_flip(['cubo', 'inicio_mes', 'encuesta', 'catalogo', 'preguntas'])),
             'summary' => $data['summary'] + ['pendientes' => count($data['pending'])],
             'warnings' => $data['warnings'] ?: null,
             'pending' => $data['pending'] ?: null,

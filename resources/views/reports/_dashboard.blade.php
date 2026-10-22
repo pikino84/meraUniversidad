@@ -125,7 +125,7 @@
             </section>
             <section class="lx-card" aria-labelledby="t-sat-loc">
                 <h3 id="t-sat-loc">Satisfacción por localidad</h3>
-                <p class="lx-note">Porcentaje que respondió favorable en las 8 preguntas. Solo localidades con al menos {{ $t['satisfaction_min_answers'] }} respuestas.</p>
+                <p class="lx-note">Porcentaje que respondió favorable en todas las preguntas de la encuesta. Solo localidades con al menos {{ $t['satisfaction_min_answers'] }} respuestas.</p>
                 <div id="lx-sat-loc"></div>
             </section>
         </div>

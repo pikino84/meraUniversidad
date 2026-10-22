@@ -65,8 +65,12 @@ function init() {
     const sum = (rows, k) => d3sum(rows, (r) => num(r[k]));
     const month = MONTHS.utcFormat('%b %y');
     const monthOf = (d) => month(new Date(d + '-01T00:00:00Z'));
-    const Q = [['f_utilidad', 'Les sirve para su trabajo'], ['f_riesgos', 'Entienden los riesgos'], ['f_ejemplos', 'Ejemplos claros'], ['f_herramientas', 'Aprendieron herramientas'], ['f_capaz', 'Se sienten capaces de aplicarlo'], ['f_facil', 'Fue fácil de usar'], ['f_recursos', 'Recursos útiles']];
-    const FK = ['f_utilidad', 'f_riesgos', 'f_ejemplos', 'f_herramientas', 'f_capaz', 'f_facil', 'f_recursos', 'f_recomienda'];
+    // Preguntas favorables que trae la encuesta del corte (tabla "preguntas"; etiqueta vacía = sin barra).
+    // Los cortes creados antes de 2026-10-21 no la tienen: son de Higiene y usan sus 8 preguntas.
+    const QS = raw?.preguntas ? data('preguntas').map((r) => [r.clave, r.etiqueta]) : [['f_utilidad', 'Les sirve para su trabajo'], ['f_riesgos', 'Entienden los riesgos'], ['f_ejemplos', 'Ejemplos claros'], ['f_herramientas', 'Aprendieron herramientas'], ['f_capaz', 'Se sienten capaces de aplicarlo'], ['f_facil', 'Fue fácil de usar'], ['f_recursos', 'Recursos útiles'], ['f_recomienda', null]];
+    const Q = QS.filter(([, label]) => label);
+    const FK = QS.map(([key]) => key);
+    const allOk = (r) => FK.every((k) => num(r[k]) === 1);
     const STATE = { ok: ['Va bien', '#55B882'], warn: ['Atención', '#E5A823'], bad: ['Necesita apoyo', 'var(--cds-chart-status-critical)'] };
     const state = (bajo) => (bajo >= T.needs_support_from ? 'bad' : (bajo < T.ok_below ? 'ok' : 'warn'));
     const tip = $('lx-tip');
@@ -191,7 +195,7 @@ function init() {
         const sin = sum(sel, 'sin_iniciar');
         const calN = sum(sel, 'calif_n');
         const ok80 = sum(sel, 'b80');
-        const rec = nE ? encF.filter((r) => FK.every((k) => num(r[k]) === 1)).length / nE : null;
+        const rec = nE && FK.length ? encF.filter(allOk).length / nE : null;
         $('k-asig').textContent = fmt(asig);
         $('k-comp').textContent = asig ? pct(comp / asig) : '—';
         $('k-comp-s').textContent = fmt(comp) + ' de ' + fmt(asig) + ' personas';
@@ -201,7 +205,7 @@ function init() {
         $('k-cal').textContent = calN ? (sum(sel, 'calif_suma') / calN).toFixed(1) : '—';
         $('k-cal-s').textContent = calN ? pct(ok80 / calN) + ' sacó 80 o más' : '';
         $('k-rec').textContent = rec === null ? '—' : pct(rec);
-        $('k-rec-s').textContent = nE ? 'Favorable en las 8 preguntas (' + fmt(nE) + ' respuestas)' : 'Sin respuestas con estos filtros';
+        $('k-rec-s').textContent = !nE ? 'Sin respuestas con estos filtros' : !FK.length ? 'La encuesta no trae preguntas para calcularla' : (FK.length === 1 ? 'Recomiendan el curso' : 'Favorable en las ' + FK.length + ' preguntas') + ' (' + fmt(nE) + ' respuestas)';
 
         // Texto principal
         const aAll = group(byLoc, (r) => r.area).filter((v) => v.n > 0).sort((a, b) => b.okp - a.okp);
@@ -338,7 +342,7 @@ function init() {
 
         // Satisfacción por localidad
         const encA = enc.filter((r) => (!area || r.area === area) && r.localidad !== 'Ya no activo');
-        const SL = rollups(encA, (g) => ({ n: g.length, a: g.filter((r) => FK.every((k) => num(r[k]) === 1)).length }), (r) => r.localidad)
+        const SL = !FK.length ? [] : rollups(encA, (g) => ({ n: g.length, a: g.filter(allOk).length }), (r) => r.localidad)
             .map(([k, v]) => ({ k, ...v, p: v.a / v.n })).filter((v) => v.n >= T.satisfaction_min_answers).sort((a, b) => b.p - a.p);
         barRows($('lx-sat-loc'), SL.map((v) => ({ label: v.k + ' (' + fmt(v.n) + ')', value: v.p, text: pct(v.p) })), 1, '');
         if (!SL.length) $('lx-sat-loc').append(div('lx-sub', `Sin localidades con ${T.satisfaction_min_answers} respuestas o más.`));

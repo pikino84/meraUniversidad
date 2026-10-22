@@ -5,11 +5,16 @@
 | Encuestas de satisfacción de los reportes de curso ("seeder por curso")
 |--------------------------------------------------------------------------
 | docs/reportes/INSTRUCTIVO_REPORTES.md §4 y §6.4. Cada carpeta de curso usa una de estas
-| definiciones (por defecto config('mera.reports.default_survey')). Para otro curso: copiar el
-| bloque, ajustar las preguntas favorables y su catálogo de temas.
+| definiciones. Al crear un corte, "Automática" elige la del curso de la versión (course_codes), luego
+| la del título del cuestionario (title) y, si ninguna coincide, "general". Para otro curso: copiar
+| el bloque, ajustar las preguntas favorables y (opcional) su catálogo de temas.
 |
-| - favorable: [clave, fragmento del encabezado de la pregunta, respuestas favorables]. La
-|   respuesta se compara TAL CUAL (solo sin "*" y con espacios colapsados), como el script.
+| - favorable: [clave, fragmento del encabezado de la pregunta, respuestas favorables, etiqueta en el
+|   tablero (null = cuenta para la satisfacción, sin barra propia)]. La respuesta se compara TAL CUAL
+|   (solo sin "*" y con espacios colapsados), como el script. Una pregunta que la encuesta no trae se
+|   omite con aviso: la satisfacción se calcula con las demás (antes detenía el corte, 2026-10-21).
+| - title: fragmento de la columna "Cuestionario" que identifica la encuesta (sin acentos ni mayúsculas).
+| - catalog (opcional): sin él se usa el catálogo base de temas (config mera.progress.survey_topics).
 | - catalog: temas de "lo que más valoran" (v..) y "qué piden mejorar" (m..), en el orden del
 |   CSV original. keywords: fragmentos (sin acentos, en minúsculas) para proponer temas a las
 |   respuestas NUEVAS; un admin corrige la propuesta en pantalla.
@@ -22,6 +27,7 @@ return [
 
     'higiene' => [
         'name' => 'Introducción a la Higiene y Procedimientos',
+        'title' => 'Higiene',
 
         // Seguimiento anual (INSTRUCTIVO_REPORTE_PERSONAS.md §6.1): cursos del catálogo que usan esta
         // configuración para calcular la satisfacción. Sin configuración, la encuesta muestra los
@@ -29,14 +35,14 @@ return [
         'course_codes' => ['NRM-HIG-002-EL-26'],
 
         'favorable' => [
-            ['f_utilidad', 'temas tratados son útiles', ['Muy de acuerdo', 'De acuerdo']],
-            ['f_riesgos', 'riesgos invisibles', ['Sí']],
-            ['f_ejemplos', 'ejemplos y casos presentados', ['Muy claros y aplicables']],
-            ['f_herramientas', 'herramientas prácticas', ['Sí, muchas']],
-            ['f_capaz', 'capaz de aplicar', ['Sí']],
-            ['f_facil', 'fácil fue acceder', ['Muy fácil', 'Fácil']],
-            ['f_recursos', 'Los recursos', ['Muy útiles', 'Útiles']],
-            ['f_recomienda', 'Recomendarías este curso', ['Si', 'Sí']],
+            ['f_utilidad', 'temas tratados son útiles', ['Muy de acuerdo', 'De acuerdo'], 'Les sirve para su trabajo'],
+            ['f_riesgos', 'riesgos invisibles', ['Sí'], 'Entienden los riesgos'],
+            ['f_ejemplos', 'ejemplos y casos presentados', ['Muy claros y aplicables'], 'Ejemplos claros'],
+            ['f_herramientas', 'herramientas prácticas', ['Sí, muchas'], 'Aprendieron herramientas'],
+            ['f_capaz', 'capaz de aplicar', ['Sí'], 'Se sienten capaces de aplicarlo'],
+            ['f_facil', 'fácil fue acceder', ['Muy fácil', 'Fácil'], 'Fue fácil de usar'],
+            ['f_recursos', 'Los recursos', ['Muy útiles', 'Útiles'], 'Recursos útiles'],
+            ['f_recomienda', 'Recomendarías este curso', ['Si', 'Sí'], null],
         ],
 
         'liked_question' => 'más te gustó',
@@ -67,6 +73,38 @@ return [
             ['v08', 'valora', 'Útil y aplicable al trabajo y a la vida diaria', ['util', 'aplic', 'vida diaria', 'en mi trabajo', 'en casa']],
             ['v09', 'valora', 'Aprendizaje y refresco de conocimientos', ['aprend', 'refresc', 'record', 'conocimiento']],
             ['v_todo', 'valora', 'Todo en general', []],
+        ],
+    ],
+
+    // Misma encuesta que Higiene salvo una pregunta (2026-10-21, pedido de Tania). Sin clasificación
+    // previa ni catálogo propio: los comentarios se proponen con el catálogo base y se corrigen en pantalla.
+    'seguridad' => [
+        'name' => 'Fundamentos de Seguridad',
+        'title' => 'Fundamentos de Seguridad',
+        'course_codes' => ['NRM-SEG-002-EL-26'],
+
+        'favorable' => [
+            ['f_utilidad', 'temas tratados son útiles', ['Muy de acuerdo', 'De acuerdo'], 'Les sirve para su trabajo'],
+            ['f_fundamentos', 'fundamentos de Seguridad', ['Sí'], 'Entienden los fundamentos'],
+            ['f_ejemplos', 'ejemplos y casos presentados', ['Muy claros y aplicables'], 'Ejemplos claros'],
+            ['f_herramientas', 'herramientas prácticas', ['Sí, muchas'], 'Aprendieron herramientas'],
+            ['f_capaz', 'capaz de aplicar', ['Sí'], 'Se sienten capaces de aplicarlo'],
+            ['f_facil', 'fácil fue acceder', ['Muy fácil', 'Fácil'], 'Fue fácil de usar'],
+            ['f_recursos', 'Los recursos', ['Muy útiles', 'Útiles'], 'Recursos útiles'],
+            ['f_recomienda', 'Recomendarías este curso', ['Si', 'Sí'], null],
+        ],
+
+        'liked_question' => 'más te gustó',
+        'improve_question' => 'Qué mejorarías',
+    ],
+
+    // Cualquier otro curso: solo lo que traen todas las encuestas de MERA. Satisfacción = % que
+    // recomienda el curso. Va al final: es el respaldo de "Automática".
+    'general' => [
+        'name' => 'General (cualquier curso)',
+
+        'favorable' => [
+            ['f_recomienda', 'Recomendarías', ['Si', 'Sí'], 'Recomiendan el curso'],
         ],
     ],
 

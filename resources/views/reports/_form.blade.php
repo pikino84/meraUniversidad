@@ -53,20 +53,17 @@
         @endif
 
         @unless ($editing)
-        @if (count($surveys) > 1)
         <div class="col-md-6">
             <div class="form-group mera-form-group mb-0">
                 <label for="report-survey">Encuesta</label>
                 <select id="report-survey" name="survey" class="form-control form-select mera-input">
                     @foreach ($surveys as $key => $name)
-                    <option value="{{ $key }}" @selected(old('survey', config('mera.reports.default_survey')) === $key)>{{ $name }}</option>
+                    <option value="{{ $key }}" @selected(old('survey', array_key_first($surveys)) === $key)>{{ $name }}</option>
                     @endforeach
                 </select>
+                <small class="form-text text-muted">«Automática» usa la del curso de la versión o la del título de la encuesta; si no la reconoce, la general (satisfacción = % que recomienda el curso).</small>
             </div>
         </div>
-        @else
-        <input type="hidden" name="survey" value="{{ array_key_first($surveys) }}">
-        @endif
         @endunless
     </div>
 

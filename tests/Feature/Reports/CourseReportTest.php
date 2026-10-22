@@ -76,6 +76,7 @@ class CourseReportTest extends TestCase
         }
         $header[] = '¿Qué fue lo que más te gustó del curso?';
         $header[] = '¿Qué mejorarías del curso?';
+        $header[] = 'En una escala del 0 al 10, ¿qué tan probable es que recomiendes este curso?';
         $survey = $this->makeXlsx([
             $header,
             array_merge([1, 'active'], self::ALL_FAVORABLE, ['Los videos', 'Nada']),
@@ -114,7 +115,7 @@ class CourseReportTest extends TestCase
         $this->assertSame('2026-10-13', $report->cut_date->toDateString());
         $this->assertSame(2, $report->summary['asignados']);
         $this->assertSame(1, $report->summary['completados']);
-        $this->assertSame(['cubo', 'inicio_mes', 'encuesta', 'catalogo'], array_keys($report->data));
+        $this->assertSame(['cubo', 'inicio_mes', 'encuesta', 'catalogo', 'preguntas'], array_keys($report->data));
         $this->assertSame($this->admin->id, $report->created_by);
         $this->assertSame($this->version->id, $report->course_group_version_id);
         $this->assertTrue($this->tempIsEmpty());
@@ -124,6 +125,33 @@ class CourseReportTest extends TestCase
 
         $this->get(route('course-groups.reports.show', [$this->group, $report]))->assertOk()->assertSee('Curso: Higiene');
         $this->get(route('course-groups.versions.show', [$this->group, $this->version, 'seccion' => 'reportes']))->assertOk()->assertSee('13/10/2026')->assertSee('Cortes del curso');
+    }
+
+    /**
+     * 2026-10-21 (producción): en Fundamentos de Seguridad el corte se detenía con «Falta la columna
+     * «riesgos invisibles»». "Automática" elige la encuesta por el código de la versión.
+     */
+    public function test_automatic_survey_uses_the_course_of_the_version(): void
+    {
+        $this->version->update(['catalog_code' => 'NRM-SEG-002-EL-26']);
+        $files = $this->workbooks();
+        $header = ['No. Empleado', 'Estatus colaborador'];
+        foreach (config('report_surveys.seguridad.favorable') as [, $fragment]) {
+            $header[] = "¿Pregunta: {$fragment}?";
+        }
+        array_push($header, 'En una escala del 0 al 10, ¿qué tan probable es…?', '¿Qué fue lo que más te gustó del curso?', '¿Qué mejorarías del curso?');
+        $survey = $this->makeXlsx([$header, [1, 'active', 'De acuerdo', 'Sí', 'Muy claros y aplicables', 'Sí, muchas', 'Sí', 'Fácil', 'Útiles', 'Si', 10, 'Todo', 'Nada']], 'encuesta.xlsx');
+        $files['encuesta'] = new UploadedFile($survey, 'encuesta.xlsx', null, null, true);
+
+        $this->actingAs($this->admin)->get(route('course-groups.reports.create', $this->group))->assertOk()->assertSee('Automática (según el curso)');
+        $this->actingAs($this->admin)->post(route('course-groups.reports.store', $this->group), $this->payload(['survey' => 'auto'] + $files))
+            ->assertSessionHas('success', 'Corte creado con la encuesta «Fundamentos de Seguridad». Revisa los avisos.');
+
+        $report = CourseReport::firstOrFail();
+        $this->assertSame('seguridad', $report->survey);
+        $this->assertSame(100.0, (float) $report->summary['satisfaccion']);
+        $this->assertContains(['f_fundamentos', 'Entienden los fundamentos'], $report->data['preguntas']['rows']);
+        $this->assertTrue($this->tempIsEmpty());
     }
 
     public function test_a_wrong_file_shows_a_clear_error_and_still_deletes_the_upload(): void
