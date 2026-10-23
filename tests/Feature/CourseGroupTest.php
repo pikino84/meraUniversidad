@@ -360,4 +360,28 @@ class CourseGroupTest extends TestCase
         $this->actingAs($this->admin)->get(route('courses.index', ['carpeta' => $group->id]))
             ->assertOk()->assertSee('En carpeta')->assertSee('2026 · México')->assertDontSee('Suelto');
     }
+
+    /** Pedido del usuario (2026-10-22): /carpetas paginado de 10 y con buscador. */
+    public function test_folders_are_paginated_and_searchable(): void
+    {
+        foreach (range(1, 12) as $i) {
+            CourseGroup::create(['name' => sprintf('Curso %02d', $i), 'position' => $i]);
+        }
+        $seguridad = CourseGroup::create(['name' => 'Fundamentos Seguridad en el Trabajo', 'position' => 13]);
+        $this->version($seguridad)->update(['catalog_code' => 'NRM-SEG-002-EL-26']);
+
+        $this->actingAs($this->admin)->get(route('course-groups.index'))
+            ->assertOk()->assertSee('13 carpetas')->assertSee('Curso 10')->assertDontSee('Curso 11')->assertSee('Página');
+        $this->actingAs($this->admin)->get(route('course-groups.index', ['page' => 2]))
+            ->assertOk()->assertSee('Curso 11')->assertSee('Fundamentos Seguridad')->assertDontSee('Curso 01');
+
+        // Por nombre (sin importar mayúsculas), por código del catálogo de una versión y sin resultados.
+        $this->actingAs($this->admin)->get(route('course-groups.index', ['q' => 'seguridad']))
+            ->assertOk()->assertSee('1 carpeta de 13')->assertSee('Fundamentos Seguridad')->assertDontSee('Curso 01')
+            ->assertDontSee('aria-label="Subir', false);
+        $this->actingAs($this->admin)->get(route('course-groups.index', ['q' => 'NRM-SEG-002']))
+            ->assertOk()->assertSee('Fundamentos Seguridad')->assertDontSee('Curso 01');
+        $this->actingAs($this->admin)->get(route('course-groups.index', ['q' => '100%_']))
+            ->assertOk()->assertSee('Ninguna carpeta coincide');
+    }
 }

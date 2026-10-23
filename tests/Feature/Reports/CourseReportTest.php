@@ -7,9 +7,11 @@ use App\Models\CourseGroupVersion;
 use App\Models\CourseReport;
 use App\Models\Market;
 use App\Models\User;
+use App\Services\Reports\CourseReportManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Tests\Concerns\BuildsSpreadsheets;
@@ -166,6 +168,34 @@ class CourseReportTest extends TestCase
 
         $this->assertSame(0, CourseReport::count());
         $this->assertTrue($this->tempIsEmpty());
+    }
+
+    /** Pedido 2026-10-22: el error dice qué archivo falla (con su nombre) y por qué. */
+    public function test_a_file_in_the_wrong_place_says_which_one_and_why(): void
+    {
+        $files = $this->workbooks();
+        // Una copia del de inscripciones en el lugar del de personal.
+        $copy = $files['inscripciones']->getPathname().'-copia';
+        copy($files['inscripciones']->getPathname(), $copy);
+        $files['personal'] = new UploadedFile($copy, 'inscripciones_2026-10-13.xlsx', null, null, true);
+
+        $this->actingAs($this->admin)->post(route('course-groups.reports.store', $this->group), $this->payload($files))
+            ->assertSessionHas('error', 'Falta la columna «No. de empleado» en el archivo «reporte de personal». Parece el reporte de inscripciones: '
+                .'¿se subió en el lugar del reporte de personal? Archivo subido: «inscripciones_2026-10-13.xlsx».');
+
+        $this->assertSame(0, CourseReport::count());
+        $this->assertTrue($this->tempIsEmpty());
+    }
+
+    public function test_an_unexpected_error_shows_a_code_to_find_it_in_the_log(): void
+    {
+        $this->mock(CourseReportManager::class)->shouldReceive('create')->andThrow(new \RuntimeException('boom'));
+        Log::spy();
+
+        $this->actingAs($this->admin)->post(route('course-groups.reports.store', $this->group), $this->payload())
+            ->assertSessionHas('error', fn ($m) => (bool) preg_match('/error inesperado .* comparte este código con soporte: [A-Z0-9]{6}\./', $m));
+
+        Log::shouldHaveReceived('error')->withArgs(fn ($what, $context) => strlen($context['codigo'] ?? '') === 6)->once();
     }
 
     public function test_a_new_cut_needs_a_version_of_its_own_folder(): void

@@ -42,7 +42,7 @@ class ReportWorkbookReader
         try {
             $reader->open($path);
         } catch (Throwable $e) {
-            throw new ReportFormatException("No se pudo abrir el archivo «{$label}». Verifica que sea un .xlsx válido.", 0, $e);
+            throw ReportFormatException::inFile($label, "No se pudo abrir el archivo «{$label}»: no es un Excel válido (.xlsx) o está dañado. Ábrelo en Excel y guárdalo de nuevo como .xlsx.", $e);
         }
 
         try {
@@ -78,7 +78,7 @@ class ReportWorkbookReader
                 }
 
                 if ($indexes === null) {
-                    throw new ReportFormatException("El archivo «{$label}» está vacío (no tiene encabezados).");
+                    throw ReportFormatException::inFile($label, "El archivo «{$label}» está vacío: la hoja 1 no tiene encabezados.");
                 }
 
                 break; // solo la hoja 1
@@ -103,7 +103,7 @@ class ReportWorkbookReader
         try {
             $reader->open($path);
         } catch (Throwable $e) {
-            throw new ReportFormatException("No se pudo abrir el archivo «{$label}». Verifica que sea un .xlsx válido.", 0, $e);
+            throw ReportFormatException::inFile($label, "No se pudo abrir el archivo «{$label}»: no es un Excel válido (.xlsx) o está dañado. Ábrelo en Excel y guárdalo de nuevo como .xlsx.", $e);
         }
 
         try {
@@ -117,7 +117,7 @@ class ReportWorkbookReader
             $reader->close();
         }
 
-        throw new ReportFormatException("El archivo «{$label}» está vacío (no tiene encabezados).");
+        throw ReportFormatException::inFile($label, "El archivo «{$label}» está vacío: la hoja 1 no tiene encabezados.");
     }
 
     /**
@@ -185,13 +185,47 @@ class ReportWorkbookReader
             $found = self::findColumn($normalized, $text, $exact);
 
             if ($found === null) {
-                throw new ReportFormatException("Falta la columna «{$text}» en el archivo «{$label}». Revisa que sea el archivo correcto.");
+                throw ReportFormatException::inFile($label, "Falta la columna «{$text}» en el archivo «{$label}». ".self::diagnose($headers, $label));
             }
 
             $indexes[$key] = $found;
         }
 
         return $indexes;
+    }
+
+    /**
+     * Por qué falta una columna, para que quien sube los Excel sepa qué corregir: si el archivo parece
+     * OTRO de los reportes (se subió en el lugar equivocado) lo dice; si no, lista sus primeras columnas.
+     *
+     * @param  list<string>  $headers
+     */
+    public static function diagnose(array $headers, string $label): string
+    {
+        $has = fn (string $text) => self::findColumn($headers, $text) !== null;
+        $looksLike = match (true) {
+            $has('Cuestionario') => 'encuesta de satisfacción',
+            $has('Progreso') && $has('Calificación') => 'reporte de inscripciones',
+            $has('Unidad de negocio') || $has('Departamento') => 'reporte de personal',
+            $has('Ruta') && $has('Mod') => 'catálogo de cursos',
+            default => null,
+        };
+
+        if ($looksLike !== null && $looksLike !== $label) {
+            $the = fn (string $name) => (str_starts_with($name, 'encuesta') ? 'la ' : 'el ').$name;
+
+            return 'Parece '.$the($looksLike).': ¿se subió en el lugar '.str_replace('de el ', 'del ', 'de '.$the($label)).'?';
+        }
+
+        $found = array_values(array_filter($headers, fn ($h) => $h !== ''));
+        if ($found === []) {
+            return 'La primera fila de la hoja 1 está vacía: los encabezados deben ir en la fila 1.';
+        }
+
+        $list = implode(', ', array_map(fn ($h) => '«'.mb_strimwidth($h, 0, 40, '…').'»', array_slice($found, 0, 6)));
+
+        return 'La hoja 1 trae '.count($found).' columnas: '.$list.(count($found) > 6 ? '…' : '.')
+            .' Revisa que sea el archivo correcto y que no se haya cambiado el nombre de la columna.';
     }
 
     private function hasContent(array $values): bool

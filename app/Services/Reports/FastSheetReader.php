@@ -29,7 +29,7 @@ class FastSheetReader
         $zip = new ZipArchive;
 
         if ($zip->open($path) !== true) {
-            throw new ReportFormatException("No se pudo abrir el archivo «{$label}». Verifica que sea un .xlsx válido.");
+            throw ReportFormatException::inFile($label, "No se pudo abrir el archivo «{$label}»: no es un Excel válido (.xlsx) o está dañado. Ábrelo en Excel y guárdalo de nuevo como .xlsx.");
         }
 
         $sheet = $this->firstSheet($zip);
@@ -37,12 +37,12 @@ class FastSheetReader
         $zip->close();
 
         if ($sheet === null) {
-            throw new ReportFormatException("El archivo «{$label}» no tiene hojas.");
+            throw ReportFormatException::inFile($label, "El archivo «{$label}» no tiene hojas.");
         }
 
         $xml = new XMLReader;
         if (! @$xml->open('zip://'.$path.'#'.$sheet, null, LIBXML_NONET | LIBXML_COMPACT)) {
-            throw new ReportFormatException("No se pudo leer la hoja del archivo «{$label}».");
+            throw ReportFormatException::inFile($label, "No se pudo leer la hoja 1 del archivo «{$label}»: guárdalo de nuevo como .xlsx desde Excel.");
         }
 
         $indexes = null;   // clave => índice de columna (0 = A)
@@ -104,7 +104,7 @@ class FastSheetReader
         }
 
         if ($indexes === null) {
-            throw new ReportFormatException("El archivo «{$label}» está vacío (no tiene encabezados).");
+            throw ReportFormatException::inFile($label, "El archivo «{$label}» está vacío: la hoja 1 no tiene encabezados.");
         }
     }
 
@@ -248,7 +248,7 @@ class FastSheetReader
             }
 
             if ($found === null) {
-                throw new ReportFormatException("Falta la columna «{$text}» en el archivo «{$label}». Revisa que sea el archivo correcto.");
+                throw ReportFormatException::inFile($label, "Falta la columna «{$text}» en el archivo «{$label}». ".ReportWorkbookReader::diagnose($headers, $label));
             }
 
             $indexes[$key] = $found;

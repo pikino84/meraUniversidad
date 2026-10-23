@@ -4594,6 +4594,12 @@ a.mera-version-card:focus-visible {
     gap: 8px;
 }
 
+/* Solo buscador (Carpetas): campo ancho + botón. */
+.mera-catalog-filters.is-search {
+    grid-template-columns: minmax(0, 520px) max-content;
+    justify-content: start;
+}
+
 @media (max-width: 767.98px) {
     .mera-catalog-filters {
         grid-template-columns: 1fr 1fr;

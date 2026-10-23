@@ -206,7 +206,7 @@ class CourseReportBuilderTest extends TestCase
         $survey = $this->makeXlsx([
             $header,
             array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 1, 'active'], $ok, ['Claro que si', 10, 'Los videos', 'El acoso', 'Nada']),
-            array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 2, 'active'], $ok, ['nop', 9, '', '', '']),
+            array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 2, 'active'], $ok, ['nop', 9, 'Todo', 'Los ejemplos', '']),
             array_merge(['Encuesta de satisfacción - Respeto que Construye 2026', 3, 'deleted'], $ok, ['.', 8, '', '', '']),
         ]);
 
@@ -219,6 +219,9 @@ class CourseReportBuilderTest extends TestCase
         $recommend = array_search('f_recomienda', $data['encuesta']['columns'], true);
         $this->assertSame([1, 0, null], array_column($data['encuesta']['rows'], $recommend));
         $this->assertSame('Los videos · El acoso', $data['pending'][0]['liked']);
+        // "Todo" + tema extra: cuenta como "Todo en general" y además el tema de la extra.
+        $row = array_combine($data['encuesta']['columns'], $data['encuesta']['rows'][1]);
+        $this->assertSame([1, 1], [$row['v_todo'], $row['v03']]);
         $this->assertSame([], array_filter($data['warnings'], fn ($w) => str_contains($w, 'no trae')));
     }
 

@@ -223,8 +223,11 @@ class CourseReportBuilder
 
         foreach ($this->reader->rows($path, $label, $columns) as $row) {
             $row += ['liked' => null, 'improve' => null, 'liked2' => null];
+            // La pregunta extra se clasifica aparte ("Todo" solo cuenta si es la respuesta completa) y
+            // el texto se muestra junto en "Pendientes de clasificar".
+            $likedText = ReportWorkbookReader::clean($row['liked']);
             if (SurveyAnswerClassifier::meaningful($row['liked2'])) {
-                $row['liked'] = trim(ReportWorkbookReader::clean($row['liked']).' · '.ReportWorkbookReader::clean($row['liked2']), ' ·');
+                $likedText = trim($likedText.' · '.ReportWorkbookReader::clean($row['liked2']), ' ·');
             }
             $num = PersonnelDirectory::employeeNumber($row['num']);
             $person = $personnel->find($num);
@@ -252,9 +255,14 @@ class CourseReportBuilder
                 $codes = []; // la encuesta no trae preguntas abiertas
             } else {
                 $codes = $classifier->classify($row['liked'], $row['improve']);
+                if (SurveyAnswerClassifier::meaningful($row['liked2'])) {
+                    foreach ($classifier->classify($row['liked2'], null) as $code => $marked) {
+                        $codes[$code] = max($codes[$code] ?? 0, $marked);
+                    }
+                }
                 $pending[] = [
                     'row' => count($rows),
-                    'liked' => mb_substr(ReportWorkbookReader::clean($row['liked']), 0, self::MAX_ANSWER_LENGTH),
+                    'liked' => mb_substr($likedText, 0, self::MAX_ANSWER_LENGTH),
                     'improve' => mb_substr(ReportWorkbookReader::clean($row['improve']), 0, self::MAX_ANSWER_LENGTH),
                 ];
             }

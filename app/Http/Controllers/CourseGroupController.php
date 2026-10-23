@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\CourseGroup;
 use App\Models\Market;
 use App\Services\Courses\CourseGroupOrganizer;
+use App\Support\Like;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,16 +25,27 @@ class CourseGroupController extends Controller
 
     public function __construct(private readonly CourseGroupOrganizer $organizer) {}
 
-    public function index(): View
+    /** Carpetas por página (pedido del usuario, 2026-10-22: paginado y buscador). */
+    public const PER_PAGE = 10;
+
+    public function index(Request $request): View
     {
+        $search = Str::limit(trim((string) $request->query('q')), 100, '');
+
         $groups = CourseGroup::query()
             ->with(['versions' => fn ($q) => $q->with('market')->withCount('modules')->ordered()])
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => Like::contains($q, ['name', 'slug'], $search)
+                ->orWhereHas('versions', fn ($v) => Like::contains($v, ['catalog_code'], $search))))
             ->orderBy('position')
             ->orderBy('name')
-            ->get();
+            ->paginate(self::PER_PAGE)
+            ->onEachSide(1)
+            ->withQueryString();
 
         return view('course-groups.index', [
             'groups' => $groups,
+            'search' => $search,
+            'total' => CourseGroup::count(),
             'ungroupedCount' => Course::whereNull('course_group_id')->count(),
         ]);
     }

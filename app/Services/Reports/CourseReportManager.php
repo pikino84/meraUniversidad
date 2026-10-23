@@ -162,6 +162,12 @@ class CourseReportManager
         $dir = rtrim(config('mera.reports.temp_root'), '/\\').DIRECTORY_SEPARATOR.Str::uuid();
         File::ensureDirectoryExists($dir, 0700);
 
+        // Nombre de cada archivo tal como lo subieron, para decir en el error cuál falla.
+        $names = [];
+        foreach (['personal' => 'reporte de personal', 'inscripciones' => 'reporte de inscripciones', 'encuesta' => 'encuesta de satisfacción'] as $key => $label) {
+            $names[$label] = $files[$key] instanceof UploadedFile ? $files[$key]->getClientOriginalName() : basename((string) $files[$key]);
+        }
+
         try {
             $paths = [];
             foreach (['personal', 'inscripciones', 'encuesta'] as $key) {
@@ -174,13 +180,28 @@ class CourseReportManager
 
             return $this->builder->build($paths['personal'], $paths['inscripciones'], $paths['encuesta'], config("report_surveys.{$surveyKey}"))
                 + ['survey_key' => $surveyKey];
+        } catch (ReportFormatException $e) {
+            if (! isset($names[$e->workbook])) {
+                throw $e;
+            }
+            // Sin encadenar el original: su traza retiene el lector y el Excel quedaría abierto (en
+            // Windows no se borraría la carpeta temporal en el finally).
+            $error = $e->withUploadedName($names[$e->workbook]);
+            unset($e);
+
+            throw $error;
         } finally {
             // openspout solo cierra el XML de la hoja al recorrerla completa: si un error corta la
             // lectura (p. ej. falta una columna), el archivo sigue abierto hasta que se liberan sus
             // objetos, y en Windows un archivo abierto no se puede borrar.
             gc_collect_cycles();
 
-            if (! File::deleteDirectory($dir) && is_dir($dir)) {
+            // En Windows el archivo puede seguir tomado unos milisegundos (antivirus, indexador): reintenta.
+            for ($try = 0; $try < 3 && is_dir($dir) && ! File::deleteDirectory($dir); $try++) {
+                usleep(150_000);
+            }
+
+            if (is_dir($dir)) {
                 Log::warning('No se pudo borrar la carpeta temporal de un reporte (trae datos personales): bórrala a mano.', ['dir' => $dir]);
             }
         }

@@ -51,9 +51,7 @@ class CourseReportController extends Controller
         } catch (ReportFormatException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         } catch (Throwable $e) {
-            Log::error('Error al crear un corte de reporte', ['group' => $courseGroup->id, 'exception' => $e]);
-
-            return back()->withInput()->with('error', 'No se pudo procesar el reporte. Revisa los archivos e inténtalo de nuevo.');
+            return back()->withInput()->with('error', $this->unexpected($e, 'Error al crear un corte de reporte', ['group' => $courseGroup->id]));
         }
 
         return redirect()->route('course-groups.reports.show', [$courseGroup, $report])
@@ -84,9 +82,7 @@ class CourseReportController extends Controller
         } catch (ReportFormatException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         } catch (Throwable $e) {
-            Log::error('Error al actualizar un corte de reporte', ['report' => $report->id, 'exception' => $e]);
-
-            return back()->withInput()->with('error', 'No se pudo procesar el reporte. Revisa los archivos e inténtalo de nuevo.');
+            return back()->withInput()->with('error', $this->unexpected($e, 'Error al actualizar un corte de reporte', ['report' => $report->id]));
         }
 
         return redirect()->route('course-groups.reports.show', [$courseGroup, $report])
@@ -195,6 +191,19 @@ class CourseReportController extends Controller
     private function versions(CourseGroup $group)
     {
         return $group->versions()->with('market')->ordered()->get();
+    }
+
+    /**
+     * Error inesperado (no de formato): se registra con un código corto que se muestra en pantalla,
+     * para que Capacitación lo pase y se encuentre el detalle en storage/logs (pedido 2026-10-22).
+     */
+    private function unexpected(Throwable $e, string $what, array $context): string
+    {
+        $code = strtoupper(Str::random(6));
+        Log::error($what, $context + ['codigo' => $code, 'exception' => $e]);
+
+        return 'No se pudo procesar el reporte por un error inesperado (no es de formato de los archivos). '
+            ."Inténtalo de nuevo; si se repite, comparte este código con soporte: {$code}.";
     }
 
     /** @return array<string,string> clave => nombre ("Automática" primero: elige por el curso de la versión) */
