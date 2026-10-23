@@ -1,15 +1,16 @@
 {{-- Link para compartir el corte sin sesión (decisión del usuario, INSTRUCTIVO_REPORTES.md §10).
-     Variables: $group, $report --}}
-<section class="mera-public-card {{ $report->isShared() ? 'is-published' : '' }} mt-3" aria-labelledby="compartir-reporte">
+     Variables: $group, $report, $compact (opcional: dentro de un <details> que ya trae título y estado) --}}
+@php($compact ??= false)
+<section class="mera-public-card {{ $report->isShared() ? 'is-published' : '' }} {{ $compact ? 'is-compact' : 'mt-3' }}" aria-labelledby="compartir-reporte">
     <div class="mera-public-head">
         <div>
-            <h2 id="compartir-reporte" class="h6 mb-1"><i class="fas fa-share-alt" aria-hidden="true"></i> Compartir sin sesión</h2>
+            <h2 id="compartir-reporte" class="{{ $compact ? 'visually-hidden' : 'h6 mb-1' }}"><i class="fas fa-share-alt" aria-hidden="true"></i> Compartir sin sesión</h2>
             @if ($report->isShared())
-            <span class="mera-status mera-status-on"><i class="fas fa-circle" aria-hidden="true"></i> Link activo</span>
-            <small class="text-muted ms-1">Cualquiera con el link puede ver este corte (solo totales, sin datos personales).</small>
+            @unless ($compact)<span class="mera-status mera-status-on"><i class="fas fa-circle" aria-hidden="true"></i> Link activo</span>@endunless
+            <small class="text-muted {{ $compact ? '' : 'ms-1' }}">Cualquiera con el link puede ver este corte (solo totales, sin datos personales).</small>
             @else
-            <span class="mera-status mera-status-off"><i class="fas fa-circle" aria-hidden="true"></i> Sin link</span>
-            <small class="text-muted ms-1">Solo se ve dentro del panel.</small>
+            @unless ($compact)<span class="mera-status mera-status-off"><i class="fas fa-circle" aria-hidden="true"></i> Sin link</span>@endunless
+            <small class="text-muted {{ $compact ? '' : 'ms-1' }}">Solo se ve dentro del panel.</small>
             @endif
         </div>
 

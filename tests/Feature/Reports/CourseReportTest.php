@@ -348,6 +348,26 @@ class CourseReportTest extends TestCase
             ->assertSee('Descargar HTML');
     }
 
+    /**
+     * 2026-10-23 ("demasiada información en una sola vista"): pestañas, acciones secundarias en
+     * "Más acciones" y avisos de rutina plegados (los que piden atención se abren solos).
+     */
+    public function test_the_report_page_is_organized_in_tabs_and_folded_panels(): void
+    {
+        $report = $this->makeReport();
+        $page = fn () => $this->actingAs($this->admin)->get(route('course-groups.reports.show', [$this->group, $report]))->assertOk();
+
+        $page()->assertSeeInOrder(['Más acciones', 'Actualizar corte', 'Descargar HTML', 'Compartir sin sesión', 'Eliminar corte'])
+            ->assertSeeInOrder(['data-tab="resumen"', 'data-tab="avance"', 'data-tab="evaluacion"', 'data-tab="opiniones"'], false)
+            ->assertSeeInOrder(['data-panel="resumen"', 'Ranking de localidades', 'data-panel="avance"', 'Avance por mes', 'data-panel="evaluacion"', 'Calificaciones', 'data-panel="opiniones"', 'Lo que más valoran'], false);
+
+        $report->forceFill(['warnings' => ['3 inscritos de unidades excluidas o sin unidad (se omiten).']])->save();
+        $page()->assertSee('Informativos: nada que corregir.')->assertDontSee('mera-report-panel is-warning" open', false);
+
+        $report->forceFill(['warnings' => ['La encuesta no trae la pregunta «riesgos invisibles»: la satisfacción se calcula con las otras 7.']])->save();
+        $page()->assertSee('mera-report-panel is-warning" open', false)->assertDontSee('Informativos: nada que corregir.');
+    }
+
     public function test_download_html_is_a_standalone_file_with_only_aggregates(): void
     {
         $report = $this->makeReport();

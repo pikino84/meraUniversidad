@@ -52,8 +52,17 @@
         </div>
     </div>
 
+    {{-- Pestañas (pedido del usuario 2026-10-23: "demasiada información en una sola vista"). Los filtros
+         y los indicadores de arriba se conservan al cambiar; la pestaña queda en la URL (#vista=…). --}}
+    <div class="lx-tabs" role="tablist" aria-label="Secciones del reporte" data-report-tabs hidden>
+        <button type="button" role="tab" id="tab-resumen" aria-controls="panel-resumen" data-tab="resumen"><i class="fas fa-trophy" aria-hidden="true"></i> Resumen</button>
+        <button type="button" role="tab" id="tab-avance" aria-controls="panel-avance" data-tab="avance"><i class="fas fa-chart-line" aria-hidden="true"></i> Avance</button>
+        <button type="button" role="tab" id="tab-evaluacion" aria-controls="panel-evaluacion" data-tab="evaluacion"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Evaluación</button>
+        <button type="button" role="tab" id="tab-opiniones" aria-controls="panel-opiniones" data-tab="opiniones"><i class="fas fa-comments" aria-hidden="true"></i> Opiniones</button>
+    </div>
+
     <div data-report-charts hidden>
-        <h2 class="lx-sec">Avance del curso</h2>
+        <div role="tabpanel" id="panel-resumen" aria-labelledby="tab-resumen" data-panel="resumen">
         <div class="lx-one">
             <section class="lx-card" aria-labelledby="t-ranking">
                 <h3 id="t-ranking">Ranking de localidades</h3>
@@ -62,6 +71,9 @@
                 <div class="lx-split" id="lx-locs"><div id="lx-la"></div><div id="lx-lb"></div></div>
             </section>
         </div>
+        </div>
+
+        <div role="tabpanel" id="panel-avance" aria-labelledby="tab-avance" data-panel="avance">
         <div class="lx-grid">
             <section class="lx-card" aria-labelledby="t-meses">
                 <h3 id="t-meses">Avance por mes</h3>
@@ -86,8 +98,9 @@
                 <div id="lx-pz-av"></div>
             </section>
         </div>
+        </div>
 
-        <h2 class="lx-sec">Evaluación</h2>
+        <div role="tabpanel" id="panel-evaluacion" aria-labelledby="tab-evaluacion" data-panel="evaluacion">
         <div class="lx-grid">
             <section class="lx-card" aria-labelledby="t-calif">
                 <h3 id="t-calif">Calificaciones</h3>
@@ -115,8 +128,9 @@
                 <div id="lx-pz-bad"></div>
             </section>
         </div>
+        </div>
 
-        <h2 class="lx-sec">Lo que opinan las personas</h2>
+        <div role="tabpanel" id="panel-opiniones" aria-labelledby="tab-opiniones" data-panel="opiniones">
         <div class="lx-grid">
             <section class="lx-card" aria-labelledby="t-sat">
                 <h3 id="t-sat">Qué tan satisfechas están las personas</h3>
@@ -140,6 +154,7 @@
                 <p class="lx-note" id="lx-mej-note">—</p>
                 <div id="lx-mej"></div>
             </section>
+        </div>
         </div>
     </div>
 

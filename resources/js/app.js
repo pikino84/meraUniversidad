@@ -14,6 +14,7 @@ import { initShowPasswords, initUnsavedWarning } from './modules/unsaved';
 import { initPanelTemplate } from './modules/panel-template';
 import { initReportForm } from './modules/report-form';
 import { initAutoSubmit } from './modules/auto-submit';
+import { initDetailsMenus } from './modules/details-menu';
 
 window.Alpine = Alpine;
 window.swal = swal; // usado por vistas antiguas y por los módulos
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initPanelTemplate();
     initReportForm();
     initAutoSubmit();
+    initDetailsMenus();
     initMobileMenu();
 });
 

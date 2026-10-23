@@ -105,7 +105,27 @@
 .mera-report .lx-tip { position: absolute; pointer-events: none; z-index: 5; max-width: 260px; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); opacity: 0; }
 .mera-report .lx-noscript { padding: 1rem; border-radius: 12px; background: #fff4e5; }
 
+/* Pestañas (2026-10-23): mismo aspecto que las del seguimiento anual; en celular se desplazan de lado. */
+.mera-report .lx-tabs { display: flex; gap: 4px; margin: 0 0 var(--cds-gap-md); border-bottom: 1px solid #dfe9e2; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.mera-report .lx-tabs button { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; min-height: 44px; margin-bottom: -1px; padding: 8px 16px; border: 0; border-bottom: 3px solid transparent; background: none; color: #5F6368; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.mera-report .lx-tabs button:hover { color: #024D25; }
+.mera-report .lx-tabs button:focus-visible { outline: 3px solid #81CFF4; outline-offset: -3px; border-radius: 6px 6px 0 0; }
+.mera-report .lx-tabs button[aria-selected="true"] { border-bottom-color: #024D25; color: #024D25; }
+.mera-report .lx-tabs i { color: inherit; opacity: .8; }
+
 @media (max-width: 520px) {
+    /* Las 4 pestañas caben sin desplazar: sin íconos y del mismo ancho. */
+    .mera-report .lx-tabs { gap: 0; }
+    .mera-report .lx-tabs button { flex: 1 1 0; justify-content: center; padding-inline: 4px; font-size: 13px; }
+    .mera-report .lx-tabs i { display: none; }
+    /* Indicadores en 2 columnas y compactos (antes, 5 tarjetas apiladas: casi dos pantallas). */
+    .mera-report .mera-report-kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mera-report .mera-report-kpi { padding: 12px; border-radius: 14px; }
+    .mera-report .mera-report-kpi > i { display: none; }
+    .mera-report .mera-report-kpi-label { font-size: 11px; }
+    .mera-report .mera-report-kpi strong { font-size: 22px; }
+    .mera-report .mera-report-kpi small { font-size: 12px; }
+    .mera-report .mera-report-kpi:last-child { grid-column: 1 / -1; }
     /* Ranking: sin la columna "Sin iniciar" (sigue en la barra y en el tooltip) para que quepa en 375 px */
     .mera-report .lx-rk { grid-template-columns: 1.5rem minmax(4rem, 1fr) minmax(2.5rem, 4rem) 3.3rem 2.9rem; gap: .35rem; }
     .mera-report .lx-rk > :nth-child(6) { display: none; }
@@ -120,7 +140,10 @@
 }
 
 @media print {
-    .mera-report .lx-filters { display: none; }
+    .mera-report .lx-filters,
+    .mera-report .lx-tabs { display: none; }
+    /* Al imprimir salen todas las secciones, no solo la pestaña abierta. */
+    .mera-report [data-panel][hidden] { display: block !important; }
     .mera-report .lx-card,
     .mera-report .mera-report-kpi { box-shadow: none; break-inside: avoid; }
 }

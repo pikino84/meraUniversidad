@@ -100,15 +100,39 @@ function init() {
         const h = new URLSearchParams();
         if (params.loc) h.set('localidad', params.loc);
         if (params.area) h.set('area', params.area);
+        if (params.tab && params.tab !== TABS[0]) h.set('vista', params.tab);
         const hash = h.toString();
         history.replaceState(null, '', hash ? `#${hash}` : location.pathname + location.search);
     };
+    // Pestañas (2026-10-23): una sección a la vez. La pestaña oculta mide 0 de ancho, así que al
+    // mostrarla se vuelve a dibujar.
+    const TABS = ['resumen', 'avance', 'evaluacion', 'opiniones'];
+    const tabButtons = [...root.querySelectorAll('[data-report-tabs] [data-tab]')];
+    const showTab = (name, focus = false) => {
+        const tab = TABS.includes(name) ? name : TABS[0];
+        tabButtons.forEach((b) => {
+            const on = b.dataset.tab === tab;
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+            b.tabIndex = on ? 0 : -1;
+            if (on && focus) b.focus();
+        });
+        root.querySelectorAll('[data-panel]').forEach((panel) => { panel.hidden = panel.dataset.panel !== tab; });
+        return tab;
+    };
     const fromHash = new URLSearchParams(location.hash.slice(1));
-    params = { loc: fromHash.get('localidad') || null, area: fromHash.get('area') || null };
+    params = { loc: fromHash.get('localidad') || null, area: fromHash.get('area') || null, tab: fromHash.get('vista') || TABS[0] };
     const setParams = (p) => { params = { ...params, ...p }; saveHash(); render(); };
     fl.addEventListener('change', () => setParams({ loc: fl.value || null }));
     fa.addEventListener('change', () => setParams({ area: fa.value || null }));
-    $('lx-reset').addEventListener('click', () => { params = {}; saveHash(); render(); });
+    $('lx-reset').addEventListener('click', () => { params = { tab: params.tab }; saveHash(); render(); });
+    tabButtons.forEach((b) => b.addEventListener('click', () => setParams({ tab: showTab(b.dataset.tab) })));
+    root.querySelector('[data-report-tabs]').addEventListener('keydown', (e) => {
+        const i = TABS.indexOf(params.tab);
+        const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 }[e.key];
+        if (next === undefined) return;
+        e.preventDefault();
+        setParams({ tab: showTab(TABS[(next + TABS.length) % TABS.length], true) });
+    });
 
     const pickLocation = (row) => setParams({ loc: params.loc === row.dataset.key ? null : row.dataset.key });
     $('lx-locs').addEventListener('click', (e) => {
@@ -368,7 +392,9 @@ function init() {
     }
 
     root.querySelector('[data-report-filters]').hidden = false;
+    root.querySelector('[data-report-tabs]').hidden = false;
     root.querySelector('[data-report-charts]').hidden = false;
+    params.tab = showTab(params.tab);
     render();
 
     let timer;

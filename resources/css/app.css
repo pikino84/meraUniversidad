@@ -5268,3 +5268,211 @@ a.mera-version-card:focus-visible {
 .mera-topic-options .mera-tag-check span {
     font-size: 12px;
 }
+
+/* ===================== CORTE DEL REPORTE POR CURSO: barra y paneles (2026-10-23) ===================== */
+/* Menos información a la vez: volver + "Clasificar comentarios" a la vista; lo demás en "Más acciones";
+   avisos y compartir plegados en una línea cada uno. */
+.mera-report-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mera-report-toolbar-end {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.mera-report-toolbar .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    min-height: 40px;
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.mera-report-count {
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(2, 77, 37, .14);
+    font-size: 12px;
+    text-align: center;
+}
+
+.mera-report-more {
+    position: relative;
+}
+
+.mera-report-more > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.mera-report-more > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mera-report-menu {
+    position: absolute;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    margin-top: 6px;
+    padding: 6px;
+    border: 1px solid #dfe9e2;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(2, 77, 37, .14);
+}
+
+.mera-report-menu form {
+    margin: 0;
+}
+
+.mera-report-menu a,
+.mera-report-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: #1f2d24;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.mera-report-menu a:hover,
+.mera-report-menu button:hover,
+.mera-report-menu a:focus-visible,
+.mera-report-menu button:focus-visible {
+    background: #E3F0D0;
+    color: #024D25;
+}
+
+.mera-report-menu i {
+    width: 16px;
+    color: #55882B;
+    text-align: center;
+}
+
+.mera-report-menu .is-danger,
+.mera-report-menu .is-danger i {
+    color: #C62828;
+}
+
+.mera-report-menu .is-danger:hover,
+.mera-report-menu .is-danger:focus-visible {
+    background: #fdecea;
+    color: #C62828;
+}
+
+.mera-report-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mera-report-panel {
+    border: 1px solid #dfe9e2;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.mera-report-panel > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    min-height: 46px;
+    padding: 10px 16px;
+    color: #024D25;
+    cursor: pointer;
+    list-style: none;
+}
+
+.mera-report-panel > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mera-report-panel > summary::after {
+    margin-left: auto;
+    content: "\25BE"; /* ▾ */
+    color: #5F6368;
+    transition: transform .15s ease;
+}
+
+.mera-report-panel[open] > summary::after {
+    transform: rotate(180deg);
+}
+
+.mera-report-panel > summary small {
+    color: #5F6368;
+}
+
+.mera-report-panel > summary:focus-visible {
+    outline: 3px solid #81CFF4;
+    outline-offset: -3px;
+    border-radius: 14px;
+}
+
+.mera-report-panel > :not(summary) {
+    margin: 0 16px 14px;
+}
+
+.mera-report-panel.is-warning {
+    border-color: #f3d28b;
+    background: #fff8e6;
+}
+
+.mera-report-panel.is-warning > summary,
+.mera-report-panel.is-warning > summary i {
+    color: #7a5200;
+}
+
+.mera-report-panel.is-warning ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.mera-public-card.is-compact {
+    margin: 0 16px 14px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mera-report-panel > summary::after {
+        transition: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .mera-report-toolbar,
+    .mera-report-toolbar-end {
+        width: 100%;
+    }
+
+    .mera-report-toolbar-end {
+        justify-content: space-between;
+    }
+}
