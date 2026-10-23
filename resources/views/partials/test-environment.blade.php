@@ -12,6 +12,9 @@
 <style>
 /* Fijo abajo: arriba tapaba la barra superior fija del panel (sobre todo en móvil). */
 body { padding-bottom: 64px; }
+/* Alto del cintillo: lo usan las barras fijas abajo (p. ej. "Guardar esta página") para no quedar debajo. */
+:root { --mera-env-banner-h: 64px; }
+@media (max-width: 575.98px) { :root { --mera-env-banner-h: 104px; } }
 .mera-env-banner { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1040; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 14px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); background: #FFE08A; color: #3D2E00; font: 500 13px/1.4 'Montserrat', Arial, sans-serif; text-align: center; border-top: 4px solid transparent; border-image: repeating-linear-gradient(-45deg, #3D2E00 0 10px, #FFC21A 10px 20px) 4; box-shadow: 0 -4px 14px rgba(0, 0, 0, .12); }
 .mera-env-banner strong { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .mera-env-banner a { color: #3D2E00; font-weight: 700; text-decoration: underline; }

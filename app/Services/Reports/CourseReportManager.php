@@ -142,10 +142,12 @@ class CourseReportManager
             $done++;
         }
 
-        $summary = $report->summary ?? [];
-        $summary['pendientes'] = count($pending);
+        // Los que no dicen nada ("", ".", "N/A") salen de la lista: no hay qué clasificar.
+        $pending = array_values(array_filter($pending, fn ($p) => SurveyAnswerClassifier::meaningful($p['liked'] ?? '')
+            || SurveyAnswerClassifier::meaningful($p['improve'] ?? '', true)));
 
-        $report->forceFill(['data' => $data, 'pending' => array_values($pending) ?: null, 'summary' => $summary])->save();
+        $report->forceFill(['data' => $data, 'pending' => $pending ?: null]);
+        $report->forceFill(['summary' => ['pendientes' => count($pending), 'sin_tema' => count($report->reviewQueue()['sin-tema'])] + ($report->summary ?? [])])->save();
 
         return $done;
     }
@@ -211,9 +213,13 @@ class CourseReportManager
     {
         $report->forceFill([
             'data' => array_intersect_key($data, array_flip(['cubo', 'inicio_mes', 'encuesta', 'catalogo', 'preguntas'])),
-            'summary' => $data['summary'] + ['pendientes' => count($data['pending'])],
             'warnings' => $data['warnings'] ?: null,
             'pending' => $data['pending'] ?: null,
         ]);
+        // sin_tema: lo que de verdad pide revisión (botón "Revisar comentarios" y lista de cortes).
+        $report->forceFill(['summary' => $data['summary'] + [
+            'pendientes' => count($data['pending']),
+            'sin_tema' => count($report->reviewQueue()['sin-tema']),
+        ]]);
     }
 }

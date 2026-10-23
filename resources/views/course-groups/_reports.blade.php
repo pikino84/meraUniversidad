@@ -38,7 +38,7 @@
                             <a href="{{ route('course-groups.reports.show', [$group, $report]) }}" class="user-name">{{ $report->cut_date->format('d/m/Y') }}</a>
                             <small class="d-block text-muted">{{ $report->title }}</small>
                             @if ($report->pendingCount())
-                            <span class="mera-missing-badge"><i class="fas fa-tags" aria-hidden="true"></i> {{ $report->pendingCount() }} por clasificar</span>
+                            <span class="mera-missing-badge"><i class="fas fa-tags" aria-hidden="true"></i> {{ $report->pendingCount() }} {{ array_key_exists('sin_tema', $report->summary ?? []) ? 'sin tema' : 'por revisar' }}</span>
                             @endif
                             @if ($report->isShared())
                             <span class="mera-status mera-status-on mt-1"><i class="fas fa-link" aria-hidden="true"></i> Compartido</span>

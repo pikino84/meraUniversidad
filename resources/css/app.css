@@ -5476,3 +5476,40 @@ a.mera-version-card:focus-visible {
         justify-content: space-between;
     }
 }
+
+/* ===================== REVISAR COMENTARIOS (rediseño 2026-10-23) ===================== */
+.mera-pending-hint {
+    margin: 10px 0 6px;
+    color: #024D25;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.mera-pending-hint span {
+    color: #5F6368;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Guardar siempre a la vista al bajar por la lista. */
+.mera-pending-save {
+    position: sticky;
+    bottom: calc(var(--mera-env-banner-h, 0px) + 12px + env(safe-area-inset-bottom, 0px)); /* encima del cintillo de pruebas */
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding: 12px 16px;
+    border: 1px solid #dfe9e2;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 8px 22px rgba(2, 77, 37, .12);
+}
+
+.mera-pending-save .btn {
+    width: auto;
+}

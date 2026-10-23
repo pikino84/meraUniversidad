@@ -313,27 +313,72 @@ class CourseReportTest extends TestCase
     public function test_pending_comments_can_be_classified_by_hand(): void
     {
         $report = $this->makeReport();
-        $this->assertSame(1, $report->pendingCount());
+        // "Los videos" ya trae tema: no cuenta como "sin tema", pero se puede corregir en "Con tema".
+        $this->assertSame(0, $report->pendingCount());
 
         $this->actingAs($this->admin)
-            ->get(route('course-groups.reports.pending', [$this->group, $report]))
+            ->get(route('course-groups.reports.pending', [$this->group, $report, 'ver' => 'con-tema']))
             ->assertOk()
-            ->assertSee('Los videos');
+            ->assertSee('Los videos')->assertSee('Guardar esta página')->assertDontSee('Revisado');
 
         $code = config('report_surveys.higiene.catalog')[0][0];
         $this->actingAs($this->admin)
-            ->patch(route('course-groups.reports.classify', [$this->group, $report]), ['codes' => [0 => [$code, 'v_respondio', 'inventado']], 'reviewed' => [0]])
-            ->assertSessionHas('success');
+            ->patch(route('course-groups.reports.classify', [$this->group, $report]), ['codes' => [0 => [$code, 'v_respondio', 'inventado']], 'shown' => [0]])
+            ->assertSessionHas('success', 'Listo: 1 comentario guardado. Ya se ven en «Opiniones» del reporte.');
 
         $report->refresh();
         $columns = $report->data['encuesta']['columns'];
         $row = array_combine($columns, $report->data['encuesta']['rows'][0]);
 
-        $this->assertSame(0, $report->pendingCount());
         $this->assertNull($report->pending);
         $this->assertSame(1, $row[$code]);
         $this->assertSame(1, $row['v_respondio']); // no se toca a mano
         $this->assertSame(1, array_sum(array_map(fn ($c) => preg_match('/^(m\d+|v\d+|v_todo)$/', $c) ? $row[$c] : 0, $columns)));
+    }
+
+    /**
+     * Rediseño 2026-10-23 (en producción nadie entendía "Revisado" y las casillas de temas no salían
+     * para las encuestas sin catálogo propio): vacíos fuera, pestañas Sin tema / Con tema, temas del corte.
+     */
+    public function test_review_shows_only_comments_with_text_and_the_topics_of_the_cut(): void
+    {
+        config(['report_surveys.higiene.course_codes' => []]);
+        $files = $this->workbooks();
+        $header = ['No. Empleado', 'Estatus colaborador', '¿Recomendarías este curso?', '¿Qué fue lo que más te gustó del curso?', '¿Qué mejorarías del curso?'];
+        $survey = $this->makeXlsx([$header,
+            [1, 'active', 'Sí', 'Los videos', 'Nada'],          // con tema
+            [2, 'active', 'Sí', 'Saber a quién recurrir', ''],  // sin tema
+            [2, 'active', 'Sí', 'N/A', '.'],                    // vacío: no aparece
+        ], 'encuesta.xlsx');
+        $files['encuesta'] = new UploadedFile($survey, 'encuesta.xlsx', null, null, true);
+        $this->actingAs($this->admin)->post(route('course-groups.reports.store', $this->group), $this->payload(['survey' => 'general'] + $files));
+        $report = CourseReport::firstOrFail();
+
+        $this->assertSame(1, $report->pendingCount());
+        $this->assertSame(2, count($report->pending));
+        $this->assertStringContainsString('2 comentarios con texto', implode(' ', $report->warnings));
+
+        // Abre en "Sin tema", con las casillas del catálogo base (antes no salía ninguna).
+        $this->actingAs($this->admin)->get(route('course-groups.reports.pending', [$this->group, $report]))
+            ->assertOk()->assertSee('Saber a quién recurrir')->assertDontSee('Los videos')->assertDontSee('mera-pending-a">N/A', false)
+            ->assertSee(config('mera.progress.survey_topics')[0][2])->assertSeeInOrder(['Sin tema', '1', 'Con tema', '1']);
+        $this->actingAs($this->admin)->get(route('course-groups.reports.show', [$this->group, $report]))->assertSee('1 sin tema');
+
+        $index = array_key_first($report->reviewQueue()['sin-tema']);
+        $this->actingAs($this->admin)->patch(route('course-groups.reports.classify', [$this->group, $report]), ['codes' => [$index => ['v08']], 'shown' => [$index], 'ver' => 'sin-tema'])
+            ->assertRedirect(route('course-groups.reports.pending', [$this->group, $report, 'ver' => 'sin-tema']));
+
+        $report->refresh();
+        $this->assertSame(0, $report->pendingCount());
+        $this->assertSame(1, count($report->pending)); // queda el que ya tenía tema
+
+        // Corte anterior (como los de producción): sin "sin_tema" y con vacíos en la lista. Al abrirlo se corrige.
+        $summary = $report->summary;
+        unset($summary['sin_tema']);
+        $report->forceFill(['summary' => $summary, 'pending' => array_merge($report->pending, [['row' => 0, 'liked' => '.', 'improve' => 'N/A']])])->save();
+        $this->actingAs($this->admin)->get(route('course-groups.reports.show', [$this->group, $report]))->assertOk();
+        $report->refresh();
+        $this->assertSame([1, 0, 1], [count($report->pending), $report->summary['sin_tema'], $report->summary['pendientes']]);
     }
 
     public function test_the_report_page_mounts_the_dashboard_with_its_data(): void

@@ -62,6 +62,7 @@ class CourseReportController extends Controller
     public function show(CourseGroup $courseGroup, CourseReport $report): View
     {
         Gate::authorize('view', $report);
+        $report->rememberReviewCount();
 
         return view('reports.show', ['group' => $courseGroup, 'report' => $report, 'shared' => false]);
     }
@@ -141,16 +142,34 @@ class CourseReportController extends Controller
         });
     }
 
-    /** Comentarios abiertos pendientes de clasificar (propuesta por palabras clave). */
-    public function pending(CourseGroup $courseGroup, CourseReport $report): View
+    /** Comentarios por página en "Revisar comentarios". */
+    public const REVIEW_PER_PAGE = 20;
+
+    /**
+     * "Revisar comentarios" (rediseño 2026-10-23: nadie entendía "Revisado"). Pestañas Sin tema (lo que
+     * de verdad pide una persona) y Con tema; los vacíos no aparecen. Guardar = la página como se ve.
+     */
+    public function pending(Request $request, CourseGroup $courseGroup, CourseReport $report): View
     {
         Gate::authorize('update', $report);
+        $report->rememberReviewCount();
+
+        $queue = $report->reviewQueue();
+        $tab = $request->query('ver');
+        $tab = array_key_exists($tab, $queue) ? $tab : ($queue['sin-tema'] ? 'sin-tema' : 'con-tema');
+        $items = $queue[$tab];
+        $pages = max(1, (int) ceil(count($items) / self::REVIEW_PER_PAGE));
+        $page = max(1, min($request->integer('pagina', 1), $pages));
 
         return view('reports.pending', [
             'group' => $courseGroup,
             'report' => $report,
-            'catalog' => config("report_surveys.{$report->survey}.catalog", []),
-            'proposed' => $this->proposed($report),
+            'catalog' => $report->topicCatalog() ?: array_map(fn ($t) => [$t[0], $t[1], $t[2]], config("report_surveys.{$report->survey}.catalog", [])),
+            'counts' => array_map('count', $queue),
+            'tab' => $tab,
+            'items' => array_slice($items, ($page - 1) * self::REVIEW_PER_PAGE, self::REVIEW_PER_PAGE, true),
+            'page' => $page,
+            'pages' => $pages,
         ]);
     }
 
@@ -158,23 +177,25 @@ class CourseReportController extends Controller
     {
         Gate::authorize('update', $report);
 
+        // Se guardan TODOS los comentarios que se mostraron, con las casillas como quedaron.
         $data = $request->validate([
             'codes' => ['array'],
             'codes.*' => ['array'],
             'codes.*.*' => ['string', 'max:20'],
-            'reviewed' => ['required', 'array', 'min:1'],
-            'reviewed.*' => ['integer', 'min:0'],
-        ], ['reviewed.required' => 'Marca al menos un comentario como revisado.']);
+            'shown' => ['required', 'array', 'min:1'],
+            'shown.*' => ['integer', 'min:0'],
+            'ver' => ['nullable', 'string', 'in:sin-tema,con-tema'],
+        ]);
 
         $assignments = [];
-        foreach ($data['reviewed'] as $index) {
+        foreach ($data['shown'] as $index) {
             $assignments[(int) $index] = $data['codes'][$index] ?? [];
         }
 
         $done = $this->reports->classify($report, $assignments);
 
-        return redirect()->route('course-groups.reports.pending', [$courseGroup, $report])
-            ->with('success', "{$done} ".($done === 1 ? 'comentario clasificado.' : 'comentarios clasificados.'));
+        return redirect()->route('course-groups.reports.pending', [$courseGroup, $report, 'ver' => $data['ver'] ?? null])
+            ->with('success', "Listo: {$done} ".($done === 1 ? 'comentario guardado' : 'comentarios guardados').'. Ya se ven en «Opiniones» del reporte.');
     }
 
     /** Vista pública con el link para compartir (sin sesión, noindex, solo agregados). */
@@ -211,18 +232,5 @@ class CourseReportController extends Controller
     {
         return [CourseReportManager::AUTO_SURVEY => 'Automática (según el curso)']
             + collect(config('report_surveys'))->map(fn ($s, $key) => $s['name'] ?? $key)->all();
-    }
-
-    /** Códigos propuestos (los que hoy tiene la fila) para cada comentario pendiente. */
-    private function proposed(CourseReport $report): array
-    {
-        $columns = $report->data['encuesta']['columns'];
-        $rows = $report->data['encuesta']['rows'];
-
-        return array_map(function ($item) use ($columns, $rows) {
-            $row = array_combine($columns, $rows[$item['row']] ?? array_fill(0, count($columns), 0));
-
-            return array_keys(array_filter($row, fn ($v, $k) => $v === 1 && preg_match('/^(m\d+|v\d+|v_todo)$/', $k), ARRAY_FILTER_USE_BOTH));
-        }, $report->pending ?? []);
     }
 }

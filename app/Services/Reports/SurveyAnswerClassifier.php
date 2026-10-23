@@ -18,7 +18,8 @@ class SurveyAnswerClassifier
     private const EMPTY_ANSWERS = ['', 'nada', 'ninguno', 'ninguna', 'na', 'n a', 'no', 'ningun', 'nada en particular', 'sin comentarios', 'ningun comentario'];
 
     /** "Qué mejorarías" que en realidad dicen que no hay nada que mejorar. */
-    private const NOTHING_TO_IMPROVE = ['todo bien', 'todo esta bien', 'nada todo bien', 'todo excelente', 'todo perfecto', 'esta bien asi', 'asi esta bien', 'nada esta bien', 'nada me gusto todo'];
+    private const NOTHING_TO_IMPROVE = ['todo bien', 'todo esta bien', 'nada todo bien', 'todo excelente', 'todo perfecto', 'esta bien asi', 'asi esta bien', 'nada esta bien', 'nada me gusto todo',
+        'ninguno todo bien', 'ninguna todo bien', 'nada todo esta bien', 'ninguno todo esta bien', 'nada todo excelente', 'nada todo perfecto', 'nada esta perfecto', 'todo muy bien', 'nada todo muy bien'];
 
     /** @param list<array{0:string,1:string,2:string,3?:list<string>}> $catalog */
     public function __construct(private readonly array $catalog) {}

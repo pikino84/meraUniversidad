@@ -25,16 +25,16 @@
     // Rutina: comentarios por clasificar (ya hay botón) e inscritos omitidos. Lo demás (p. ej. una pregunta que
     // no viene) sí pide atención y abre el panel.
     $notices = collect($report->warnings ?? []);
-    $important = $notices->reject(fn ($w) => str_contains($w, 'sin clasificar') || str_contains($w, '(se omiten)'));
+    $important = $notices->reject(fn ($w) => str_contains($w, 'sin clasificar') || str_contains($w, 'comentarios con texto') || str_contains($w, '(se omiten)'));
 @endphp
 {{-- Acciones (2026-10-23: menos ruido). A la vista: volver y lo que hay que hacer; lo demás, en "Más acciones". --}}
 <div class="mera-report-toolbar mb-3">
     <a href="{{ $version ? route('course-groups.versions.show', [$group, $version, 'seccion' => 'reportes']) : route('course-groups.show', $group) }}" class="btn mera-btn-cancel btn-sm"><i class="fas fa-arrow-left" aria-hidden="true"></i> {{ $group->name }}{{ $version ? ' · '.$version->label() : '' }}</a>
 
     <span class="mera-report-toolbar-end">
-        @if ($report->pendingCount())
+        @if ($report->pendingCount() || ($report->summary['pendientes'] ?? 0))
         <a href="{{ route('course-groups.reports.pending', [$group, $report]) }}" class="btn mera-btn-primary btn-sm">
-            <i class="fas fa-tags" aria-hidden="true"></i> Clasificar comentarios <span class="mera-report-count">{{ number_format($report->pendingCount()) }}</span>
+            <i class="fas fa-tags" aria-hidden="true"></i> Revisar comentarios <span class="mera-report-count" title="Comentarios sin tema">{{ number_format($report->pendingCount()) }} sin tema</span>
         </a>
         @endif
         <details class="mera-report-more">

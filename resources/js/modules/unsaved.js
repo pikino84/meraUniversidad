@@ -21,10 +21,37 @@ export function initUnsavedWarning() {
         });
     });
 
-    window.addEventListener('beforeunload', (event) => {
-        const pending = forms.some((form) => form.dataset.dirty === '1' && form.dataset.saving !== '1');
+    const hasChanges = () => forms.some((form) => form.dataset.dirty === '1' && form.dataset.saving !== '1');
 
-        if (pending) {
+    // Enlaces de la propia página ("Volver", paginación, pestañas…): aviso con la ventana del sistema
+    // (2026-10-23; antes salía la de Chrome). Cerrar la pestaña o recargar solo lo puede avisar el navegador.
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href]');
+
+        if (!link || !hasChanges() || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey
+            || link.target === '_blank' || link.hasAttribute('download') || link.getAttribute('href').startsWith('#')) {
+            return;
+        }
+
+        event.preventDefault();
+        window.swal({
+            title: '¿Salir sin guardar?',
+            text: 'Tienes cambios en esta página que no has guardado. Si sales, se pierden.',
+            icon: 'warning',
+            buttons: {
+                cancel: { text: 'Seguir aquí', value: false, visible: true, className: 'mera-swal-cancel', closeModal: true },
+                confirm: { text: 'Salir sin guardar', value: true, visible: true, className: 'mera-swal-confirm-danger', closeModal: true },
+            },
+            className: 'mera-swal-danger',
+        }).then((leave) => {
+            if (!leave) return;
+            forms.forEach((form) => { form.dataset.saving = '1'; });
+            window.location.href = link.href;
+        });
+    });
+
+    window.addEventListener('beforeunload', (event) => {
+        if (hasChanges()) {
             event.preventDefault();
             event.returnValue = '';
         }

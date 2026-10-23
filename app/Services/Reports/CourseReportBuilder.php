@@ -219,6 +219,8 @@ class CourseReportBuilder
         $rows = [];
         $pending = [];
         $allFavorable = 0;
+        $noTopic = 0; // comentarios con texto a los que el sistema no les encontró tema
+        $topicCodes = array_values(array_filter(array_column($survey['catalog'], 0), fn ($c) => $c !== 'v_respondio'));
         $rated = 0; // respuestas con todas las preguntas claras (base de la satisfacción)
 
         foreach ($this->reader->rows($path, $label, $columns) as $row) {
@@ -260,18 +262,23 @@ class CourseReportBuilder
                         $codes[$code] = max($codes[$code] ?? 0, $marked);
                     }
                 }
-                $pending[] = [
-                    'row' => count($rows),
-                    'liked' => mb_substr($likedText, 0, self::MAX_ANSWER_LENGTH),
-                    'improve' => mb_substr(ReportWorkbookReader::clean($row['improve']), 0, self::MAX_ANSWER_LENGTH),
-                ];
+                // Solo los que dicen algo ("", ".", "N/A", "nada" no se revisan: no hay qué clasificar).
+                if (SurveyAnswerClassifier::meaningful($likedText) || SurveyAnswerClassifier::meaningful($row['improve'], true)) {
+                    $pending[] = [
+                        'row' => count($rows),
+                        'liked' => mb_substr($likedText, 0, self::MAX_ANSWER_LENGTH),
+                        'improve' => mb_substr(ReportWorkbookReader::clean($row['improve']), 0, self::MAX_ANSWER_LENGTH),
+                    ];
+                    $noTopic += (int) ! array_filter(array_intersect_key($codes, array_flip($topicCodes)));
+                }
             }
 
             $rows[] = array_merge([$locality, $area], $flags, array_map(fn ($c) => (int) ($codes[$c] ?? 0), $codeColumns));
         }
 
         if ($pending) {
-            $warnings[] = count($pending).' respuestas abiertas sin clasificar: el sistema propuso temas por palabras clave; revísalos en "Pendientes de clasificar".';
+            $warnings[] = count($pending).' comentarios con texto: el sistema les propuso temas por palabras clave'
+                .($noTopic ? "; {$noTopic} quedaron sin tema y puedes asignárselo en «Revisar comentarios» (opcional)." : '.');
         }
 
         $total = count($rows);
