@@ -39,9 +39,31 @@ function initCopyLinks() {
             if (label) {
                 label.textContent = ok ? '¡Copiado!' : 'Selecciónalo y copia';
                 setTimeout(() => { label.textContent = original; }, 2000);
+            } else {
+                // Botón solo con ícono (módulos de una versión): palomita 2 s y aviso para lectores de pantalla.
+                const icon = button.querySelector('i');
+                const title = button.title;
+                icon?.classList.replace('fa-copy', ok ? 'fa-check' : 'fa-times');
+                button.title = ok ? '¡Link copiado!' : 'No se pudo copiar: ábrelo y copia la dirección';
+                announce(button.title);
+                setTimeout(() => { icon?.classList.replace(ok ? 'fa-check' : 'fa-times', 'fa-copy'); button.title = title; }, 2000);
             }
         });
     });
+}
+
+/** Mensaje para lectores de pantalla (región aria-live compartida, creada al primer uso). */
+function announce(text) {
+    let region = document.getElementById('mera-copy-status');
+    if (!region) {
+        region = document.createElement('div');
+        region.id = 'mera-copy-status';
+        region.className = 'visually-hidden';
+        region.setAttribute('role', 'status');
+        document.body.append(region);
+    }
+    region.textContent = '';
+    setTimeout(() => { region.textContent = text; }, 50);
 }
 
 function initGroupDependentFields() {

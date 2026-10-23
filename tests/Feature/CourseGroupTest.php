@@ -384,4 +384,17 @@ class CourseGroupTest extends TestCase
         $this->actingAs($this->admin)->get(route('course-groups.index', ['q' => '100%_']))
             ->assertOk()->assertSee('Ninguna carpeta coincide');
     }
+
+    /** Pedido del usuario (2026-10-23): junto a "Ver módulo", un botón para copiar su link. */
+    public function test_each_module_of_a_version_has_a_copy_link_button(): void
+    {
+        $group = CourseGroup::create(['name' => 'Fundamentos']);
+        $version = $this->version($group);
+        $module = $this->module($version, 'Módulo 1', 1);
+
+        $this->actingAs($this->admin)->get(route('course-groups.versions.show', [$group, $version]))
+            ->assertOk()
+            ->assertSee('data-copy="'.e($module->content_url).'"', false)
+            ->assertSee('Copiar link de Módulo 1');
+    }
 }

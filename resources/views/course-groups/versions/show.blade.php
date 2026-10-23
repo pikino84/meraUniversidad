@@ -102,6 +102,10 @@
                         title="Ver módulo" aria-label="Ver {{ $module->name }} (nueva pestaña)">
                         <i class="fa fa-eye" aria-hidden="true"></i>
                     </a>
+                    <button type="button" class="mera-action-btn mera-edit-btn" data-copy="{{ $module->content_url }}"
+                        title="Copiar link del módulo" aria-label="Copiar link de {{ $module->name }}">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                    </button>
                     @endif
                     <a href="{{ route('courses.edit', $module) }}" class="mera-action-btn mera-edit-btn"
                         title="Editar" aria-label="Editar {{ $module->name }}">
